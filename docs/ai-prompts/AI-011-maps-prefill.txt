@@ -1,0 +1,45 @@
+<task>
+Project: RoadSense, React Native 0.88 + Expo SDK 58 (docs: https://docs.expo.dev/versions/v58.0.0/) + TypeScript strict + Expo Router, `@/*` -> `./src/*`. Architecture: MVVM in Clean Architecture. Screens render only what ViewModel hooks return; screens and feature components never import src/stores, src/services or src/data. ViewModels may use stores and services but NOT src/data (data is reached through repositories in src/data/di.ts via stores, or through services). Theme: useTheme / useThemedStyles (src/theme), tokens in src/theme/tokens.ts, light/dark palettes. DESIGN.md (repo root, read it in full) is the visual source of truth: grayscale only (the one approved exception is colors.status.near/over for speed status), pills for interactive elements, rounded.xl cards, "Maps in ride-request flow: full-bleed inside a card; rounded corners follow the parent card". All data is mocked (Cairo fixtures in src/data/mock: cameras, hazards, DEMO_TRIP along Salah Salem).
+
+Two jobs.
+
+JOB 1 — Google Maps. `react-native-maps` 1.29.11 is already installed (do not add or upgrade dependencies). Target: Expo Go, no API key — Android Expo Go renders Google Maps via PROVIDER_GOOGLE without a key; iOS Expo Go only supports Apple Maps, so use PROVIDER_GOOGLE on Android and the default provider on iOS (Platform.select). Read the react-native-maps README in node_modules/react-native-maps and the Expo SDK 58 react-native-maps docs page (https://docs.expo.dev/versions/v58.0.0/sdk/map-view/) for the current props. Also add the key plumbing for later builds without requiring a key now: convert app.json to keep working but add to it (or via app.config.ts that spreads app.json) `android.config.googleMaps.apiKey` and `ios.config.googleMapsApiKey` read from process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY, only when it is set; .env.example already lists the variable. Don't break `npx expo export`.
+
+ 1a. Shared map kit in src/components/map/ (props only — no stores/services/data imports), exported from src/components/map/index.ts:
+   - RoadMap: wraps MapView. Props: region/initial region, children, followPoint?: LatLng & heading (animateCamera to it with a driving pitch/zoom when it changes), scrollEnabled etc., style. Uses a monochrome Google map style that follows the theme: put two customMapStyle JSON arrays (light grayscale and dark grayscale — roads, labels, water, parks all in greys, POI icons hidden) in src/theme/mapStyles.ts and pick by useTheme().scheme; on iOS pass userInterfaceStyle instead. Hide default POIs/toolbar (toolbarEnabled false), showsCompass false, rotateEnabled per prop.
+   - CameraMarker / HazardMarker: custom markers drawn as a 32-dp circle (canvas fill, 1.5-dp ink border, 18-dp MaterialCommunityIcons glyph from hazardMeta in ink; expired hazards at 0.4 opacity). Use tracksViewChanges={false} after first render for performance. accessibilityLabel e.g. "Speed camera, Ring Road, 100 km/h".
+   - UserMarker: ink circle with onPrimary 'navigation' glyph rotated by heading (flat marker, anchor center).
+   - RouteLine: Polyline of LatLng[] in colors.ink, width 5; optional `progressIndex` to draw the travelled part in colors.mute and the rest in ink.
+ 1b. Drive Mode map card (Seif's feature — src/features/drive): add a map card between the speed card and the next-alert band on DriveModeScreen: a Card-like container (rounded.xl, overflow hidden, height 220, hairline border in dark scheme) holding RoadMap full-bleed with the demo route (RouteLine with progress), all cameras and active hazards from the hazard store, and the UserMarker following the live position while driving (followPoint). Idle: map framed on the demo route (fit to route coordinates with edge padding). A small floating pill (AppButton variant 'floating' or an IconButton) top-right "Recentre" (icon 'crosshairs-gps') that re-fits/follows.
+   ViewModel changes (src/features/drive/viewmodels/useDriveModeViewModel.ts or a new useDriveMapViewModel.ts): expose cameras, activeHazards, routePoints, position, heading, travelledIndex. Get the route from the services layer: add `getDemoRoute(): LatLng[]` to src/services/location.ts (it already imports DEMO_TRIP). Track travelledIndex by counting pushed points (or nearest route index). Keep every existing behaviour, label and test passing.
+   Marker press: show the hazard/camera title in the existing next-alert style? No — keep it simple: Marker `title`/`description` callouts only.
+
+JOB 2 — Prefilled demo login (development convenience). Move the demo credentials to src/shared/constants.ts as `DEMO_CREDENTIALS = { email: 'demo@roadsense.app', password: 'Drive2026' } as const`, make src/data/mock/MockAuthRepository.ts use them for its seeded demo user, and initialise the email/password state in src/features/auth/viewmodels/useSignInViewModel.ts with them when `__DEV__` is true (empty strings otherwise). Sign-up stays empty. The demo caption on the sign-in screen stays.
+
+Rules: no hex/rgba literals outside src/theme/; typography tokens only (no raw fontSize/fontWeight/fontFamily/letterSpacing in src/features, src/app, src/components/map); no `any`/`as any`; files under ~150 lines; accessibility labels on pressables; comments only where non-obvious; no "phase"/"TODO"/"for now" wording. Jest: the existing __tests__/appFlow.test.tsx renders the real app — mock 'react-native-maps' there (MapView/Marker/Polyline as plain Views, PROVIDER_GOOGLE constant) so the Drive tab renders under jest, and keep all 5 flow steps passing. Add __tests__/getDemoRoute or a small test for any new pure helper you create (e.g. fit-to-route region or nearest-route-index), placed in src/domain/usecases/drive/ if it is pure geometry.
+Leave untouched: src/features/map, src/features/trips (Mohamed's and Yehia's screens), DESIGN.md, docs/.
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+  npx expo config --type public   (must succeed; and show no googleMaps key when EXPO_PUBLIC_GOOGLE_MAPS_KEY is unset)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features, src/app, src/components/map; `@/stores|@/services|@/data` in src/features/*/screens, src/features/*/components, src/components; `@/data` in src/features/*/viewmodels; `as any`.
+</verification_loop>
+
+<action_safety>
+Scoped to this task. Do NOT git add or git commit; the orchestrator commits after reviewing every line. No new dependencies.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Map kit API (components and props) and how provider/style is chosen per platform and scheme
+  2. Drive Mode map card behaviour (idle, driving, recentre) and ViewModel changes
+  3. Prefill change
+  4. Files created/modified
+  5. Gate outcomes (tsc, jest counts, lint, export, expo config, greps)
+  6. Anything unverifiable without a device, deviations, open questions
+</structured_output_contract>

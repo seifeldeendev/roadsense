@@ -45,6 +45,22 @@ jest.mock('@expo/vector-icons', () => {
     Fontisto: NullGlyph,
   };
 });
+jest.mock('react-native-maps', () => {
+  const React = require('react');
+  const RN = require('react-native');
+  const makeNative =
+    (testID: string) =>
+    (props: { children?: React.ReactNode }) =>
+      React.createElement(RN.View, { testID }, props.children);
+  return {
+    __esModule: true,
+    default: makeNative('map-view'),
+    Marker: makeNative('map-marker'),
+    Polyline: makeNative('map-polyline'),
+    PROVIDER_GOOGLE: 'google',
+    PROVIDER_DEFAULT: undefined,
+  };
+});
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const RN = require('react-native');
