@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors, rounded, spacing, touch, typography, type HazardIconName } from '@/theme/tokens';
+import { AppText } from '@/components/ui';
+import { colors, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
 
 type ReportButtonProps = {
   icon: HazardIconName;
@@ -19,7 +20,9 @@ export function ReportButton({ icon, label, onPress }: ReportButtonProps) {
       <View style={styles.iconWrap}>
         <MaterialCommunityIcons name={icon} size={20} color={colors.ink} />
       </View>
-      <Text style={styles.label}>{label}</Text>
+      <AppText variant="bodyMdStrong" style={styles.label}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
@@ -40,14 +43,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfacePressed,
   },
   iconWrap: {
-    width: spacing.xxl,
-    height: spacing.xxl,
+    width: spacing.xxxl,
+    height: spacing.xxxl,
     borderRadius: rounded.full,
+    backgroundColor: colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: {
-    ...typography.bodySmStrong,
     color: colors.ink,
   },
 });

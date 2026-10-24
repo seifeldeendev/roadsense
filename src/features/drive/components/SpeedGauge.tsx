@@ -1,16 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
-import type { SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
 import { colors, rounded, spacing, typography } from '@/theme/tokens';
+import { STATUS_COLOR, type SpeedStatus } from './speedStatusMeta';
 
 type SpeedGaugeProps = {
   speedKmh: number;
   status: SpeedStatus;
-};
-
-const RING_COLOR: Record<SpeedStatus, string> = {
-  ok: colors.status.ok,
-  near: colors.status.near,
-  over: colors.status.over,
 };
 
 export function SpeedGauge({ speedKmh, status }: SpeedGaugeProps) {
@@ -18,7 +12,7 @@ export function SpeedGauge({ speedKmh, status }: SpeedGaugeProps) {
     <View
       accessibilityLabel={`Speed ${speedKmh} kilometres per hour`}
       accessibilityRole="text"
-      style={[styles.gauge, { borderColor: RING_COLOR[status] }]}
+      style={[styles.gauge, { borderColor: STATUS_COLOR[status] }]}
     >
       <Text style={styles.speed} adjustsFontSizeToFit>
         {speedKmh}
@@ -32,7 +26,7 @@ const styles = StyleSheet.create({
   gauge: {
     width: 168,
     height: 168,
-    borderRadius: rounded.pill,
+    borderRadius: rounded.full,
     borderWidth: 10,
     backgroundColor: colors.canvas,
     alignItems: 'center',
@@ -40,7 +34,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   speed: {
-    ...typography.displayLg,
+    ...typography.displayXxl,
     color: colors.ink,
     fontVariant: ['tabular-nums'],
   },

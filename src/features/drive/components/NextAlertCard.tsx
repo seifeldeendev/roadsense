@@ -1,10 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { UpcomingAlert } from '@/domain/entities';
 import { Card, AppText } from '@/components/ui';
 import { formatDistance } from '@/shared/format';
-import { colors, hazardMeta, spacing, type HazardIconName } from '@/theme/tokens';
-import { LimitBadge } from './LimitBadge';
+import { colors, hazardMeta, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
 
 type NextAlertCardProps = {
   alert: UpcomingAlert | null;
@@ -13,9 +12,12 @@ type NextAlertCardProps = {
 export function NextAlertCard({ alert }: NextAlertCardProps) {
   if (alert === null) {
     return (
-      <Card>
-        <AppText variant="bodySm" color="body" style={styles.centered}>
+      <Card variant="dark">
+        <AppText variant="displaySm" color="onDark">
           No alerts ahead
+        </AppText>
+        <AppText variant="bodyMd" color="mute">
+          Nearby hazards show up here while you drive
         </AppText>
       </Card>
     );
@@ -29,37 +31,44 @@ export function NextAlertCard({ alert }: NextAlertCardProps) {
         : 'alert';
 
   return (
-    <Card>
+    <Card variant="dark">
       <View style={styles.row}>
-        <MaterialCommunityIcons name={icon} size={32} color={colors.ink} />
+        <View style={styles.iconWrap}>
+          <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
+        </View>
         <View style={styles.textBlock}>
-          <AppText variant="bodyMdStrong" numberOfLines={1}>
+          <AppText variant="displaySm" color="onDark" numberOfLines={1}>
             {alert.title}
           </AppText>
-          <AppText variant="bodySm" color="body" numberOfLines={1}>
+          <AppText variant="bodyMd" color="onDark">
             {formatDistance(alert.distanceM)}
-            {alert.roadName !== undefined ? ` · ${alert.roadName}` : ''}
+            {alert.roadName !== undefined ? ' · ' : ''}
+            {alert.roadName !== undefined ? (
+              <Text style={{ color: colors.mute }}>{alert.roadName}</Text>
+            ) : null}
           </AppText>
         </View>
-        {alert.kind === 'camera' && alert.speedLimitKmh !== undefined && (
-          <LimitBadge limitKmh={alert.speedLimitKmh} size="sm" />
-        )}
       </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    textAlign: 'center',
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
+  iconWrap: {
+    width: touch.min,
+    height: touch.min,
+    borderRadius: rounded.full,
+    backgroundColor: colors.canvas,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   textBlock: {
     flex: 1,
-    gap: spacing.xs,
+    gap: spacing.xxs,
   },
 });
