@@ -1,0 +1,55 @@
+<task>
+Implement the three Map feature screens (FR4, FR5), replacing the placeholders in src/features/map/screens/: LiveMapScreen (route /map tab), ReportDetailsScreen (/report/[id]), RoutePreviewScreen (/route-preview). Put ViewModels in src/features/map/viewmodels/ and components in src/features/map/components/.
+
+Data and domain you add:
+- Entities: Destination { id; name; area; lat; lng } and PlannedRoute { destinationId; points: LatLng[]; distanceM; durationS }. Repository interface RouteRepository { getDestinations(): Promise<Destination[]>; getRoute(destinationId: string): Promise<PlannedRoute> } (export from the barrels).
+- src/data/mock/routes.ts: start point = the first point of the Salah Salem demo route (reuse the trips fixture's start), ~5 Cairo destinations (e.g. BUE El Shorouk, Cairo Festival City, Tahrir Square, Cairo Airport T3, City Stars) each with a hand-picked list of 5–8 real-road-ish waypoints densified by interpolation to ~60–120 points; distanceM from the polyline, durationS assuming ~45 km/h average. Make sure at least two routes pass within 50 m of some MOCK_CAMERAS / MOCK_HAZARDS entries (add 2–3 extra cameras/hazards to the fixtures ONLY if needed, by appending). MockRouteRepository with the usual ~400 ms delay; add `routes` to di.ts.
+- Pure use cases (src/domain/usecases/routes/): getAlertsAlongRoute(points, cameras, hazards, maxDistanceM = 50) -> ordered list of { kind, refId, title, distanceAlongM, distanceFromRouteM, speedLimitKmh? } sorted by distance along the route, active hazards only; plus a point-to-segment distance helper in geo if needed. Jest tests for both.
+- Store src/stores/useRouteStore.ts: destinations, selectedDestinationId, route, isLoading, error, loadDestinations(), selectDestination(id) (loads route).
+- Hazard markers need presses: add optional `onPress` / `onCalloutPress` props to CameraMarker and HazardMarker in src/components/map (keep existing behaviour; mirror the props as accepted-and-ignored in WebMapFallback stand-ins).
+
+1. Live map (tab "map"): full-bleed RoadMap (Screen padded={false}) showing all cameras and active hazards from useHazardStore (call load() if empty), framed on Cairo/demo area (fitRouteRegion over all markers via the ViewModel). Overlays on top: a horizontal ScrollView of filter Chips (All, Cameras, Accidents, Potholes, Checkpoints, Flooding — multi-toggle; "All" resets) on a canvas surface at the top with level3 shadow; bottom-right floating IconButton "Recentre" (fit all visible markers); bottom bar card (Card form / level2) with "N cameras · M hazards nearby" bodyMdStrong and the primary pill "Plan a route" -> /route-preview. Pressing a hazard marker callout -> /report/<id>; camera marker shows its callout only. Loading/empty ("No cameras or hazards match these filters" with a Reset filters action)/error states.
+2. Report details (/report/[id], id via useLocalSearchParams<{ id: string }>()): hazard from useHazardStore.getById (load if needed). Top: 16:9 non-interactive RoadMap card (scroll/zoom disabled) centred on the hazard with its HazardMarker. Then: type headline (displayMd) with circular icon, Badge for status (Active / Expired), facts rows (faq-row style, hairline dividers): "Reported" (formatTimeAgo), "Expires" (time remaining, or "Expired"), "Location" (lat, lng to 4 dp or nearest camera road name if within 300 m), "Confirmations", "Denials". A vote bar: two flex segments ink (confirmations) vs mute (denials) with counts, pill-shaped. "Still there?" section with "Yes, still there" (primary pill) / "No, it's gone" (secondary) calling useHazardStore.vote; after voting show "Thanks — vote recorded"; when expired disable voting with an explanation. Not-found id -> EmptyState with Back.
+3. Route preview: header copy; a request-form-card (Card form: padding lg, level2) with two request-form-input-rows (canvasSoft, rounded.md, padding lg, icon + label + value): "From · Current location" (fixed) and "To" which is a TextField-like search input filtering the destination list (case-insensitive on name/area). Destination suggestions as a list of rows (icon + name + area) under the card until one is chosen. When chosen: 16:9 RoadMap card with RouteLine, start/end markers (reuse UserMarker for start; a simple end Marker via HazardMarker? No — add a small DestinationMarker component in src/features/map/components using react-native-maps Marker is NOT allowed in features (no native imports beyond the kit); instead add `PinMarker` to src/components/map (+ web stand-in) as a 32-dp ink circle with 'flag-checkered' glyph). Summary card: "18.4 km · 27 min · 3 cameras · 2 hazards" (displaySm + bodySm). Ordered alert list from getAlertsAlongRoute: rows with icon, title, "at 4.2 km", camera limit badge. Bottom primary large button "Start drive" -> router.navigate('/drive'). Change destination resets. Loading while route loads, error with retry, empty list text "No cameras or hazards on this route".
+
+Add __tests__/mapScreens.test.tsx using renderRouter from 'expo-router/testing-library' with { appDir: 'src/app', overrides: {} } and the same jest.mock set used in __tests__/appFlow.test.tsx (copy the mocks; mock react-native-maps Marker/Polyline/MapView as Views that render children and forward onCalloutPress/onPress). Seed useSessionStore with a signed-in user and hasCompletedOnboarding true and hasHydrated true. Cover: /map renders filter chips and the "Plan a route" button; /report/<an existing hazard id> shows its type and voting updates the count; /route-preview: typing "fest" shows Cairo Festival City, choosing it shows the summary line. Use fake timers + act as appFlow does (await fireEvent).
+</task>
+<context>
+Project: RoadSense — React Native 0.88 + Expo SDK 58 (docs https://docs.expo.dev/versions/v58.0.0/) + TypeScript strict + Expo Router (routes in src/app/, thin re-exports of feature screens), `@/*` -> `./src/*`. Warns Cairo drivers about speed cameras and road hazards. Everything is mocked (src/data/mock fixtures + Mock*Repository, wired in src/data/di.ts).
+
+Architecture (MVVM inside Clean Architecture — it is graded, follow it exactly):
+- src/domain: entities, repository interfaces, pure use cases (no React/Expo imports). Put any pure logic you add here, with Jest tests.
+- src/data: mock repositories implementing domain interfaces; di.ts exposes `repositories`.
+- src/stores: zustand stores; they call `repositories`.
+- src/services: device/demo wrappers (location.ts has MockLocationSource, createDemoLocationSource, getDemoRoute; speech.ts).
+- src/features/<feature>/{screens,viewmodels,components}: Screens render ONLY what a ViewModel hook returns. Screens and feature components never import src/stores, src/services, src/data, or use-case functions (type-only imports from src/domain are fine). ViewModels may use stores, services and use cases, never src/data.
+- src/components/ui (AppText, AppButton variants primary/secondary/subtle/floating/large, Card variants content/elevated/soft/inverse/form, Chip, Badge, IconButton, SectionHeader, ToggleRow, SegmentedControl, TextField, Screen (props scroll, padded), EmptyState, ErrorState, LoadingState) and src/components/map (RoadMap with ref.fit(coords) + followPoint, CameraMarker, HazardMarker, UserMarker, RouteLine with progressIndex; web fallback in index.web.ts + WebMapFallback.tsx). Reuse them; study src/features/drive for the established patterns (useThemedStyles factories, ViewModel shapes, loading/error states).
+- Theme: useTheme()/useThemedStyles (src/theme); tokens in src/theme/tokens.ts (spacing, rounded, typography, touch, hazardMeta icons); light + dark palettes.
+
+DESIGN.md (repo root) is the visual source of truth — read it fully. Grayscale only; the only colour exception is colors.status.near / colors.status.over for speed-vs-limit status. Pills for interactive elements, rounded.xl cards, one primary CTA per screen, sentence case, DESIGN.md component paddings, 16 px screen gutter, 32 px between sections, typography tokens only. Must work in light and dark and fit a 360 dp wide phone. Lists use FlatList (or SectionList) with id keyExtractors. Every screen needs loading, empty and error states. Accessibility labels on every pressable. Files under ~150 lines (split components). No hex/rgba outside src/theme, no raw fontSize/fontWeight/fontFamily/letterSpacing outside src/theme and src/components, no `any`/`as any`, typed routes. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording. No new npm dependencies.
+
+Another implementer is building other screens in parallel on a separate branch. Stay strictly inside the files listed in your task; where you must touch a shared barrel (entities/repositories index.ts, data/di.ts, components/map index.ts and index.web.ts) only ADD lines, never reorder or reformat existing ones.
+</context>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+  npx expo export --platform web --output-dir .export-web   (must succeed; then delete .export-web)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app; `@/stores|@/services|@/data` in src/features/*/screens, src/features/*/components, src/components; `@/data` in src/features/*/viewmodels; `as any`.
+</verification_loop>
+
+<action_safety>
+Do NOT git add or git commit; the orchestrator reviews every line and commits. Do not modify src/features/drive, src/features/auth, src/features/onboarding, src/theme, DESIGN.md, docs/, app.json, app.config.ts, package.json.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Per screen: what it shows, ViewModel API, states handled, DESIGN.md components used
+  2. Domain/data/store additions and their tests
+  3. Files created/modified
+  4. Gate outcomes (tsc, jest counts, lint, both exports, greps)
+  5. Deviations, assumptions, anything unverifiable without a device
+</structured_output_contract>

@@ -9,9 +9,11 @@ type HazardMarkerProps = {
   lng: number;
   kind: HazardType;
   dimmed?: boolean;
+  onPress?: () => void;
+  onCalloutPress?: () => void;
 };
 
-export function HazardMarker({ lat, lng, kind, dimmed = false }: HazardMarkerProps) {
+export function HazardMarker({ lat, lng, kind, dimmed = false, onPress, onCalloutPress }: HazardMarkerProps) {
   const { scheme } = useTheme();
   const tracksViewChanges = useTracksViewChanges(`${scheme}-${dimmed}`);
   return (
@@ -19,6 +21,8 @@ export function HazardMarker({ lat, lng, kind, dimmed = false }: HazardMarkerPro
       coordinate={{ latitude: lat, longitude: lng }}
       title={hazardMeta[kind].label}
       tracksViewChanges={tracksViewChanges}
+      onPress={onPress}
+      onCalloutPress={onCalloutPress}
     >
       <MarkerCanvas
         icon={hazardMeta[kind].icon}
