@@ -71,7 +71,18 @@ export function setRate(rate: number): void {
   demoSource?.setRate(rate);
 }
 
+// Route points queued for the next demo location source. Setting a trip makes
+// the next createDemoLocationSource() play that trip instead of DEMO_TRIP;
+// passing null (or consuming a queued route) restores the demo.
+let pendingRoutePoints: TripPoint[] | null = null;
+
+export function setDriveRoutePoints(points: TripPoint[] | null): void {
+  pendingRoutePoints = points;
+}
+
 export function createDemoLocationSource(): LocationSource {
-  demoSource = new MockLocationSource(DEMO_TRIP.points, 1000, currentRate);
+  const points = pendingRoutePoints ?? DEMO_TRIP.points;
+  pendingRoutePoints = null;
+  demoSource = new MockLocationSource(points, 1000, currentRate);
   return demoSource;
 }

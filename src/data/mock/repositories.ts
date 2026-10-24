@@ -16,7 +16,7 @@ import { applyVote } from '../../domain/usecases/hazards/applyVote';
 import { DEFAULT_SETTINGS, HAZARD_TTL_MS } from '../../shared/constants';
 import { MOCK_CAMERAS } from './cameras';
 import { MOCK_HAZARDS } from './hazards';
-import { DEMO_TRIP } from './trips';
+import { MOCK_TRIPS } from './trips';
 
 const REPO_DELAY_MS = 400;
 const SETTINGS_KEY = 'roadsense.settings';
@@ -79,15 +79,22 @@ export class MockHazardRepository implements HazardRepository {
 export class MockTripRepository implements TripRepository {
   async list(): Promise<Trip[]> {
     await delay();
-    return [{ ...DEMO_TRIP, points: [...DEMO_TRIP.points] }];
+    return MOCK_TRIPS.map(cloneTrip);
   }
 
   async getById(id: string): Promise<Trip | undefined> {
     await delay();
-    return DEMO_TRIP.id === id
-      ? { ...DEMO_TRIP, points: [...DEMO_TRIP.points] }
-      : undefined;
+    const trip = MOCK_TRIPS.find((candidate) => candidate.id === id);
+    return trip === undefined ? undefined : cloneTrip(trip);
   }
+}
+
+function cloneTrip(trip: Trip): Trip {
+  return {
+    ...trip,
+    points: [...trip.points],
+    alerts: [...trip.alerts],
+  };
 }
 
 export class MockSettingsRepository implements SettingsRepository {

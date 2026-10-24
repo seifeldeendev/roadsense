@@ -1,0 +1,59 @@
+<task>
+Implement the three Trips feature screens (FR6, FR7), replacing the placeholders in src/features/trips/screens/: TripHistoryScreen (/trips tab), TripDetailsScreen (/trip/[id]), StatsReplayScreen (/stats tab). ViewModels in src/features/trips/viewmodels/, components in src/features/trips/components/.
+
+Data and domain you add:
+- Mock trips: src/data/mock/trips.ts currently builds one DEMO_TRIP ('trip-demo-salah-salem', started at module load). Refactor its point generator into a reusable builder (waypoints, limitKmh, startedAt, speed profile) and add 6 more trips over the last 14 days on other real Cairo roads (Ring Road, 26th of July Corridor, Autostrad, 90th Street New Cairo, Suez Road, Mehwar) with different times of day, lengths (2–15 km; points can be spaced 2–5 s apart for long ones), limits (60–100), and speed profiles — some with zero over-limit, some with several over-limit stretches; give a few trips `alerts` entries (AlertEvent) referencing nearby MOCK_CAMERAS / MOCK_HAZARDS ids. Export MOCK_TRIPS (newest first). DEMO_TRIP must keep its id, shape and current behaviour exactly (the drive demo and existing tests depend on it) and be included in MOCK_TRIPS. MockTripRepository.list() returns MOCK_TRIPS.
+- Pure use cases (src/domain/usecases/trips/), each with Jest tests:
+  - buildSpeedSegments(points, amberThresholdPct) -> consecutive runs [{ status: 'ok'|'near'|'over', points: LatLng[] }] using getSpeedStatus (adjacent runs share their boundary point so the line is continuous).
+  - summarizeTripEvents(trip) -> chronological events: over-limit stretches ({ kind:'over', startTs, endTs, maxSpeedKmh, limitKmh }) and alerts ({ kind:'alert', ts, refKind, refId, distanceM }).
+  - getWeeklyStats(trips, weekStart: Date) -> { days: [{ date, distanceKm }] x7 (Mon–Sun), totalKm, driveTimeS, avgSpeedKmh, overLimitCount, alertsCount, pctWithinLimit } (pctWithinLimit = share of points with speed <= limit; 0 trips -> zeros, no NaN). Plus startOfWeek(date) helper (Monday).
+  - groupTripsByDay(trips, now) -> sections titled "Today", "Yesterday", or e.g. "Mon 19 Oct".
+- Store src/stores/useTripStore.ts: trips, isLoading, error, load(); replay: { tripId: string | null, isPlaying, rate: 1|2|4, index }, selectReplayTrip(id), play(), pause(), setRate(), seek(index), tick() — the timer itself lives in the ViewModel (setInterval of 1000/rate ms calling tick; clear on pause/unmount; stop at the end).
+- Replay into Drive Mode (FR7): add to src/services/location.ts a `setDriveRoutePoints(points: TripPoint[] | null)` that makes the next createDemoLocationSource() play those points instead of DEMO_TRIP (null restores the demo). Do not change any other behaviour in that file or in src/features/drive.
+- Speed-coloured map line: add src/components/map/SegmentedRouteLine.tsx (segments: { status, points }[] -> one Polyline per segment, colour colors.status[status], width 5) exported from both src/components/map/index.ts and index.web.ts (web stand-in renders null).
+
+1. Trip history (tab "trips"): headline "Trips" (displayXl) + bodyMd subline "N drives in the last 14 days". Filter SegmentedControl: All / With over-limit. SectionList grouped by groupTripsByDay with SectionHeader-style day labels. TripCard (Card content with hairline or soft fill — follow DESIGN.md): time range "08:12 – 08:39", distance "12.4 km", duration "27 min", max speed, and an over-limit Badge ("3 over limit", ink variant when > 0, soft "Within limit" when 0); chevron. Press -> /trip/<id>. Pull-to-refresh (RefreshControl tinted ink). Empty state for the filter ("No trips over the limit — nice driving"). Loading/error.
+2. Trip details (/trip/[id], id via useLocalSearchParams<{ id: string }>()): 16:9 RoadMap card with SegmentedRouteLine (status colours are the allowed exception here — speed vs limit), start/end via UserMarker/RouteLine end handling of your choice using kit components only, and alert markers (CameraMarker/HazardMarker for alert refIds that exist in fixtures). A small legend row (ok/near/over swatches with labels). Stats grid 2x3 of soft cards: Distance, Duration, Max speed, Avg speed, Over-limit points, Alerts. Timeline list of summarizeTripEvents ("14:05 · 92 km/h in an 80 zone" / "14:07 · Speed camera alert · 300 m"). Bottom primary large "Replay this trip" -> router.push({ pathname: '/stats', params: { replay: id } }). Not-found -> EmptyState with Back.
+3. Stats & replay (tab "stats"): Section "This week": week selector row (IconButtons chevron-left / chevron-right around "13 – 19 Oct" label; can't go past the current week), a simple bar chart built from Views (7 bars, ink fill, rounded.md top, height proportional to km, day initials under, value above the tallest), and a 2x3 tile grid (total km, drive time, avg speed, over-limit, alerts, % within limit). Section "Replay a trip": trip picker as horizontal Chips (date + km), a replay card (Card form) with mini speed readout (displayLg number coloured by speed status + "km/h" + limit), a progress track (pressable: tap position seeks), elapsed/total time, controls row: IconButton play/pause ('play'/'pause'), SegmentedControl ×1/×2/×4, and the secondary pill "Replay in Drive Mode" which calls setDriveRoutePoints(trip.points) and router.navigate('/drive') (the driver then taps Start drive). If opened with param `replay`, preselect that trip. Empty state when no trips.
+
+Add __tests__/tripScreens.test.tsx using renderRouter from 'expo-router/testing-library' with { appDir: 'src/app', overrides: {} } and the same jest.mock set as __tests__/appFlow.test.tsx (copy the mocks; mock react-native-maps components as Views). Seed useSessionStore with a signed-in user, hasCompletedOnboarding true, hasHydrated true. Cover: /trips lists a trip and the over-limit filter narrows the list; pressing a trip opens /trip/<id> with its stats; /stats shows the weekly total and pressing play advances the replay index under fake timers.
+</task>
+<context>
+Project: RoadSense — React Native 0.88 + Expo SDK 58 (docs https://docs.expo.dev/versions/v58.0.0/) + TypeScript strict + Expo Router (routes in src/app/, thin re-exports of feature screens), `@/*` -> `./src/*`. Warns Cairo drivers about speed cameras and road hazards. Everything is mocked (src/data/mock fixtures + Mock*Repository, wired in src/data/di.ts).
+
+Architecture (MVVM inside Clean Architecture — it is graded, follow it exactly):
+- src/domain: entities, repository interfaces, pure use cases (no React/Expo imports). Put any pure logic you add here, with Jest tests.
+- src/data: mock repositories implementing domain interfaces; di.ts exposes `repositories`.
+- src/stores: zustand stores; they call `repositories`.
+- src/services: device/demo wrappers (location.ts has MockLocationSource, createDemoLocationSource, getDemoRoute; speech.ts).
+- src/features/<feature>/{screens,viewmodels,components}: Screens render ONLY what a ViewModel hook returns. Screens and feature components never import src/stores, src/services, src/data, or use-case functions (type-only imports from src/domain are fine). ViewModels may use stores, services and use cases, never src/data.
+- src/components/ui (AppText, AppButton variants primary/secondary/subtle/floating/large, Card variants content/elevated/soft/inverse/form, Chip, Badge, IconButton, SectionHeader, ToggleRow, SegmentedControl, TextField, Screen (props scroll, padded), EmptyState, ErrorState, LoadingState) and src/components/map (RoadMap with ref.fit(coords) + followPoint, CameraMarker, HazardMarker, UserMarker, RouteLine with progressIndex; web fallback in index.web.ts + WebMapFallback.tsx). Reuse them; study src/features/drive for the established patterns (useThemedStyles factories, ViewModel shapes, loading/error states).
+- Theme: useTheme()/useThemedStyles (src/theme); tokens in src/theme/tokens.ts (spacing, rounded, typography, touch, hazardMeta icons); light + dark palettes.
+
+DESIGN.md (repo root) is the visual source of truth — read it fully. Grayscale only; the only colour exception is colors.status.near / colors.status.over for speed-vs-limit status. Pills for interactive elements, rounded.xl cards, one primary CTA per screen, sentence case, DESIGN.md component paddings, 16 px screen gutter, 32 px between sections, typography tokens only. Must work in light and dark and fit a 360 dp wide phone. Lists use FlatList (or SectionList) with id keyExtractors. Every screen needs loading, empty and error states. Accessibility labels on every pressable. Files under ~150 lines (split components). No hex/rgba outside src/theme, no raw fontSize/fontWeight/fontFamily/letterSpacing outside src/theme and src/components, no `any`/`as any`, typed routes. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording. No new npm dependencies.
+
+Another implementer is building other screens in parallel on a separate branch. Stay strictly inside the files listed in your task; where you must touch a shared barrel (entities/repositories index.ts, data/di.ts, components/map index.ts and index.web.ts) only ADD lines, never reorder or reformat existing ones.
+</context>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+  npx expo export --platform web --output-dir .export-web   (must succeed; then delete .export-web)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app; `@/stores|@/services|@/data` in src/features/*/screens, src/features/*/components, src/components; `@/data` in src/features/*/viewmodels; `as any`.
+</verification_loop>
+
+<action_safety>
+Do NOT git add or git commit; the orchestrator reviews every line and commits. Do not modify src/features/drive, src/features/auth, src/features/onboarding, src/theme, DESIGN.md, docs/, app.json, app.config.ts, package.json.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Per screen: what it shows, ViewModel API, states handled, DESIGN.md components used
+  2. Domain/data/store additions and their tests
+  3. Files created/modified
+  4. Gate outcomes (tsc, jest counts, lint, both exports, greps)
+  5. Deviations, assumptions, anything unverifiable without a device
+</structured_output_contract>
