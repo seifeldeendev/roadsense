@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
@@ -8,9 +7,10 @@ import {
   SegmentedControl,
   ToggleRow,
 } from '@/components/ui';
-import type { AlertTarget } from '@/domain/entities';
 import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
-import { colors, hazardMeta, spacing, type HazardIconName } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
+import { AlertTypeList } from '../components/AlertTypeList';
+import { ValidationNote } from '../components/ValidationNote';
 import { useAlertSettingsViewModel } from '../viewmodels/useAlertSettingsViewModel';
 
 const DISTANCE_SEGMENTS = ALERT_DISTANCE_OPTIONS.map((value) => ({
@@ -23,94 +23,82 @@ const AMBER_SEGMENTS = AMBER_OPTIONS.map((value) => ({
   value,
 }));
 
-const TYPE_ROWS: { type: AlertTarget; label: string }[] = [
-  { type: 'camera', label: 'Speed cameras' },
-  { type: 'accident', label: 'Accidents' },
-  { type: 'pothole', label: 'Potholes' },
-  { type: 'checkpoint', label: 'Checkpoints' },
-  { type: 'flooding', label: 'Flooding' },
-];
-
 export default function AlertSettingsScreen() {
   const vm = useAlertSettingsViewModel();
 
   return (
     <Screen scroll>
       <View style={styles.container}>
-        <SectionHeader title="Alert distance" />
-        <SegmentedControl
-          options={DISTANCE_SEGMENTS}
-          value={vm.alertDistanceM}
-          onChange={vm.setAlertDistance}
-        />
+        <AppText variant="bodyMd" color="body">
+          Camera and hazard warnings for the demo route.
+        </AppText>
 
-        <SectionHeader title="Alert types" subtitle={vm.message ?? undefined} />
-        <View style={styles.stack}>
-          {TYPE_ROWS.map(({ type, label }) => {
-            const meta = type === 'camera' ? hazardMeta.camera : hazardMeta[type];
-            return (
-              <ToggleRow
-                key={type}
-                label={label}
-                value={vm.enabledTypes.includes(type)}
-                icon={
-                  <MaterialCommunityIcons
-                    name={meta.icon as HazardIconName}
-                    size={20}
-                    color={colors.ink}
-                  />
-                }
-                onValueChange={() => vm.toggleType(type)}
-              />
-            );
-          })}
-        </View>
-
-        <SectionHeader title="Sound and voice" />
-        <View style={styles.stack}>
-          <ToggleRow
-            label="Voice alerts"
-            value={vm.voiceEnabled}
-            onValueChange={vm.setVoiceEnabled}
-          />
-          <ToggleRow
-            label="Alert sound"
-            value={vm.soundEnabled}
-            onValueChange={vm.setSoundEnabled}
+        <View style={styles.section}>
+          <SectionHeader title="Alert distance" />
+          <SegmentedControl
+            options={DISTANCE_SEGMENTS}
+            value={vm.alertDistanceM}
+            onChange={vm.setAlertDistance}
           />
         </View>
 
-        <SectionHeader
-          title="Amber warning"
-          subtitle={`Speed turns amber at ${vm.amberThresholdPct}% of the limit`}
-        />
-        <SegmentedControl
-          options={AMBER_SEGMENTS}
-          value={vm.amberThresholdPct}
-          onChange={vm.setAmberThreshold}
-        />
+        <View style={styles.section}>
+          <SectionHeader title="Alert types" />
+          {vm.message !== null && <ValidationNote message={vm.message} />}
+          <AlertTypeList enabledTypes={vm.enabledTypes} onToggle={vm.toggleType} />
+        </View>
 
-        <View style={styles.stack}>
+        <View style={styles.section}>
+          <SectionHeader title="Sound and voice" />
+          <View style={styles.stack}>
+            <ToggleRow
+              label="Voice alerts"
+              value={vm.voiceEnabled}
+              onValueChange={vm.setVoiceEnabled}
+            />
+            <ToggleRow
+              label="Alert sound"
+              value={vm.soundEnabled}
+              onValueChange={vm.setSoundEnabled}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="Amber warning" />
+          <View style={styles.stack}>
+            <SegmentedControl
+              options={AMBER_SEGMENTS}
+              value={vm.amberThresholdPct}
+              onChange={vm.setAmberThreshold}
+            />
+            <AppText variant="bodySm" color="body">
+              Speed turns amber at {vm.amberThresholdPct}% of the limit
+            </AppText>
+          </View>
+        </View>
+
+        <View style={styles.actions}>
           {vm.canTestVoice ? null : (
-            <AppText variant="caption" color="mute" style={styles.helper}>
+            <AppText variant="bodySm" color="body" style={styles.helper}>
               Voice alerts are off — turn them on to test
             </AppText>
           )}
-          <AppButton
-            title="Test voice"
-            variant="secondary"
-            onPress={vm.testVoice}
-            disabled={!vm.canTestVoice}
-            accessibilityLabel="Test voice"
-          />
           <AppButton
             title="Preview alert"
             onPress={vm.previewAlert}
             accessibilityLabel="Preview alert"
           />
           <AppButton
-            title="Reset to defaults"
+            title="Test voice"
             variant="subtle"
+            onPress={vm.testVoice}
+            disabled={!vm.canTestVoice}
+            accessibilityLabel="Test voice"
+          />
+          <AppButton
+            title="Reset to defaults"
+            variant="secondary"
             onPress={vm.reset}
             accessibilityLabel="Reset to defaults"
           />
@@ -122,11 +110,17 @@ export default function AlertSettingsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.lg,
-    paddingBottom: spacing.lg,
+    gap: spacing.xxxl,
+    paddingBottom: spacing.xl,
+  },
+  section: {
+    gap: spacing.sm,
   },
   stack: {
     gap: spacing.sm,
+  },
+  actions: {
+    gap: spacing.md,
   },
   helper: {
     textAlign: 'center',

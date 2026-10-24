@@ -35,3 +35,9 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Design decision:** DESIGN.md forbids accent colours, but FR1 requires amber/red speed status — kept two semantic colours (`status.near`, `status.over`) used only for speed status.
 **My changes & verification:** Re-ran tsc, jest (16/16), lint; grepped `src/` for hex literals, `fontWeight`, letter-spacing and upper-casing outside tokens — none. Reviewed tokens against DESIGN.md tables. _Seif: add your notes._
 **Rationale:** _Seif: fill in._
+
+### AI-006 · 2026-10-24 · Seif · features/drive redesign to DESIGN.md · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-006-drive-redesign.txt`
+**Output:** Drive Mode (speed card with level-2 shadow, black next-alert band, monochrome report tiles, one black CTA), Alert Overlay (modal card, pill vote buttons), Alert Settings (tab-toggle segmented controls, faq-row toggles, validation note); ViewModels unchanged.
+**My changes & verification:** Re-ran tsc, jest, lint, Android export; grepped screens/components for hex, font props, letter-spacing and store/service/data imports — none. Replaced a duplicated `SpeedStatus` union with a type re-export from the domain so it can't drift. _Seif: add on-device review notes._
+**Rationale:** _Seif: fill in._

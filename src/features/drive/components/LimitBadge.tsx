@@ -15,7 +15,7 @@ export function LimitBadge({ limitKmh, size = 'md', over = false }: LimitBadgePr
       accessibilityRole="text"
       style={[styles.sign, dims, { borderColor: over ? colors.status.over : colors.ink }]}
     >
-      <Text style={[styles.limit, size === 'sm' && styles.limitSmall]} adjustsFontSizeToFit>
+      <Text style={styles.limit} adjustsFontSizeToFit>
         {limitKmh === null ? '–' : limitKmh}
       </Text>
     </View>
@@ -24,7 +24,7 @@ export function LimitBadge({ limitKmh, size = 'md', over = false }: LimitBadgePr
 
 const styles = StyleSheet.create({
   sign: {
-    borderRadius: rounded.pill,
+    borderRadius: rounded.full,
     backgroundColor: colors.canvas,
     borderWidth: 7,
     alignItems: 'center',
@@ -40,11 +40,8 @@ const styles = StyleSheet.create({
     borderWidth: 5,
   },
   limit: {
-    ...typography.displayLg,
+    ...typography.displayMd,
     color: colors.ink,
     fontVariant: ['tabular-nums'],
-  },
-  limitSmall: {
-    ...typography.displayMd,
   },
 });
