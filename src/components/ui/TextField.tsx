@@ -13,6 +13,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { rounded, spacing, touch, typography } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
+// The border is always drawn (transparent when idle) so focus does not shift layout;
+// padding absorbs its width to keep the DESIGN.md text-input at 16 + 24 + 16 = 56.
+const BORDER_WIDTH = 1.5;
+const TOGGLE_SIZE = 24;
+
 type TextFieldProps = Omit<TextInputProps, 'style'> & {
   label: string;
   error?: string | undefined;
@@ -37,7 +42,7 @@ export function TextField({
 
   const boxStyle: ViewStyle = {
     borderColor,
-    borderWidth: 1.5,
+    borderWidth: BORDER_WIDTH,
     backgroundColor: colors.canvasSoft,
     borderRadius: rounded.md,
   };
@@ -70,7 +75,7 @@ export function TextField({
               setSecure((value) => !value);
             }}
             style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
-            hitSlop={6}
+            hitSlop={(touch.min - TOGGLE_SIZE) / 2}
           >
             <MaterialCommunityIcons
               name={secure ? 'eye-off' : 'eye'}
@@ -104,20 +109,21 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: touch.min,
-    padding: spacing.lg,
-    gap: spacing.xs,
+    padding: spacing.lg - BORDER_WIDTH,
+    gap: spacing.sm,
   },
   input: {
     ...typography.bodyMd,
     flex: 1,
-    minHeight: touch.min,
+    height: typography.bodyMd.lineHeight,
     paddingVertical: 0,
     paddingHorizontal: 0,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   toggle: {
-    width: 36,
-    height: 36,
+    width: TOGGLE_SIZE,
+    height: TOGGLE_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },

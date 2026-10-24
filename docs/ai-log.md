@@ -61,3 +61,9 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Output:** always-available `index` redirect route + `/onboarding` route, edge-to-edge measured pager with `getItemLayout`, splash no longer intercepts touches, DESIGN.md padding for pills/inputs/icon buttons, display text capped at 1.3× OS font scale, and `__tests__/appFlow.test.tsx` — 4 router tests that render the real `src/app` and walk launch → onboarding → skip → sign-in → demo sign-in → drive → settings → sign-out.
 **My changes & verification:** confirmed `node_modules` untouched; moved the RNTL "don't clean up" opt-out from a global jest setup file into the flow test only; re-ran tsc, jest (33/33), lint, Android export and the colour/font/import greps. _Seif: verify on device and add notes._
 **Rationale:** _Seif: fill in._
+
+### AI-010 · 2026-10-24 · Seif · auth input sizing + Google/Apple buttons · Claude Code (claude-opus-5-5), written directly (no OpenCode)
+**Prompt (verbatim):** "review the sizes of the input at the sign-in/up and please also add btns for signup using google,apple"
+**Output:** `TextField` fixed to DESIGN.md text-input height (16 + 24 + 16 = 56; was ~79 because row padding, row min-height and input min-height stacked); 24-px password toggle with a 44-pt hit area. Mock provider sign-in (`AuthProvider`, `signInWithProvider` in repository → store → `useSocialAuthViewModel`), `SocialAuthButtons` ("or" divider + white secondary pills with monochrome Google/Apple glyphs) on sign-in and sign-up; flow test extended (34/34).
+**My changes & verification:** _Seif: fill in._
+**Rationale:** _Seif: fill in._
