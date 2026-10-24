@@ -1,16 +1,18 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { StyleSheet, View } from 'react-native';
+import { AppText } from './AppText';
+import { spacing } from '@/theme/tokens';
 
 type SectionHeaderProps = {
   title: string;
   subtitle?: string;
+  size?: 'sm' | 'md';
 };
 
-export function SectionHeader({ title, subtitle }: SectionHeaderProps) {
+export function SectionHeader({ title, subtitle, size = 'sm' }: SectionHeaderProps) {
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle !== undefined && <Text style={styles.subtitle}>{subtitle}</Text>}
+      <AppText variant={size === 'md' ? 'displayMd' : 'displaySm'}>{title}</AppText>
+      {subtitle !== undefined && <AppText variant="bodySm" color="body">{subtitle}</AppText>}
     </View>
   );
 }
@@ -19,14 +21,5 @@ const styles = StyleSheet.create({
   header: {
     gap: spacing.xs,
     marginBottom: spacing.sm,
-  },
-  title: {
-    fontSize: typography.size.title,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: typography.size.caption,
-    color: colors.muted,
   },
 });

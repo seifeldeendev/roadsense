@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { colors, radius, spacing, typography } from '@/theme/tokens';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { AppText } from './AppText';
+import { colors, rounded, spacing, touch } from '@/theme/tokens';
 
 type ToggleRowProps = {
   label: string;
@@ -19,16 +20,16 @@ export function ToggleRow({ label, description, icon, value, onValueChange }: To
       onPress={() => onValueChange(!value)}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      {icon !== undefined && <View style={styles.icon}>{icon}</View>}
+      {icon !== undefined && <View style={styles.iconCircle}>{icon}</View>}
       <View style={styles.textBlock}>
-        <Text style={styles.label}>{label}</Text>
-        {description !== undefined && <Text style={styles.description}>{description}</Text>}
+        <AppText variant="bodyMdStrong">{label}</AppText>
+        {description !== undefined && <AppText variant="bodySm" color="body">{description}</AppText>}
       </View>
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: colors.surfaceAlt, true: colors.primary }}
-        thumbColor={value ? colors.background : colors.muted}
+        trackColor={{ false: colors.canvasSoft, true: colors.ink }}
+        thumbColor={colors.canvas}
         accessibilityLabel={label}
       />
     </Pressable>
@@ -40,32 +41,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    minHeight: 56,
+    paddingVertical: spacing.lg,
+    minHeight: touch.large,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.hairline,
   },
   pressed: {
-    opacity: 0.7,
+    backgroundColor: colors.canvasSofter,
   },
-  icon: {
-    width: 28,
+  iconCircle: {
+    width: touch.min,
+    height: touch.min,
+    borderRadius: rounded.full,
+    backgroundColor: colors.canvasSoft,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   textBlock: {
     flex: 1,
-    gap: 2,
-  },
-  label: {
-    fontSize: typography.size.body,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  description: {
-    fontSize: typography.size.caption,
-    color: colors.muted,
+    gap: spacing.xxs,
   },
 });

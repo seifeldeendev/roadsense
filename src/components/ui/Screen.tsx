@@ -1,6 +1,6 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '@/theme/tokens';
 
 type ScreenProps = {
@@ -12,7 +12,7 @@ export function Screen({ children, scroll = false }: ScreenProps) {
   if (!scroll) {
     return (
       <SafeAreaView style={styles.fill}>
-        <View style={styles.fill}>{children}</View>
+        <View style={[styles.fill, styles.gutter]}>{children}</View>
       </SafeAreaView>
     );
   }
@@ -21,7 +21,7 @@ export function Screen({ children, scroll = false }: ScreenProps) {
     <SafeAreaView style={styles.fill}>
       <ScrollView
         style={styles.fill}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.gutter, styles.scrollContent]}
         alwaysBounceVertical
       >
         {children}
@@ -33,9 +33,12 @@ export function Screen({ children, scroll = false }: ScreenProps) {
 const styles = StyleSheet.create({
   fill: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.canvas,
   },
-  content: {
+  gutter: {
+    paddingHorizontal: spacing.lg,
+  },
+  scrollContent: {
     paddingBottom: spacing.xl,
   },
 });

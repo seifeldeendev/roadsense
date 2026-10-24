@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
 import { colors, spacing, typography } from '@/theme/tokens';
 import { AlertStatusLine } from './AlertStatusLine';
@@ -25,7 +26,7 @@ export function DriveStatusPanel({
   if (!isDriving) {
     return (
       <View style={styles.idleCard}>
-        <Text style={styles.idleIcon}>🚗</Text>
+        <MaterialCommunityIcons name="steering" size={28} color={colors.ink} />
         <Text style={styles.idleText}>
           Start a drive to see live speed (demo route: Salah Salem)
         </Text>
@@ -37,7 +38,7 @@ export function DriveStatusPanel({
     <View style={styles.driveRow}>
       <SpeedGauge speedKmh={speedKmh} status={status} />
       <View style={styles.driveSide}>
-        <LimitBadge limitKmh={hasLimit ? limitKmh : null} />
+        <LimitBadge limitKmh={hasLimit ? limitKmh : null} over={status === 'over'} />
         <AlertStatusLine status={status} label={statusLabel} />
       </View>
     </View>
@@ -57,21 +58,16 @@ const styles = StyleSheet.create({
   },
   idleCard: {
     minHeight: 168,
-    borderRadius: spacing.md,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderRadius: spacing.lg,
+    backgroundColor: colors.canvasSoft,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
     padding: spacing.lg,
   },
-  idleIcon: {
-    fontSize: typography.size.heading,
-  },
   idleText: {
-    fontSize: typography.size.body,
-    color: colors.muted,
+    ...typography.bodySm,
+    color: colors.body,
     textAlign: 'center',
   },
 });

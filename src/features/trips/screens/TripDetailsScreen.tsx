@@ -6,7 +6,7 @@ export default function TripDetailsScreen() {
   return (
     <Screen scroll>
       <EmptyState
-        icon="🛣️"
+        icon="map-marker-path"
         title="Trip details"
         message={`Trip ${id ?? '—'} — coming soon`}
       />

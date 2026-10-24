@@ -1,0 +1,61 @@
+<task>
+Project: RoadSense, React Native + Expo SDK 58 + TypeScript strict + Expo Router (routes in src/app/), `@/*` -> `./src/*`. It currently has a dark green-accent theme. Re-skin it to the design system in DESIGN.md at the repo root — READ DESIGN.md IN FULL FIRST; it is the source of truth. It describes a web marketing site; translate it to a mobile app (no nav bar/footer/hero; keep every token, shape, typography and component rule).
+
+The ONE approved deviation from DESIGN.md: RoadSense's core safety requirement needs speed-status colours. Keep exactly two semantic colours, `status.near` '#F5A623' (amber) and `status.over` '#E11900' (red), and use them ONLY for speed status (gauge, speed status text, limit badge when over). 'ok' status uses ink black. Everything else is strictly black / white / grayscale per DESIGN.md — no other accent colours anywhere (hazard types, cameras, chips, tabs, links are all monochrome).
+
+Already installed (do not add other deps): @expo-google-fonts/inter, expo-font, expo-splash-screen, @expo/vector-icons.
+
+This task = the design system + navigation shell. Do these:
+
+1. Rewrite src/theme/tokens.ts from DESIGN.md:
+   - colors: primary '#000000', onPrimary '#ffffff', canvas '#ffffff', canvasSoft '#efefef', canvasSofter '#f3f3f3', surfacePressed '#e2e2e2', blackElevated '#282828', ink '#000000', body '#5e5e5e', hairlineMid '#4b4b4b', mute '#afafaf', onDark '#ffffff', hairline (a light divider gray, e.g. '#e2e2e2'), backdrop 'rgba(0,0,0,0.5)'; plus `status: { ok: '#000000', near, over }` as above.
+   - spacing exactly DESIGN.md: xxs 4, xs 6, sm 8, md 12, lg 16, xl 20, '2xl' 24, '3xl' 32 (use keys xxl and xxxl or quoted keys — your choice, be consistent).
+   - rounded: none 0, md 8, lg 12, xl 16, pill 999, pillTab 36, full 9999.
+   - elevation: level0 none, level1 'rgba(0, 0, 0, 0.12) 0px 4px 16px 0px', level2 'rgba(0, 0, 0, 0.16) 0px 4px 16px 0px', level3 'rgba(0, 0, 0, 0.16) 0px 2px 8px 0px' — expose as style objects using the React Native `boxShadow` style prop (supported in this RN version; verify in RN docs/types).
+   - typography: every token from the DESIGN.md hierarchy table (displayXxl, displayXl, displayLg, displayMd, displaySm, bodyLg, bodyMd, bodyMdStrong, bodySm, bodySmStrong, caption, buttonLarge, buttonMd) as { fontFamily, fontSize, lineHeight }. Map weights to font families, not fontWeight (custom fonts on Android need per-weight families): 400 -> 'Inter_400Regular', 500 -> 'Inter_500Medium', 700 -> 'Inter_700Bold'. Display tokens use Inter_700Bold. No letterSpacing anywhere.
+   - touch: min 44, large 56 (DESIGN.md touch targets).
+   - hazardMeta: Record<HazardType | 'camera', { label: string; icon: <MaterialCommunityIcons glyph name type> }> — monochrome, no colour field. Pick real glyph names that exist in @expo/vector-icons MaterialCommunityIcons (verify against node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/MaterialCommunityIcons.json): e.g. camera 'cctv', accident 'car-emergency', pothole 'road-variant' (or better if exists), checkpoint 'police-badge' or 'boom-gate', flooding 'waves'. Type the icon field as `React.ComponentProps<typeof MaterialCommunityIcons>['name']`.
+
+2. Fonts: in src/app/_layout.tsx load Inter_400Regular, Inter_500Medium, Inter_700Bold with useFonts from @expo-google-fonts/inter, keep the splash screen visible until loaded (expo-splash-screen preventAutoHideAsync / hideAsync — check SDK 58 docs for the current API). Root Stack header: canvas background, ink title in displaySm font, no shadow, back button tint ink. StatusBar style "dark". Keep all existing Stack.Screen registrations and options (alert stays transparentModal + fade).
+
+3. src/app/(tabs)/_layout.tsx (keep `Tabs` from 'expo-router/js-tabs'): white canvas tab bar with hairline top border, active tint ink, inactive tint mute, labels in bodySmStrong font, MaterialCommunityIcons icons (drive: 'steering', map: 'map-outline', trips: 'history' or 'map-marker-path', stats: 'chart-bar') — verify names exist.
+
+4. Rewrite src/components/ui primitives to DESIGN.md components (keep file names/exports used today so callers keep compiling, adapt props as needed, then fix all callers):
+   - AppButton: variants 'primary' (button-primary black pill, onPrimary text), 'secondary' (white pill, ink text, hairline border so it shows on white), 'subtle' (canvasSoft pill), 'floating' (white pill + level3), 'large' (button-large-rounded: black, rounded.xl, buttonLarge type, padding lg/xl); remove old 'danger'/'ghost' variants and migrate callers ('danger' -> 'primary' or 'secondary' as fits, 'ghost' -> 'subtle'). Pressed state: black pills -> blackElevated, white/soft pills -> surfacePressed. Disabled opacity 0.4. Icon slot accepts a MaterialCommunityIcons name. Min height touch.min (large variant touch.large).
+   - Card: variants 'content' (canvas, rounded.xl, padding 2xl, flat), 'elevated' (level1), 'soft' (canvasSoft), 'dark' (promo-card-on-dark: ink bg, onDark text context), 'form' (request-form-card: padding lg, level2).
+   - Chip: category-button (canvasSoft pill, bodySmStrong, optional icon, padding sm/lg, min height touch.min); selected = ink fill + onPrimary text.
+   - Badge: small pill, canvasSoft or ink variants, monochrome.
+   - SectionHeader: displaySm or displayMd title (sentence case) + optional bodySm subtitle in body colour.
+   - ToggleRow: faq-row style — full-width row, bodyMdStrong label, bodySm description, optional circular icon (icon-button-circular canvasSoft), Switch with ink track when on and canvasSoft off, hairline divider below, padding lg vertical.
+   - SegmentedControl: tab-toggle — canvasSoft container rounded.pillTab, selected segment canvas white with level3 shadow + ink bodyMdStrong text, unselected body text.
+   - New: AppText (variant = any typography token, color = any colors key default ink) and IconButton (icon-button-circular: canvasSoft circle, touch.min size, MaterialCommunityIcons icon, required accessibilityLabel); export both from the index.
+   - Screen: canvas background, horizontal padding lg (16, mobile gutter), safe-area aware, optional scroll.
+   - EmptyState / ErrorState / LoadingState: ex-empty-state-card style (canvasSoft card rounded.xl, circular icon container, displaySm title, bodyMd message, action as primary pill). ActivityIndicator colour ink.
+   All text must use AppText or typography tokens (fontFamily from tokens) — no raw fontWeight.
+
+5. Fix every caller so the app compiles: src/features/drive/** (only mechanical token/prop migration — keep layouts and behaviour; a separate task will redesign those screens) and the 9 placeholder screens in src/features/{drive,map,trips}/screens (switch emoji icons to MaterialCommunityIcons names via EmptyState).
+
+Leave untouched: src/domain, src/data, src/services, src/stores, src/shared, __tests__, DESIGN.md, docs/, package.json (no new deps).
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+Also grep src/ for any remaining hex colour literal outside src/theme/tokens.ts, and for `fontWeight` — there should be none (fix them).
+Then `git status --porcelain` should show changes only in src/theme, src/components, src/app, src/features.
+</verification_loop>
+
+<action_safety>
+Scoped to this task. Do NOT git add or git commit; the orchestrator commits after review. No `any`/`as any`. Files under ~150 lines. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Token and component mapping to DESIGN.md (what each primitive now implements)
+  2. Files created/modified
+  3. Gate outcomes (tsc, jest counts, lint, export, the two greps)
+  4. Deviations from DESIGN.md and why; open questions
+</structured_output_contract>

@@ -6,7 +6,7 @@ export default function ReportDetailsScreen() {
   return (
     <Screen scroll>
       <EmptyState
-        icon="📍"
+        icon="map-marker"
         title="Report details"
         message={`Report ${id ?? '—'} — coming soon`}
       />

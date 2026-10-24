@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, rounded, spacing, typography } from '@/theme/tokens';
 
 type ReportBannerProps = {
   message: string | null;
@@ -18,13 +18,10 @@ const styles = StyleSheet.create({
   banner: {
     minHeight: 32,
     textAlign: 'center',
-    color: colors.primary,
-    fontWeight: '600',
-    fontSize: 14,
-    backgroundColor: colors.surface,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    ...typography.bodySmStrong,
+    color: colors.ink,
+    backgroundColor: colors.canvasSoft,
+    borderRadius: rounded.pill,
     overflow: 'hidden',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
