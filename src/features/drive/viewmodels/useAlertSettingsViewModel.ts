@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
-import type { AlertTarget, Camera, Settings, UpcomingAlert } from '@/domain/entities';
+import type { AlertTarget, Camera, Settings, UpcomingAlert, User } from '@/domain/entities';
 import { speak } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useSessionStore } from '@/stores/useSessionStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeStore, type ThemePreference } from '@/stores/useThemeStore';
 
@@ -16,6 +17,8 @@ export type AlertSettingsViewModel = {
   themePreference: ThemePreference;
   message: string | null;
   canTestVoice: boolean;
+  user: User | null;
+  signingOut: boolean;
   toggleType: (type: AlertTarget) => void;
   setAlertDistance: (value: Settings['alertDistanceM']) => void;
   setAmberThreshold: (value: Settings['amberThresholdPct']) => void;
@@ -25,12 +28,15 @@ export type AlertSettingsViewModel = {
   testVoice: () => void;
   previewAlert: () => void;
   reset: () => void;
+  signOut: () => void;
 };
 
 export function useAlertSettingsViewModel(): AlertSettingsViewModel {
   const settings = useSettingsStore();
   const themePreference = useThemeStore((s) => s.preference);
   const setThemePreference = useThemeStore((s) => s.setPreference);
+  const user = useSessionStore((s) => s.user);
+  const [signingOut, setSigningOut] = useState(false);
   const cameras = useHazardStore((s) => s.cameras);
   const load = useHazardStore((s) => s.load);
   const [message, setMessage] = useState<string | null>(null);
@@ -81,6 +87,16 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
     router.push('/alert');
   }, [sampleCameraAlert]);
 
+  const signOut = useCallback(() => {
+    setSigningOut(true);
+    useSessionStore
+      .getState()
+      .signOut()
+      .catch(() => {
+        setSigningOut(false);
+      });
+  }, []);
+
   return {
     alertDistanceM: settings.alertDistanceM,
     enabledTypes: settings.enabledTypes,
@@ -99,5 +115,8 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
     testVoice,
     previewAlert,
     reset: settings.reset,
+    user,
+    signingOut,
+    signOut,
   };
 }
