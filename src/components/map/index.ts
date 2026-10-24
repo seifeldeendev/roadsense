@@ -3,3 +3,4 @@ export { CameraMarker } from './CameraMarker';
 export { HazardMarker } from './HazardMarker';
 export { UserMarker } from './UserMarker';
 export { RouteLine } from './RouteLine';
+export { SegmentedRouteLine, type RouteSegment } from './SegmentedRouteLine';
