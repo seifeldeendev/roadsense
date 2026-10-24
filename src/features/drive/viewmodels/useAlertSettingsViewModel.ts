@@ -5,6 +5,7 @@ import { speak } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useThemeStore, type ThemePreference } from '@/stores/useThemeStore';
 
 export type AlertSettingsViewModel = {
   alertDistanceM: Settings['alertDistanceM'];
@@ -12,11 +13,13 @@ export type AlertSettingsViewModel = {
   voiceEnabled: boolean;
   soundEnabled: boolean;
   amberThresholdPct: Settings['amberThresholdPct'];
+  themePreference: ThemePreference;
   message: string | null;
   canTestVoice: boolean;
   toggleType: (type: AlertTarget) => void;
   setAlertDistance: (value: Settings['alertDistanceM']) => void;
   setAmberThreshold: (value: Settings['amberThresholdPct']) => void;
+  setThemePreference: (value: ThemePreference) => void;
   setVoiceEnabled: (value: boolean) => void;
   setSoundEnabled: (value: boolean) => void;
   testVoice: () => void;
@@ -26,6 +29,8 @@ export type AlertSettingsViewModel = {
 
 export function useAlertSettingsViewModel(): AlertSettingsViewModel {
   const settings = useSettingsStore();
+  const themePreference = useThemeStore((s) => s.preference);
+  const setThemePreference = useThemeStore((s) => s.setPreference);
   const cameras = useHazardStore((s) => s.cameras);
   const load = useHazardStore((s) => s.load);
   const [message, setMessage] = useState<string | null>(null);
@@ -82,11 +87,13 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
     voiceEnabled: settings.voiceEnabled,
     soundEnabled: settings.soundEnabled,
     amberThresholdPct: settings.amberThresholdPct,
+    themePreference,
     message,
     canTestVoice: settings.voiceEnabled,
     toggleType,
     setAlertDistance: settings.setAlertDistance,
     setAmberThreshold: settings.setAmberThreshold,
+    setThemePreference,
     setVoiceEnabled: settings.setVoiceEnabled,
     setSoundEnabled: settings.setSoundEnabled,
     testVoice,

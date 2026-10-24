@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
-import { colors, typography, type TypographyToken } from '@/theme/tokens';
+import { typography, type ThemeColors, type TypographyToken } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
+
+export type AppTextColor = Exclude<keyof ThemeColors, 'status'>;
 
 type AppTextProps = {
   children: ReactNode;
   variant?: TypographyToken;
-  color?: keyof typeof colors;
+  color?: AppTextColor;
   style?: StyleProp<TextStyle>;
   numberOfLines?: number;
 };
@@ -17,10 +20,10 @@ export function AppText({
   style,
   numberOfLines,
 }: AppTextProps) {
+  const { colors } = useTheme();
   return (
     <Text
       style={StyleSheet.flatten([
-        styles.reset,
         typography[variant],
         { color: colors[color] },
         style,
@@ -31,7 +34,3 @@ export function AppText({
     </Text>
   );
 }
-
-const styles = StyleSheet.create({
-  reset: {},
-});
