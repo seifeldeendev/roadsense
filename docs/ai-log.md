@@ -79,3 +79,9 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Cause:** `app.json` had the template's `"web": { "output": "server" }`, so the dev server rendered routes in Node; the session store's `setHasHydrated` persisted through AsyncStorage, whose web build calls `window.localStorage`, which doesn't exist in Node.
 **Fix:** web output set to `"single"` (RoadSense has no need for server rendering) and a shared `src/stores/persistStorage.ts` that uses AsyncStorage normally but a no-op storage when running on web without `window`.
 **Verification:** reproduced the crash by requesting `/` from a running dev server; after the fix the same request, the Expo Go manifest and the Android bundle all return 200 with no errors; tsc, jest (41/41), lint pass. _Seif: fill in your notes._
+
+### AI-013 · 2026-10-24 · Seif · fix web crash in react-native-maps · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim):** pasted Metro web log ending in `TypeError: (0 , _reactNativeWebDistIndex.codegenNativeComponent) is not a function` from `react-native-maps/src/specs/NativeComponentGooglePolygon.ts`.
+**Cause:** react-native-maps is native-only; opening the app in a browser imported it through `src/components/map`.
+**Fix:** `src/components/map/index.web.ts` + `WebMapFallback.tsx` — Metro resolves the `.web.ts` entry on web, so the native module is never bundled there; the map card shows a "The live map runs in the mobile app" placeholder and overlays render nothing. Android/iOS are unchanged.
+**Verification:** web export contains no react-native-maps native specs and does contain the fallback; Android export still contains react-native-maps; tsc, lint, jest (41/41) pass. _Seif: fill in your notes._
