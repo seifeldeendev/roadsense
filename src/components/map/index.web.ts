@@ -2,3 +2,5 @@
 // the same API: a placeholder surface for the map and no-op overlays.
 export { RoadMap, CameraMarker, HazardMarker, UserMarker, RouteLine, PinMarker } from './WebMapFallback';
 export type { RoadMapHandle, FollowPoint } from './RoadMap';
+export { SegmentedRouteLine } from './SegmentedRouteLine.web';
+export type { RouteSegment } from './SegmentedRouteLine';
