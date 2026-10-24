@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { persistStorage } from './persistStorage';
 import type { User } from '../domain/entities';
 import type { AuthProvider } from '../domain/repositories';
 import { repositories } from '../data/di';
@@ -44,7 +44,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'roadsense.session',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: persistStorage,
       partialize: (state) => ({
         user: state.user,
         hasCompletedOnboarding: state.hasCompletedOnboarding,

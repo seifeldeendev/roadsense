@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { persistStorage } from './persistStorage';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
@@ -17,7 +17,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'roadsense.theme',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: persistStorage,
     },
   ),
 );
