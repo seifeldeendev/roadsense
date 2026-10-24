@@ -21,13 +21,15 @@ export function AppText({
   numberOfLines,
 }: AppTextProps) {
   const { colors } = useTheme();
+  const token = typography[variant];
   return (
     <Text
       style={StyleSheet.flatten([
-        typography[variant],
+        token,
         { color: colors[color] },
         style,
       ])}
+      maxFontSizeMultiplier={variant.startsWith('display') ? 1.3 : undefined}
       numberOfLines={numberOfLines}
     >
       {children}

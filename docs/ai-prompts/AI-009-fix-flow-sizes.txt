@@ -1,0 +1,50 @@
+<task>
+Project: RoadSense, React Native 0.88 + Expo SDK 58 + TypeScript strict + Expo Router (routes in src/app/), `@/*` -> `./src/*`. MVVM: screens render only ViewModel output; screens/components never import stores/services/data. Theme via useTheme/useThemedStyles (src/theme); tokens in src/theme/tokens.ts; primitives in src/components/ui. DESIGN.md at repo root is the visual source of truth — read it in full.
+
+The user reports two problems: (A) the app flow breaks after onboarding, and (B) component sizes don't match DESIGN.md. Root causes were diagnosed by review; fix them as specified, then verify with automated router tests.
+
+A. FLOW (src/app/_layout.tsx uses Stack.Protected guards on useSessionStore: !hasCompletedOnboarding -> (onboarding); hasCompletedOnboarding && !user -> (auth); user -> (tabs) + app stack screens):
+  A1. Root cause: src/app/index.tsx was deleted, so `(onboarding)/index.tsx` became "/" — the only anchor. When onboarding completes (or the user signs in / out) the guard removes the current route and the router has no valid "/" to fall back to. Fix:
+      - Rename src/app/(onboarding)/index.tsx to src/app/(onboarding)/onboarding.tsx (URL /onboarding).
+      - Re-create src/app/index.tsx (always accessible — register `<Stack.Screen name="index" options={{ headerShown: false }} />` OUTSIDE every Stack.Protected, first in the stack) rendering `<Redirect>` based on session: !hasCompletedOnboarding -> '/onboarding'; !user -> '/sign-in'; else '/drive'. It may read the session store directly (it is a route-level redirect, not a feature screen).
+      - Read the Expo Router SDK 58 docs on protected routes (https://docs.expo.dev/router/advanced/protected/ and the authentication guide) and make sure that when a guard flips, the app lands on the correct screen: completing/skipping onboarding -> sign-in; sign in / sign up success -> the Drive tab; sign out from settings/alerts (a stack screen above tabs) -> sign-in with no way back. If the docs say guards alone redirect to the anchor, rely on that; otherwise navigate explicitly with router.replace in the ViewModels after the state change. Never show "Unmatched route".
+      - Add `unstable_settings` / anchor config only if the docs recommend it for this setup.
+  A2. Onboarding pager is mis-sized: Screen adds a 16 px horizontal gutter but each slide is `useWindowDimensions().width`, so pages are wider than the viewport — paging is off-centre, slides are clipped, the dot index drifts, and scrollToIndex has no getItemLayout. Fix in src/features/onboarding: render the pager edge-to-edge (add an optional `padded?: boolean` (default true) prop to Screen and pass padded={false}), measure the pager width with onLayout (fallback to window width) and use that exact width for each slide, add getItemLayout, onScrollToIndexFailed fallback (scrollToOffset), compute the active index from onMomentumScrollEnd (round(offsetX / width)) instead of viewability, and keep slide content inside the 16 px gutter (inner padding spacing.lg, not 32). The footer keeps the 16 px gutter. The illustration frame must stay 4:3 and fit on a 360x640 dp screen together with the headline, body and footer without clipping (scale the frame with available height if needed — e.g. maxHeight + aspectRatio; never stretch).
+  A3. Ensure the BrandSplash overlay never intercepts touches (pointerEvents="none" once fading starts) and is not re-shown on navigation.
+
+B. SIZES — align primitives exactly to DESIGN.md component specs (DESIGN.md wins over any current value):
+  - AppButton: primary/secondary = button-primary/secondary: paddingVertical spacing.md (12), paddingHorizontal spacing.md (12) — use spacing.xl (20) horizontal only if the label would touch the edge? NO: follow DESIGN.md exactly (md md) but give pills a minWidth of touch.min*2 so short labels don't look like circles; subtle = paddingVertical md, paddingHorizontal lg; floating = padding md + level3; large = paddingVertical lg, paddingHorizontal xl, rounded.xl, buttonLarge type, height ~56. Label type buttonMd (16/20, Inter 500) for pills. Resulting pill height must be ~44 (12+20+12) — set minHeight touch.min (44) and remove anything that inflates it.
+  - TextField (text-input): padding spacing.lg (16) on all sides, bodyMd type, rounded.md (8), canvasSoft fill; with a secure toggle keep the 16 px padding and place the eye icon inside the right padding (icon button 32-40 dp, hitSlop to reach 44). Label bodySmStrong with spacing.sm gap.
+  - Chip (category-button): paddingVertical sm, paddingHorizontal lg, bodySmStrong, icon then label, minHeight 44.
+  - IconButton (icon-button-circular): 44 dp circle, canvasSoft, 24 dp glyph.
+  - Card: content/elevated/soft/inverse padding spacing.xxl (24); form (request-form-card) padding spacing.lg (16) + level2; all rounded.xl.
+  - SegmentedControl (button-tab-translucent): rounded.pillTab (36), selected label bodyMdStrong, height 44.
+  - ToggleRow (faq-row): paddingVertical lg, paddingHorizontal 0, bodyMdStrong question, hairline divider.
+  - Section rhythm: 32 px (spacing.xxxl) between major sections/cards on scroll screens, 8 px (spacing.sm) between headline/paragraph/CTA inside a card, 12 px (spacing.md) between buttons in a row.
+  - Typography: every text uses a DESIGN.md token at its exact size/line-height; headlines display-* (700), never body text in display tokens; check the onboarding headline (displayXl 36/44), auth headline (displayXl), splash wordmark (displayXxl 52/64), screen titles. Add `maxFontSizeMultiplier` 1.3 to AppText display variants so OS font scaling can't blow headlines past the layout (keep body text scalable).
+  Audit EVERY primitive in src/components/ui and the screens in src/features/{onboarding,auth,drive} against these specs and fix deviations (raw numbers -> tokens). List each change in the report as `component: before -> after`.
+
+C. TESTS (new, must pass): __tests__/appFlow.test.tsx using `renderRouter` + `screen` from 'expo-router/testing-library' (@testing-library/react-native is installed) with the real layout files where feasible (or a minimal mock route map that reuses the real src/app/_layout.tsx and route modules). Mock AsyncStorage (@react-native-async-storage/async-storage/jest/async-storage-mock), expo-font/@expo-google-fonts/inter (fonts loaded), expo-splash-screen, @expo/vector-icons (render null), and react-native-safe-area-context if needed; bypass the BrandSplash delay (fake timers). Cover: fresh launch -> onboarding visible; skip/get started -> sign-in visible (pathname '/sign-in'); demo sign in (demo@roadsense.app / Drive2026) -> drive tab visible (pathname '/drive'); sign out -> sign-in. Reset useSessionStore between tests. If a case truly cannot run under jest, explain exactly why in the report rather than deleting it.
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app; `@/stores|@/services|@/data` in src/features/*/screens or components; `as any`.
+</verification_loop>
+
+<action_safety>
+Scoped to this task. Don't touch src/features/map, src/features/trips, src/domain, src/data, DESIGN.md, docs/, app.json. No new dependencies beyond what's installed. Do NOT git add or git commit; the orchestrator commits after review. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Flow: root cause confirmation, what you changed, how each transition now lands (with what the docs said)
+  2. Sizes: `component: before -> after` list
+  3. Files created/modified/renamed
+  4. Gate outcomes (tsc, jest counts incl. appFlow cases, lint, export, greps)
+  5. Anything you could not verify or decided differently, and why
+</structured_output_contract>

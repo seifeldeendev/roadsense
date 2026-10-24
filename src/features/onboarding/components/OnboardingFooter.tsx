@@ -78,7 +78,7 @@ function footerStyles(_theme: ResolvedTheme) {
       borderRadius: rounded.pill,
     },
     dotActive: {
-      width: 24,
+      width: spacing.xxl,
     },
     actions: {
       flexDirection: 'row',

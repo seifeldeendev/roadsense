@@ -67,6 +67,7 @@ function ThemedChrome() {
           contentStyle: { backgroundColor: colors.canvas },
         }}
       >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Protected guard={!hasCompletedOnboarding}>
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         </Stack.Protected>
