@@ -47,3 +47,9 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Output:** light/dark semantic palettes (dark = DESIGN.md polarity flip: black canvas, white primary CTA, white inverse band), persisted theme preference store (System/Light/Dark), ThemeProvider + `useTheme`/`useThemedStyles`, hairline borders on elevated surfaces in dark, all ui primitives / navigation / drive screens migrated, Appearance section in Alert settings.
 **My changes & verification:** Re-ran tsc, jest (16/16), lint; grepped for hex/rgba outside `src/theme`, static colour imports, raw font props, and store imports in screens — none. Reviewed ThemeProvider/useTheme and confirmed speed-status colours still drive the gauge and status line. _Seif: test both schemes on device and add notes._
 **Rationale:** _Seif: fill in._
+
+### AI-008 · 2026-10-24 · Seif · splash, onboarding, sign-in / sign-up, route guards · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-008-onboarding-auth.txt`
+**Output:** User entity, AuthRepository + mock (demo@roadsense.app / Drive2026), pure form validators with 13 new Jest tests, persisted session store, `Stack.Protected` guards (onboarding → auth → app), branded in-app splash, 3-slide onboarding, `TextField` primitive, sign-in and sign-up screens with validation, Account / sign-out section in settings, black native splash in app.json.
+**My changes & verification:** Re-ran tsc, jest (29/29), lint, Android export and the architecture/colour greps. Fixed a bug where the splash's `onFinished` callback was recreated on every root render, restarting the 1.2 s splash timer on hydration or theme change (now a stable `useCallback`). Note: mock accounts created via sign-up live in memory only until the real backend is added. _Seif: walk through the flow on device and add notes._
+**Rationale:** _Seif: fill in._

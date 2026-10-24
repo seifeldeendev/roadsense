@@ -1,4 +1,5 @@
 export type { AlertKind, CameraType, HazardType } from './hazard-type';
+export type { User } from './user';
 export type { AlertTarget, Settings } from './settings';
 export type { Camera } from './camera';
 export type { Hazard } from './hazard';

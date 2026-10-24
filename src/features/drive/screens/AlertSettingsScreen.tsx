@@ -7,8 +7,9 @@ import {
   SegmentedControl,
   ToggleRow,
 } from '@/components/ui';
-import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
 import { spacing } from '@/theme/tokens';
+import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
+import { AccountSection } from '../components/AccountSection';
 import { AlertTypeList } from '../components/AlertTypeList';
 import { ValidationNote } from '../components/ValidationNote';
 import { useAlertSettingsViewModel } from '../viewmodels/useAlertSettingsViewModel';
@@ -121,6 +122,13 @@ export default function AlertSettingsScreen() {
             accessibilityLabel="Reset to defaults"
           />
         </View>
+
+        <AccountSection
+          name={vm.user?.name ?? 'Not signed in'}
+          email={vm.user?.email ?? '—'}
+          signingOut={vm.signingOut}
+          onSignOut={vm.signOut}
+        />
       </View>
     </Screen>
   );
