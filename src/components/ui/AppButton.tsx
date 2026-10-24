@@ -23,12 +23,14 @@ function variantStyle(
   colors: ThemeColors,
   elevation: ResolvedTheme['elevation'],
   variant: AppButtonVariant,
+  pill: boolean,
 ): VariantStyle {
+  const padding: ViewStyle = pill ? pillPadding : { paddingVertical: spacing.lg, paddingHorizontal: spacing.xl };
   switch (variant) {
     case 'primary':
     case 'large':
       return {
-        container: { backgroundColor: colors.primary },
+        container: { backgroundColor: colors.primary, ...padding },
         textColor: colors.onPrimary,
         pressedBackground: colors.primaryPressed,
       };
@@ -36,26 +38,43 @@ function variantStyle(
       return {
         container: {
           backgroundColor: colors.canvas,
+          ...padding,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: colors.hairline,
         },
         textColor: colors.ink,
         pressedBackground: colors.surfacePressed,
       };
-    case 'subtle':
+    case 'subtle': {
+      const subtlePadding: ViewStyle = pill
+        ? { ...padding, paddingHorizontal: spacing.lg }
+        : padding;
       return {
-        container: { backgroundColor: colors.canvasSoft },
+        container: {
+          backgroundColor: colors.canvasSoft,
+          ...subtlePadding,
+        },
         textColor: colors.ink,
         pressedBackground: colors.surfacePressed,
       };
+    }
     case 'floating':
       return {
-        container: { backgroundColor: colors.canvas, ...elevation.level3 },
+        container: {
+          backgroundColor: colors.canvas,
+          ...padding,
+          ...elevation.level3,
+        },
         textColor: colors.ink,
         pressedBackground: colors.surfacePressed,
       };
   }
 }
+
+const pillPadding: ViewStyle = {
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.md,
+};
 
 type AppButtonProps = {
   title: string;
@@ -81,7 +100,7 @@ export function AppButton({
   const theme = useTheme();
   const styles = stylesBase;
   const isLarge = variant === 'large' || size === 'lg';
-  const style = variantStyle(theme.colors, theme.elevation, variant);
+  const style = variantStyle(theme.colors, theme.elevation, variant, !isLarge);
   const inactive = disabled || loading;
   const labelTypography = isLarge ? typography.buttonLarge : typography.buttonMd;
 
@@ -135,13 +154,11 @@ const stylesBase: ButtonStyles = StyleSheet.create({
   },
   pillBase: {
     borderRadius: rounded.pill,
-    paddingHorizontal: spacing.xl,
     minHeight: touch.min,
+    minWidth: touch.min * 2,
   },
   largeBase: {
     borderRadius: rounded.xl,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
     minHeight: touch.large,
   },
   inactive: {

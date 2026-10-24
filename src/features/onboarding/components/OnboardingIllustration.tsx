@@ -1,19 +1,20 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { rounded, spacing, type HazardIconName } from '@/theme/tokens';
 import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 type OnboardingIllustrationProps = {
   icons: [HazardIconName, HazardIconName];
+  style?: StyleProp<ViewStyle>;
 };
 
-export function OnboardingIllustration({ icons }: OnboardingIllustrationProps) {
+export function OnboardingIllustration({ icons, style }: OnboardingIllustrationProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(illustrationStyles, undefined);
   const [primary, secondary] = icons;
 
   return (
-    <View style={styles.frame}>
+    <View style={[styles.frame, style]}>
       <View style={styles.stage}>
         <View style={[styles.circle, styles.primaryCircle, { backgroundColor: colors.canvas }]}>
           <MaterialCommunityIcons name={primary} size={44} color={colors.ink} />

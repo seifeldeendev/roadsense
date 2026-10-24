@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import type { FlatListProps } from 'react-native';
 import { useSessionStore } from '@/stores/useSessionStore';
 import type { HazardIconName } from '@/theme/tokens';
 
@@ -36,23 +35,16 @@ export type OnboardingViewModel = {
   index: number;
   isLast: boolean;
   canSkip: boolean;
-  markVisible: (info: ViewableChangeInfo) => void;
+  setActiveIndex: (index: number) => void;
   skip: () => void;
 };
-
-type ViewableChangeInfo = Parameters<
-  NonNullable<FlatListProps<unknown>['onViewableItemsChanged']>
->[0];
 
 export function useOnboardingViewModel(): OnboardingViewModel {
   const [index, setIndex] = useState(0);
   const completeOnboarding = useSessionStore((s) => s.completeOnboarding);
 
-  const markVisible = useCallback((info: ViewableChangeInfo) => {
-    const first = info.viewableItems.find((token) => token.isViewable);
-    if (first !== undefined && first.index !== undefined) {
-      setIndex(first.index);
-    }
+  const setActiveIndex = useCallback((next: number) => {
+    setIndex(Math.max(0, Math.min(next, ONBOARDING_SLIDES.length - 1)));
   }, []);
 
   const skip = useCallback(() => {
@@ -64,7 +56,7 @@ export function useOnboardingViewModel(): OnboardingViewModel {
     index,
     isLast: index === ONBOARDING_SLIDES.length - 1,
     canSkip: index < ONBOARDING_SLIDES.length - 1,
-    markVisible,
+    setActiveIndex,
     skip,
   };
 }

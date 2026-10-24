@@ -94,7 +94,7 @@ export default function DriveModeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.xl,
+    gap: spacing.xxxl,
     paddingBottom: spacing.xl,
   },
   header: {

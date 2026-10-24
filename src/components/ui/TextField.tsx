@@ -70,7 +70,7 @@ export function TextField({
               setSecure((value) => !value);
             }}
             style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
-            hitSlop={8}
+            hitSlop={6}
           >
             <MaterialCommunityIcons
               name={secure ? 'eye-off' : 'eye'}
@@ -105,18 +105,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: touch.min,
-    paddingRight: spacing.sm,
+    padding: spacing.lg,
+    gap: spacing.xs,
   },
   input: {
     ...typography.bodyMd,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
     flex: 1,
+    minHeight: touch.min,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   toggle: {
-    width: touch.min,
-    height: touch.min,
-    borderRadius: rounded.full,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },

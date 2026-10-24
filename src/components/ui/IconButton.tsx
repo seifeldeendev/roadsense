@@ -26,7 +26,7 @@ export function IconButton({ icon, accessibilityLabel, onPress, disabled = false
       onPress={onPress}
       style={({ pressed }) => [styles.circle, circleVariant(colors, pressed), disabled && styles.disabled]}
     >
-      <MaterialCommunityIcons name={icon} size={22} color={colors.ink} />
+      <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
     </Pressable>
   );
 }

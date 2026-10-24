@@ -7,15 +7,17 @@ import { useTheme } from '@/theme/useTheme';
 type ScreenProps = {
   children: ReactNode;
   scroll?: boolean;
+  padded?: boolean;
 };
 
-export function Screen({ children, scroll = false }: ScreenProps) {
+export function Screen({ children, scroll = false, padded = true }: ScreenProps) {
   const { colors } = useTheme();
   const fill: ViewStyle = { flex: 1, backgroundColor: colors.canvas };
+  const gutter = padded ? styles.gutter : styles.noGutter;
   if (!scroll) {
     return (
       <SafeAreaView style={fill}>
-        <View style={[fill, styles.gutter]}>{children}</View>
+        <View style={[fill, gutter]}>{children}</View>
       </SafeAreaView>
     );
   }
@@ -24,7 +26,7 @@ export function Screen({ children, scroll = false }: ScreenProps) {
     <SafeAreaView style={fill}>
       <ScrollView
         style={fill}
-        contentContainerStyle={[styles.gutter, styles.scrollContent]}
+        contentContainerStyle={[gutter, styles.scrollContent]}
         alwaysBounceVertical
       >
         {children}
@@ -36,6 +38,9 @@ export function Screen({ children, scroll = false }: ScreenProps) {
 const styles = StyleSheet.create({
   gutter: {
     paddingHorizontal: spacing.lg,
+  },
+  noGutter: {
+    paddingHorizontal: 0,
   },
   scrollContent: {
     paddingBottom: spacing.xl,

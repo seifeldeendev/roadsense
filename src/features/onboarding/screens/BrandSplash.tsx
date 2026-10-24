@@ -16,9 +16,11 @@ export function BrandSplash({ onFinished }: BrandSplashProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(baseStyles, undefined);
   const [opacity] = useState(() => new Animated.Value(1));
+  const [fading, setFading] = useState(false);
 
   useEffect(() => {
     const hold = setTimeout(() => {
+      setFading(true);
       Animated.timing(opacity, {
         toValue: 0,
         duration: FADE_MS,
@@ -32,7 +34,7 @@ export function BrandSplash({ onFinished }: BrandSplashProps) {
   }, [opacity, onFinished]);
 
   return (
-    <Animated.View style={[styles.fill, { opacity }]}>
+    <Animated.View pointerEvents={fading ? 'none' : 'auto'} style={[styles.fill, { opacity }]}>
       <View style={styles.center}>
         <MaterialCommunityIcons name="speedometer" size={40} color={colors.onInverse} />
         <AppText variant="displayXxl" color="onInverse">
