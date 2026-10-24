@@ -23,6 +23,12 @@ const AMBER_SEGMENTS = AMBER_OPTIONS.map((value) => ({
   value,
 }));
 
+const APPEARANCE_SEGMENTS = [
+  { label: 'System', value: 'system' },
+  { label: 'Light', value: 'light' },
+  { label: 'Dark', value: 'dark' },
+] as const;
+
 export default function AlertSettingsScreen() {
   const vm = useAlertSettingsViewModel();
 
@@ -32,6 +38,18 @@ export default function AlertSettingsScreen() {
         <AppText variant="bodyMd" color="body">
           Camera and hazard warnings for the demo route.
         </AppText>
+
+        <View style={styles.section}>
+          <SectionHeader title="Appearance" />
+          <SegmentedControl
+            options={APPEARANCE_SEGMENTS}
+            value={vm.themePreference}
+            onChange={vm.setThemePreference}
+          />
+          <AppText variant="bodySm" color="body">
+            System follows your phone&apos;s setting
+          </AppText>
+        </View>
 
         <View style={styles.section}>
           <SectionHeader title="Alert distance" />

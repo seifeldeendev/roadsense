@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
-import { colors, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import { rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import { useTheme, type ResolvedTheme } from '@/theme/useTheme';
 
 type ReportButtonProps = {
   icon: HazardIconName;
@@ -10,25 +11,27 @@ type ReportButtonProps = {
 };
 
 export function ReportButton({ icon, label, onPress }: ReportButtonProps) {
+  const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Report ${label}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      style={({ pressed }): StyleProp<ViewStyle> => [
+        buttonBase(colors),
+        pressed && { backgroundColor: colors.surfacePressed },
+      ]}
     >
-      <View style={styles.iconWrap}>
+      <View style={[styles.iconWrap, { backgroundColor: colors.canvas }]}>
         <MaterialCommunityIcons name={icon} size={20} color={colors.ink} />
       </View>
-      <AppText variant="bodyMdStrong" style={styles.label}>
-        {label}
-      </AppText>
+      <AppText variant="bodyMdStrong">{label}</AppText>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
+function buttonBase(colors: ResolvedTheme['colors']): ViewStyle {
+  return {
     flexBasis: '46%',
     flexGrow: 1,
     minHeight: touch.large,
@@ -38,19 +41,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-  },
-  pressed: {
-    backgroundColor: colors.surfacePressed,
-  },
+  };
+}
+
+const styles = StyleSheet.create({
   iconWrap: {
     width: spacing.xxxl,
     height: spacing.xxxl,
     borderRadius: rounded.full,
-    backgroundColor: colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  label: {
-    color: colors.ink,
   },
 });

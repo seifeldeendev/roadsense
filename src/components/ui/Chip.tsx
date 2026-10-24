@@ -1,13 +1,13 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-  colors,
   rounded,
   spacing,
   touch,
   typography,
   type HazardIconName,
 } from '@/theme/tokens';
+import { useTheme, type ResolvedTheme } from '@/theme/useTheme';
 
 type ChipProps = {
   label: string;
@@ -16,7 +16,14 @@ type ChipProps = {
   icon?: HazardIconName;
 };
 
+function chipVariant(colors: ResolvedTheme['colors'], selected: boolean, pressed: boolean): ViewStyle {
+  if (selected) return { backgroundColor: colors.primary };
+  if (pressed) return { backgroundColor: colors.surfacePressed };
+  return { backgroundColor: colors.canvasSoft };
+}
+
 export function Chip({ label, selected, onPress, icon }: ChipProps) {
+  const { colors } = useTheme();
   const contentColor = selected ? colors.onPrimary : colors.ink;
 
   return (
@@ -25,11 +32,7 @@ export function Chip({ label, selected, onPress, icon }: ChipProps) {
       accessibilityLabel={label}
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.chip,
-        selected ? styles.selected : styles.unselected,
-        pressed && !selected && styles.pressedUnselected,
-      ]}
+      style={({ pressed }) => [styles.chip, chipVariant(colors, selected, pressed)]}
     >
       {icon !== undefined && (
         <MaterialCommunityIcons
@@ -55,14 +58,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     minHeight: touch.min,
-  },
-  selected: {
-    backgroundColor: colors.primary,
-  },
-  unselected: {
-    backgroundColor: colors.canvasSoft,
-  },
-  pressedUnselected: {
-    backgroundColor: colors.surfacePressed,
   },
 });

@@ -8,11 +8,15 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { colors, typography } from '@/theme/tokens';
+import { nativeTypography } from '@/theme/tokens';
+import { ThemeProvider } from '@/theme/ThemeProvider';
+import { useTheme } from '@/theme/useTheme';
+import { useThemeStore } from '@/stores/useThemeStore';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const preference = useThemeStore((s) => s.preference);
   const [fontsLoaded, fontsError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -32,15 +36,24 @@ export default function RootLayout() {
   }
 
   return (
+    <ThemeProvider preference={preference}>
+      <ThemedChrome />
+    </ThemeProvider>
+  );
+}
+
+function ThemedChrome() {
+  const { colors, scheme } = useTheme();
+
+  return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.canvas },
           headerTintColor: colors.ink,
           headerTitleStyle: {
-            fontFamily: typography.displaySm.fontFamily,
-            fontSize: typography.displaySm.fontSize,
+            ...nativeTypography.stackHeaderTitle,
             color: colors.ink,
           },
           headerShadowVisible: false,

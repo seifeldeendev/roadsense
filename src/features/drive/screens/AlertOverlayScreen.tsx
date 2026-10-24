@@ -6,17 +6,30 @@ import {
   EmptyState,
   IconButton,
 } from '@/components/ui';
-import { colors, elevation, hazardMeta, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import {
+  hazardMeta,
+  rounded,
+  spacing,
+  touch,
+  type HazardIconName,
+} from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 import { LimitBadge } from '../components/LimitBadge';
 import { StillThereSection } from '../components/StillThereSection';
 import { useAlertOverlayViewModel } from '../viewmodels/useAlertOverlayViewModel';
 
 export default function AlertOverlayScreen() {
   const vm = useAlertOverlayViewModel();
+  const { colors, elevation: themedElevation } = useTheme();
+  const sheetStyle = StyleSheet.flatten([
+    styles.sheet,
+    { backgroundColor: colors.canvas },
+    themedElevation.level2,
+  ]);
 
   if (vm.alert === null) {
     return (
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { backgroundColor: colors.backdrop }]}>
         <EmptyState
           icon="traffic-light"
           title="No active alert"
@@ -42,11 +55,11 @@ export default function AlertOverlayScreen() {
         : 'alert';
 
   return (
-    <View style={styles.backdrop}>
+    <View style={[styles.backdrop, { backgroundColor: colors.backdrop }]}>
       <View style={styles.spacer} />
-      <View style={styles.sheet}>
+      <View style={sheetStyle}>
         <View style={styles.topRow}>
-          <View style={styles.iconWrap}>
+          <View style={[styles.iconWrap, { backgroundColor: colors.canvasSoft }]}>
             <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
           </View>
           <View style={styles.flex} />
@@ -85,16 +98,13 @@ export default function AlertOverlayScreen() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: colors.backdrop,
     padding: spacing.lg,
   },
   spacer: {
     flex: 1,
   },
   sheet: {
-    backgroundColor: colors.canvas,
     borderRadius: rounded.xl,
-    ...elevation.level2,
     padding: spacing.xxl,
     gap: spacing.lg,
   },
@@ -107,7 +117,6 @@ const styles = StyleSheet.create({
     width: touch.min,
     height: touch.min,
     borderRadius: rounded.full,
-    backgroundColor: colors.canvasSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
