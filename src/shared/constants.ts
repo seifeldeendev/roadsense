@@ -22,3 +22,8 @@ export const HAZARD_TTL_MS: Record<HazardType, number> = {
   flooding: 24 * HOUR_MS,
   pothole: 7 * 24 * HOUR_MS,
 };
+
+export const DEMO_CREDENTIALS = {
+  email: 'demo@roadsense.app',
+  password: 'Drive2026',
+} as const;

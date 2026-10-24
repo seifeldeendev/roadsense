@@ -1,5 +1,6 @@
 import type { User } from '../../domain/entities';
 import type { AuthProvider, AuthRepository } from '../../domain/repositories';
+import { DEMO_CREDENTIALS } from '../../shared/constants';
 
 const AUTH_DELAY_MS = 600;
 
@@ -8,8 +9,8 @@ type StoredUser = User & { password: string };
 const DEMO_USER: StoredUser = {
   id: 'user-demo',
   name: 'Demo Driver',
-  email: 'demo@roadsense.app',
-  password: 'Drive2026',
+  email: DEMO_CREDENTIALS.email,
+  password: DEMO_CREDENTIALS.password,
 };
 
 function delay(): Promise<void> {

@@ -1,6 +1,16 @@
-import type { TripPoint } from '../domain/entities';
+import type { LatLng, TripPoint } from '../domain/entities';
 import type { LocationSource } from '../domain/repositories';
 import { DEMO_TRIP } from '../data/mock/trips';
+
+let demoRoute: LatLng[] | null = null;
+
+// The Salah Salem demo drive path, reused by the route line and map framing.
+export function getDemoRoute(): LatLng[] {
+  if (demoRoute === null) {
+    demoRoute = DEMO_TRIP.points.map((point) => ({ lat: point.lat, lng: point.lng }));
+  }
+  return demoRoute;
+}
 
 export class MockLocationSource implements LocationSource {
   private timer: ReturnType<typeof setInterval> | null = null;
