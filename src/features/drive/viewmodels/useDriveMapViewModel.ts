@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import type { Camera, Hazard, LatLng } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
-import { getDemoRoute } from '@/services/location';
+import { getDriveRoute, subscribeDriveRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
 
@@ -25,7 +25,8 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
 
-  const routePoints = getDemoRoute();
+  // The demo route, or a trip queued from Stats & Replay.
+  const routePoints = useSyncExternalStore(subscribeDriveRoute, getDriveRoute);
   const routeFrame = useMemo(() => fitRouteRegion(routePoints), [routePoints]);
   // Re-evaluated whenever the hazard list changes (e.g. a vote expires one).
   const activeHazards = useMemo(
