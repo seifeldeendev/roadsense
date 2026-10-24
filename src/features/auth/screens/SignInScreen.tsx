@@ -8,11 +8,14 @@ import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { AuthBrand, AuthLink } from '../components/AuthBrand';
 import { AuthFormCard } from '../components/AuthFormCard';
 import { FormErrorNote } from '../components/FormErrorNote';
+import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import { AuthScreenShell } from '../components/AuthScreenShell';
+import { useSocialAuthViewModel } from '../viewmodels/useSocialAuthViewModel';
 import { useSignInViewModel } from '../viewmodels/useSignInViewModel';
 
 export default function SignInScreen() {
   const vm = useSignInViewModel();
+  const social = useSocialAuthViewModel();
   const styles = useThemedStyles(signInStyles, undefined);
   const router = useRouter();
   const passwordRef = useRef<TextInputInstance | null>(null);
@@ -62,6 +65,11 @@ export default function SignInScreen() {
           loading={vm.submitting}
           disabled={vm.submitting}
           accessibilityLabel="Sign in"
+        />
+        <SocialAuthButtons
+          pendingProvider={social.pendingProvider}
+          error={social.error}
+          onContinue={social.continueWith}
         />
       </AuthFormCard>
 

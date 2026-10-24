@@ -1,5 +1,5 @@
 import type { User } from '../../domain/entities';
-import type { AuthRepository } from '../../domain/repositories';
+import type { AuthProvider, AuthRepository } from '../../domain/repositories';
 
 const AUTH_DELAY_MS = 600;
 
@@ -58,6 +58,16 @@ export class MockAuthRepository implements AuthRepository {
     };
     this.users.push(created);
     return toUser(created);
+  }
+
+  async signInWithProvider(provider: AuthProvider): Promise<User> {
+    await delay();
+    const label = provider === 'google' ? 'Google' : 'Apple';
+    return {
+      id: `user-${provider}`,
+      name: `${label} Driver`,
+      email: `${provider}.driver@roadsense.app`,
+    };
   }
 
   async signOut(): Promise<void> {

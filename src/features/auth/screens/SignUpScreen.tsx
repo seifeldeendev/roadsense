@@ -8,11 +8,14 @@ import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { AuthBrand, AuthLink } from '../components/AuthBrand';
 import { AuthFormCard } from '../components/AuthFormCard';
 import { FormErrorNote } from '../components/FormErrorNote';
+import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import { AuthScreenShell } from '../components/AuthScreenShell';
+import { useSocialAuthViewModel } from '../viewmodels/useSocialAuthViewModel';
 import { useSignUpViewModel } from '../viewmodels/useSignUpViewModel';
 
 export default function SignUpScreen() {
   const vm = useSignUpViewModel();
+  const social = useSocialAuthViewModel();
   const styles = useThemedStyles(signUpStyles, undefined);
   const router = useRouter();
   const emailRef = useRef<TextInputInstance | null>(null);
@@ -93,6 +96,11 @@ export default function SignUpScreen() {
           loading={vm.submitting}
           disabled={vm.submitting}
           accessibilityLabel="Create account"
+        />
+        <SocialAuthButtons
+          pendingProvider={social.pendingProvider}
+          error={social.error}
+          onContinue={social.continueWith}
         />
       </AuthFormCard>
 
