@@ -22,3 +22,9 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Output:** `src/theme/tokens.ts`, 11 UI primitives in `src/components/ui`, root Stack + 4-tab layout, 9 thin route files, 9 placeholder feature screens for the team to replace.
 **My changes & verification:** Re-ran tsc, jest (16/16), lint; confirmed in `node_modules/expo-router/build/index.d.ts` that `Tabs` from `expo-router` is deprecated in favour of `expo-router/js-tabs` (the implementer's deviation). Raised `Chip` min height from 40 to `touch.min` (48) to meet the touch-target rule. _Seif: add your own review notes._
 **Rationale:** _Seif: fill in._
+
+### AI-004 · 2026-10-24 · Seif · features/drive (Drive Mode, Alert Overlay, Alert Settings) · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-004-drive-screens.txt`
+**Output:** 3 screens, 3 ViewModel hooks + helpers, 8 feature components in `src/features/drive/`.
+**My changes & verification:** Re-ran tsc, jest (16/16), lint and an Android bundle export; checked screens/components import no stores, services or data. Fixed two bugs: (1) a new alert while the overlay was open pushed a second stacked `/alert` modal — now the open overlay just updates; (2) the "target behind you" auto-dismiss ran while not driving, so "Preview alert" could close instantly after a stopped drive — now only checked while driving. _Seif: add your own review notes and on-device test results._
+**Rationale:** _Seif: fill in._
