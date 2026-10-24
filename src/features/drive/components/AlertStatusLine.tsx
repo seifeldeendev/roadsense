@@ -7,23 +7,20 @@ type StatusLineProps = {
   label: string;
 };
 
-const TEXT_COLOR: Record<SpeedStatus, string> = {
-  ok: colors.ok,
-  near: colors.near,
-  over: colors.over,
+const STATUS_COLOR: Record<SpeedStatus, string> = {
+  ok: colors.status.ok,
+  near: colors.status.near,
+  over: colors.status.over,
 };
 
 export function AlertStatusLine({ status, label }: StatusLineProps) {
   return (
-    <Text accessibilityRole="text" style={[styles.line, { color: TEXT_COLOR[status] }]}>
+    <Text accessibilityRole="text" style={[styles.line, { color: STATUS_COLOR[status] }]}>
       {label}
     </Text>
   );
 }
 
 const styles = StyleSheet.create({
-  line: {
-    fontSize: typography.size.body,
-    fontWeight: '700',
-  },
+  line: typography.bodyMdStrong,
 });

@@ -1,9 +1,11 @@
 export { AppButton, type AppButtonVariant, type AppButtonSize } from './AppButton';
-export { Badge } from './Badge';
-export { Card } from './Card';
+export { AppText } from './AppText';
+export { Badge, type BadgeVariant } from './Badge';
+export { Card, type CardVariant } from './Card';
 export { Chip } from './Chip';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
+export { IconButton } from './IconButton';
 export { LoadingState } from './LoadingState';
 export { Screen } from './Screen';
 export { SectionHeader } from './SectionHeader';

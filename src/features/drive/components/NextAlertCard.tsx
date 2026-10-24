@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { UpcomingAlert } from '@/domain/entities';
-import { Card } from '@/components/ui';
+import { Card, AppText } from '@/components/ui';
 import { formatDistance } from '@/shared/format';
-import { colors, hazardMeta, spacing } from '@/theme/tokens';
+import { colors, hazardMeta, spacing, type HazardIconName } from '@/theme/tokens';
 import { LimitBadge } from './LimitBadge';
 
 type NextAlertCardProps = {
@@ -13,32 +14,32 @@ export function NextAlertCard({ alert }: NextAlertCardProps) {
   if (alert === null) {
     return (
       <Card>
-        <Text style={styles.empty}>No alerts ahead</Text>
+        <AppText variant="bodySm" color="body" style={styles.centered}>
+          No alerts ahead
+        </AppText>
       </Card>
     );
   }
 
-  const icon =
+  const icon: HazardIconName =
     alert.kind === 'camera'
       ? hazardMeta.camera.icon
       : alert.hazard !== undefined
         ? hazardMeta[alert.hazard.type].icon
-        : '⚠️';
+        : 'alert';
 
   return (
     <Card>
       <View style={styles.row}>
-        <Text style={styles.icon} accessibilityLabel={alert.title}>
-          {icon}
-        </Text>
+        <MaterialCommunityIcons name={icon} size={32} color={colors.ink} />
         <View style={styles.textBlock}>
-          <Text style={styles.title} numberOfLines={1}>
+          <AppText variant="bodyMdStrong" numberOfLines={1}>
             {alert.title}
-          </Text>
-          <Text style={styles.detail} numberOfLines={1}>
+          </AppText>
+          <AppText variant="bodySm" color="body" numberOfLines={1}>
             {formatDistance(alert.distanceM)}
             {alert.roadName !== undefined ? ` · ${alert.roadName}` : ''}
-          </Text>
+          </AppText>
         </View>
         {alert.kind === 'camera' && alert.speedLimitKmh !== undefined && (
           <LimitBadge limitKmh={alert.speedLimitKmh} size="sm" />
@@ -49,9 +50,7 @@ export function NextAlertCard({ alert }: NextAlertCardProps) {
 }
 
 const styles = StyleSheet.create({
-  empty: {
-    fontSize: 15,
-    color: colors.muted,
+  centered: {
     textAlign: 'center',
   },
   row: {
@@ -59,20 +58,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  icon: {
-    fontSize: 32,
-  },
   textBlock: {
     flex: 1,
     gap: spacing.xs,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  detail: {
-    fontSize: 12,
-    color: colors.muted,
   },
 });

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, rounded, spacing, typography } from '@/theme/tokens';
 
 type SpeedGaugeProps = {
   speedKmh: number;
@@ -8,9 +8,9 @@ type SpeedGaugeProps = {
 };
 
 const RING_COLOR: Record<SpeedStatus, string> = {
-  ok: colors.ok,
-  near: colors.near,
-  over: colors.over,
+  ok: colors.status.ok,
+  near: colors.status.near,
+  over: colors.status.over,
 };
 
 export function SpeedGauge({ speedKmh, status }: SpeedGaugeProps) {
@@ -32,23 +32,20 @@ const styles = StyleSheet.create({
   gauge: {
     width: 168,
     height: 168,
-    borderRadius: 999,
+    borderRadius: rounded.pill,
     borderWidth: 10,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
   },
   speed: {
-    fontSize: typography.size.display,
-    lineHeight: typography.size.display,
-    fontWeight: '800',
-    color: colors.text,
+    ...typography.displayLg,
+    color: colors.ink,
     fontVariant: ['tabular-nums'],
   },
   caption: {
-    fontSize: typography.size.body,
-    color: colors.muted,
-    fontWeight: '600',
+    ...typography.bodySm,
+    color: colors.body,
   },
 });

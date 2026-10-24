@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, spacing, typography } from '@/theme/tokens';
 
 type StillThereSectionProps = {
   hasVoted: boolean;
@@ -16,7 +16,6 @@ export function StillThereSection({ hasVoted, reportedLine, onVote }: StillThere
         <View style={styles.half}>
           <AppButton
             title="Yes"
-            variant="primary"
             onPress={() => onVote(true)}
             disabled={hasVoted}
             accessibilityLabel="Confirm hazard is still there"
@@ -45,13 +44,12 @@ const styles = StyleSheet.create({
   container: {
     gap: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: colors.hairline,
     paddingTop: spacing.md,
   },
   question: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.bodyLg,
+    color: colors.ink,
     textAlign: 'center',
   },
   row: {
@@ -62,15 +60,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   thanks: {
-    fontSize: 12,
-    color: colors.ok,
+    ...typography.bodySmStrong,
+    color: colors.ink,
     textAlign: 'center',
-    fontWeight: '600',
   },
   meta: {
-    fontSize: 12,
-    color: colors.muted,
+    ...typography.caption,
+    color: colors.body,
     textAlign: 'center',
-    lineHeight: spacing.md,
   },
 });

@@ -1,6 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
+  AppText,
   Screen,
   SectionHeader,
   SegmentedControl,
@@ -8,7 +10,7 @@ import {
 } from '@/components/ui';
 import type { AlertTarget } from '@/domain/entities';
 import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
-import { colors, hazardMeta, spacing, typography } from '@/theme/tokens';
+import { colors, hazardMeta, spacing, type HazardIconName } from '@/theme/tokens';
 import { useAlertSettingsViewModel } from '../viewmodels/useAlertSettingsViewModel';
 
 const DISTANCE_SEGMENTS = ALERT_DISTANCE_OPTIONS.map((value) => ({
@@ -51,14 +53,20 @@ export default function AlertSettingsScreen() {
                 key={type}
                 label={label}
                 value={vm.enabledTypes.includes(type)}
-                icon={<Text style={styles.typeIcon}>{meta.icon}</Text>}
+                icon={
+                  <MaterialCommunityIcons
+                    name={meta.icon as HazardIconName}
+                    size={20}
+                    color={colors.ink}
+                  />
+                }
                 onValueChange={() => vm.toggleType(type)}
               />
             );
           })}
         </View>
 
-        <SectionHeader title="Sound & voice" />
+        <SectionHeader title="Sound and voice" />
         <View style={styles.stack}>
           <ToggleRow
             label="Voice alerts"
@@ -72,7 +80,10 @@ export default function AlertSettingsScreen() {
           />
         </View>
 
-        <SectionHeader title="Amber warning" subtitle={`Speed turns amber at ${vm.amberThresholdPct}% of the limit`} />
+        <SectionHeader
+          title="Amber warning"
+          subtitle={`Speed turns amber at ${vm.amberThresholdPct}% of the limit`}
+        />
         <SegmentedControl
           options={AMBER_SEGMENTS}
           value={vm.amberThresholdPct}
@@ -81,7 +92,9 @@ export default function AlertSettingsScreen() {
 
         <View style={styles.stack}>
           {vm.canTestVoice ? null : (
-            <Text style={styles.helper}>Voice alerts are off — turn them on to test</Text>
+            <AppText variant="caption" color="mute" style={styles.helper}>
+              Voice alerts are off — turn them on to test
+            </AppText>
           )}
           <AppButton
             title="Test voice"
@@ -97,7 +110,7 @@ export default function AlertSettingsScreen() {
           />
           <AppButton
             title="Reset to defaults"
-            variant="ghost"
+            variant="subtle"
             onPress={vm.reset}
             accessibilityLabel="Reset to defaults"
           />
@@ -110,17 +123,12 @@ export default function AlertSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
-    padding: spacing.md,
+    paddingBottom: spacing.lg,
   },
   stack: {
     gap: spacing.sm,
   },
-  typeIcon: {
-    fontSize: 20,
-  },
   helper: {
-    fontSize: typography.size.caption,
-    color: colors.muted,
     textAlign: 'center',
   },
 });

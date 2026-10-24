@@ -2,9 +2,9 @@ import { EmptyState, Screen } from '@/components/ui';
 
 export default function TripHistoryScreen() {
   return (
-    <Screen scroll>
+    <Screen>
       <EmptyState
-        icon="🧭"
+        icon="history"
         title="Trip history"
         message="Coming soon"
       />

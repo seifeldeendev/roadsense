@@ -1,13 +1,24 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors, radius, spacing, touch, typography } from '@/theme/tokens';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  colors,
+  rounded,
+  spacing,
+  touch,
+  typography,
+  type HazardIconName,
+} from '@/theme/tokens';
 
 type ChipProps = {
   label: string;
   selected: boolean;
   onPress: () => void;
+  icon?: HazardIconName;
 };
 
-export function Chip({ label, selected, onPress }: ChipProps) {
+export function Chip({ label, selected, onPress, icon }: ChipProps) {
+  const contentColor = selected ? colors.onPrimary : colors.ink;
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -17,13 +28,17 @@ export function Chip({ label, selected, onPress }: ChipProps) {
       style={({ pressed }) => [
         styles.chip,
         selected ? styles.selected : styles.unselected,
-        pressed && styles.pressed,
+        pressed && !selected && styles.pressedUnselected,
       ]}
     >
-      <Text
-        style={[styles.label, { color: selected ? colors.background : colors.muted }]}
-        numberOfLines={1}
-      >
+      {icon !== undefined && (
+        <MaterialCommunityIcons
+          name={icon}
+          size={typography.bodySmStrong.fontSize}
+          color={contentColor}
+        />
+      )}
+      <Text style={[typography.bodySmStrong, { color: contentColor }]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -32,26 +47,22 @@ export function Chip({ label, selected, onPress }: ChipProps) {
 
 const styles = StyleSheet.create({
   chip: {
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: spacing.md,
-    minHeight: touch.min,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: rounded.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    minHeight: touch.min,
   },
   selected: {
     backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   unselected: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.canvasSoft,
   },
-  pressed: {
-    opacity: 0.7,
-  },
-  label: {
-    fontSize: typography.size.body,
-    fontWeight: '600',
-    textAlign: 'center',
+  pressedUnselected: {
+    backgroundColor: colors.surfacePressed,
   },
 });
