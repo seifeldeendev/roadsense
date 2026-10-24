@@ -27,7 +27,12 @@ export function RoadMap({ ref }: RoadMapProps) {
   );
 }
 
-function NoOverlay(_props: object) {
+type OverlayProps = {
+  onPress?: () => void;
+  onCalloutPress?: () => void;
+};
+
+function NoOverlay(_props: OverlayProps) {
   return null;
 }
 
@@ -35,6 +40,7 @@ export const CameraMarker = NoOverlay;
 export const HazardMarker = NoOverlay;
 export const UserMarker = NoOverlay;
 export const RouteLine = NoOverlay;
+export const PinMarker = NoOverlay;
 
 const styles = StyleSheet.create({
   fill: {
