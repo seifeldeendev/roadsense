@@ -15,13 +15,15 @@ export function findUpcomingAlerts(
   cameras: Camera[],
   hazards: Hazard[],
   settings: Settings,
+  // Wider look-ahead for lists of what is coming; alerts themselves use the setting.
+  maxDistanceM: number = settings.alertDistanceM,
 ): UpcomingAlert[] {
   const results: UpcomingAlert[] = [];
 
   if (settings.enabledTypes.includes('camera')) {
     for (const camera of cameras) {
       const distanceM = haversineDistanceM(position, camera);
-      if (distanceM > settings.alertDistanceM) continue;
+      if (distanceM > maxDistanceM) continue;
       if (angleDiffDeg(headingDeg, bearingDeg(position, camera)) > HEADING_CONE_DEG) {
         continue;
       }
@@ -41,7 +43,7 @@ export function findUpcomingAlerts(
     if (hazard.status !== 'active') continue;
     if (!settings.enabledTypes.includes(hazard.type)) continue;
     const distanceM = haversineDistanceM(position, hazard);
-    if (distanceM > settings.alertDistanceM) continue;
+    if (distanceM > maxDistanceM) continue;
     if (angleDiffDeg(headingDeg, bearingDeg(position, hazard)) > HEADING_CONE_DEG) {
       continue;
     }
