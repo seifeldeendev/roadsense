@@ -31,6 +31,10 @@ type RoadMapProps = {
   scrollEnabled?: boolean;
   zoomEnabled?: boolean;
   rotateEnabled?: boolean;
+  mapType?: 'standard' | 'satellite';
+  showsTraffic?: boolean;
+  // Keeps north at the top instead of rotating the map with the heading.
+  northUp?: boolean;
   style?: StyleProp<ViewStyle>;
   ref?: Ref<RoadMapHandle>;
 };
@@ -44,11 +48,11 @@ const mapProvider: Provider = Platform.select({
 
 const DRIVE_PITCH = 45;
 
-function followCamera(point: FollowPoint): Partial<Camera> {
+function followCamera(point: FollowPoint, northUp: boolean): Partial<Camera> {
   const center = { latitude: point.lat, longitude: point.lng };
   return {
     center,
-    heading: point.heading,
+    heading: northUp ? 0 : point.heading,
     pitch: DRIVE_PITCH,
     // Google honours zoom, Apple Maps reads the altitude equivalent.
     zoom: 16,
@@ -64,6 +68,9 @@ export function RoadMap({
   scrollEnabled = true,
   zoomEnabled = true,
   rotateEnabled = true,
+  mapType = 'standard',
+  showsTraffic = false,
+  northUp = false,
   style,
   ref,
 }: RoadMapProps) {
@@ -90,8 +97,8 @@ export function RoadMap({
 
   useEffect(() => {
     if (lat === null || lng === null || heading === null) return;
-    mapRef.current?.animateCamera(followCamera({ lat, lng, heading }), { duration: 500 });
-  }, [lat, lng, heading]);
+    mapRef.current?.animateCamera(followCamera({ lat, lng, heading }, northUp), { duration: 500 });
+  }, [lat, lng, heading, northUp]);
 
   return (
     <MapView
@@ -100,7 +107,10 @@ export function RoadMap({
       provider={mapProvider}
       initialRegion={initialRegion}
       region={region}
-      customMapStyle={scheme === 'dark' ? darkMapStyle : lightMapStyle}
+      mapType={mapType}
+      showsTraffic={showsTraffic}
+      // The grayscale style only applies to the drawn map, not satellite imagery.
+      customMapStyle={mapType === 'standard' ? (scheme === 'dark' ? darkMapStyle : lightMapStyle) : undefined}
       userInterfaceStyle={scheme}
       showsCompass={false}
       showsMyLocationButton={false}

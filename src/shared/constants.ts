@@ -9,6 +9,10 @@ export const DEFAULT_SETTINGS: Settings = {
   soundEnabled: true,
   units: 'kmh',
   amberThresholdPct: 90,
+  soundMode: 'all',
+  mapType: 'standard',
+  showTraffic: false,
+  northUp: false,
 };
 
 export const ALERT_DISTANCE_OPTIONS = [200, 300, 500, 800] as const;

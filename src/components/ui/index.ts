@@ -12,3 +12,4 @@ export { SectionHeader } from './SectionHeader';
 export { SegmentedControl } from './SegmentedControl';
 export { TextField } from './TextField';
 export { ToggleRow } from './ToggleRow';
+export { BottomSheet } from './BottomSheet';

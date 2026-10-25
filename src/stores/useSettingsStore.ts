@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { persistStorage } from './persistStorage';
-import type { AlertTarget, Settings } from '../domain/entities';
+import type { AlertTarget, MapType, Settings, SoundMode } from '../domain/entities';
 import { DEFAULT_SETTINGS } from '../shared/constants';
 
 interface SettingsState extends Settings {
@@ -10,6 +10,10 @@ interface SettingsState extends Settings {
   setVoiceEnabled(voiceEnabled: boolean): void;
   setSoundEnabled(soundEnabled: boolean): void;
   setAmberThreshold(amberThresholdPct: Settings['amberThresholdPct']): void;
+  setSoundMode(soundMode: SoundMode): void;
+  setMapType(mapType: MapType): void;
+  setShowTraffic(showTraffic: boolean): void;
+  setNorthUp(northUp: boolean): void;
   reset(): void;
 }
 
@@ -27,6 +31,10 @@ export const useSettingsStore = create<SettingsState>()(
       setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
       setAmberThreshold: (amberThresholdPct) => set({ amberThresholdPct }),
+      setSoundMode: (soundMode) => set({ soundMode }),
+      setMapType: (mapType) => set({ mapType }),
+      setShowTraffic: (showTraffic) => set({ showTraffic }),
+      setNorthUp: (northUp) => set({ northUp }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {

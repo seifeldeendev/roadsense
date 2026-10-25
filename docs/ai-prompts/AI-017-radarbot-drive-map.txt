@@ -1,0 +1,64 @@
+<task>
+Rebuild the Drive tab (src/features/drive/screens/DriveModeScreen.tsx and its ViewModels/components) into a Radarbot-style "main screen": a full-screen driving map with floating controls, replacing today's scrolling layout of cards. Behaviour must match how speed-camera apps like Radarbot work; visuals must follow DESIGN.md (do NOT copy Radarbot's logo, artwork, icons, colours or name anywhere — the product is RoadSense).
+
+Reference behaviour (from Radarbot's help centre "Main Screen" / "Display options" / "Alerts and warnings"):
+- The map fills the screen and follows the vehicle; heading-up by default (map rotates with travel direction, tilted 3D-ish view), with a "Keep north orientation" option; vehicle icon in the lower-middle of the map.
+- Speed limit road sign and the driver's current speed are always visible in the corners; current speed turns amber near the limit and red over it.
+- Approaching a camera/hazard in the direction of travel raises an alert (existing behaviour: findUpcomingAlerts + /alert route + voice).
+- Round floating buttons: "Sound" quick menu (All sounds / Cameras only / Vibrate only / Muted), "Other options" quick menu (Satellite view, Show traffic, Keep north up), Recentre, and a prominent "Report" button ("New alert") that opens a picker of alert types.
+- "Active alerts": a pill showing how many cameras/hazards are ahead nearby; tapping opens a list of them sorted by distance.
+- "Go to": a search pill at the top that opens the route planner (/route-preview).
+- Current road name pill near the bottom.
+
+Layout to build (portrait, 360 dp wide must work; respect safe areas; 16 px gutters):
+- Full-bleed RoadMap (Screen padded={false}, no ScrollView) with RouteLine (travelled progress), CameraMarker / HazardMarker for cameras and active hazards (hazard callout -> /report/<id>), UserMarker following the live position. While driving: followPoint drives the camera (heading-up uses heading; north-up passes heading 0). When idle: framed on the route (existing fit behaviour).
+- Top: "Go to" search pill (canvas, level3 shadow, pill, 'magnify' icon, bodyMd "Where to?") full width minus a 44-dp IconButton for settings (cog -> /settings/alerts, keep accessibilityLabel "Alert settings").
+- Top-left under the search pill: LimitBadge (road sign style; keep the existing component; ink ring, status.over ring when over) — show "--" when idle.
+- Bottom-left: current speed in a canvas circle card (level3): number in displayLg, "km/h" caption; number colour = colors.status[status] (ok = ink). Keep accessibilityLabel "Speed N kilometres per hour".
+- Right edge column of 44-dp floating round buttons (canvas, level3, gap md): Sound ('volume-high' / 'bell-ring-outline' / 'vibrate' / 'volume-off' by mode), Other options ('layers-outline'), Recentre ('crosshairs-gps', keep accessibilityLabel "Recentre map"). Below them a larger 56-dp black round Report button ('plus', accessibilityLabel "New alert").
+- Bottom: a request-form-card style bar (Card form, level2, rounded.xl) containing: road name pill (bodySmStrong, 'road-variant' icon; "Salah Salem Road" style name or hidden when unknown), the Active alerts pill ("3 alerts ahead", subtle pill, opens the sheet), and the primary CTA: AppButton variant 'large' "Start drive" / "Stop drive" (keep accessibilityLabels "Start drive"/"Stop drive"; Stop uses 'secondary'). Exactly one black CTA visible besides the round Report FAB (the FAB is a floating pill-shaped action; acceptable).
+- Sheets: implement a reusable src/components/ui/BottomSheet.tsx (React Native Modal, transparent, animationType 'slide', backdrop colors.backdrop that closes on press, canvas panel with rounded.xl top corners, padding 2xl, drag-handle bar, safe-area bottom padding, accessibilityViewIsModal). Use it for:
+  - Sound menu: 4 rows (faq-row style with radio check icon) -> sets settings.soundMode.
+  - Other options: ToggleRows "Satellite view", "Show traffic", "Keep north up"; plus a row linking to "Appearance" (theme) in Alert settings.
+  - Report ("New alert"): 2x2 grid of the 4 hazard types (existing ReportButton tiles) + cancel; uses existing onReport (requires an active drive; keep the existing feedback messages and the toast).
+  - Active alerts: FlatList of upcoming alerts within 2 km ahead (use findUpcomingAlerts with a 2000 m distance override — add an optional maxDistanceM parameter to findUpcomingAlerts in the domain, default settings.alertDistanceM, with a test), each row: circular icon, title, distance (formatDistance), camera limit Badge; hazard rows navigate to /report/<id>. Empty: "Nothing ahead right now".
+- Feedback toast (existing ReportBanner) floats above the bottom bar.
+- Loading/error states: keep LoadingState/ErrorState full-screen while hazards first load.
+
+State and settings:
+- Extend Settings (domain entity) with: soundMode: 'all' | 'cameras' | 'vibrate' | 'muted' (default 'all'), mapType: 'standard' | 'satellite' (default 'standard'), showTraffic: boolean (false), northUp: boolean (false). Add defaults in DEFAULT_SETTINGS and setters in useSettingsStore (persisted; bump nothing else). Keep voiceEnabled/soundEnabled working (Alert settings still uses them) and make the alert behaviour honour soundMode: 'all' -> speak for cameras and hazards; 'cameras' -> speak only for camera alerts; 'vibrate' -> no speech, Vibration.vibrate(400) via a new services/haptics.ts wrapper; 'muted' -> nothing. voiceEnabled false still suppresses speech.
+- RoadMap (src/components/map/RoadMap.tsx): add props mapType ('standard'|'satellite' -> react-native-maps mapType; the custom grayscale style applies only to 'standard'), showsTraffic, and a `northUp` flag that makes followCamera use heading 0. Mirror the props as accepted-and-ignored in WebMapFallback. Keep existing callers working.
+- Road name: add a pure helper in src/domain/usecases/drive/nearestRoadName.ts (nearest camera within 600 m -> its roadName, else null) with a test; the ViewModel exposes roadName.
+- ViewModels: keep useDriveModeViewModel's existing API working (other code and tests rely on start/stop/onReport/nextAlert/status/speed) and add a useDriveControlsViewModel (sheets open/close state, sound mode, map options, active alerts list, goTo -> router.push('/route-preview'), openReport(id)). Keep useDriveMapViewModel. Delete components that are no longer used (DriveMapCard, DriveStatusPanel, NextAlertCard, SpeedGauge if replaced, AlertStatusLine) and remove their imports — only if nothing else imports them (grep first).
+
+Tests: update/add so that `npm test` stays green. Add __tests__/driveScreen.test.tsx using renderRouter (copy the mock setup from __tests__/appFlow.test.tsx, seeding a signed-in session) that checks: the Drive tab shows "Start drive", the "New alert" button opens the report sheet with the 4 hazard types, the Sound button opens the sound menu and choosing "Muted" updates useSettingsStore.getState().soundMode, and "Where to?" navigates to /route-preview. Existing __tests__/appFlow.test.tsx must still pass unchanged.
+</task>
+
+<context>
+RoadSense — React Native 0.88 + Expo SDK 58 (docs https://docs.expo.dev/versions/v58.0.0/) + TypeScript strict + Expo Router (routes in src/app/), `@/*` -> `./src/*`, react-native-maps 1.29.11 (read node_modules/react-native-maps docs for mapType/showsTraffic), all data mocked. Architecture is graded — MVVM in Clean Architecture: src/domain (pure TS + tests), src/data (mocks via di.ts), src/stores (zustand), src/services (device wrappers), src/features/<f>/{screens,viewmodels,components}. Screens/feature components never import src/stores, src/services, src/data or use-case functions (type-only domain imports OK); ViewModels never import src/data. Theme via useTheme/useThemedStyles; tokens in src/theme/tokens.ts; ui primitives in src/components/ui; map kit in src/components/map (+ web stand-ins in index.web.ts / WebMapFallback.tsx / *.web.tsx). Study src/features/drive, src/features/map and src/components before changing anything.
+DESIGN.md (repo root — read fully) governs visuals: grayscale only (sole exception colors.status.near/over for speed status), pills for interactive elements, round icon buttons, rounded.xl cards, level-3 shadow for floating pills, level-2 for the bottom form card, sentence case, typography tokens only, light + dark schemes. No hex/rgba outside src/theme, no raw fontSize/fontWeight/fontFamily/letterSpacing outside src/theme and src/components, no `any`/`as any`, files under ~150 lines, accessibility labels on every pressable, typed routes. No new npm dependencies (Vibration and Modal are React Native built-ins). Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</context>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (then delete .export-check)
+  npx expo export --platform web --output-dir .export-web   (then delete .export-web)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app; `@/stores|@/services|@/data` in src/features/*/screens, src/features/*/components, src/components; `@/data` in src/features/*/viewmodels; `as any`; the word "Radarbot" anywhere in src/.
+</verification_loop>
+
+<action_safety>
+Do NOT git add or git commit; the orchestrator reviews every line and commits. Do not modify src/features/map, src/features/trips, src/features/auth, src/features/onboarding, DESIGN.md, docs/, app.json, app.config.ts, package.json. The Alert overlay and Alert settings screens are a separate task — only touch AlertSettingsScreen/its ViewModel if the Settings type change requires it to compile.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Final Drive screen layout (top / corners / right column / bottom / sheets) and how each control behaves
+  2. Settings/state additions and how soundMode drives alerts
+  3. Map kit changes
+  4. Files created / modified / deleted
+  5. Gate outcomes (tsc, jest counts, lint, both exports, greps)
+  6. Deviations and anything unverifiable without a device
+</structured_output_contract>

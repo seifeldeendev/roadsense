@@ -1,11 +1,12 @@
 import { useMemo, useSyncExternalStore } from 'react';
-import type { Camera, Hazard, LatLng } from '@/domain/entities';
+import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { getDriveRoute, subscribeDriveRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export type DriveMapViewModel = {
   routePoints: LatLng[];
@@ -16,6 +17,9 @@ export type DriveMapViewModel = {
   heading: number;
   isDriving: boolean;
   travelledIndex: number;
+  mapType: MapType;
+  showTraffic: boolean;
+  northUp: boolean;
 };
 
 export function useDriveMapViewModel(): DriveMapViewModel {
@@ -24,6 +28,9 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   const heading = useDriveStore((s) => s.heading);
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
+  const mapType = useSettingsStore((s) => s.mapType);
+  const showTraffic = useSettingsStore((s) => s.showTraffic);
+  const northUp = useSettingsStore((s) => s.northUp);
 
   // The demo route, or a trip queued from Stats & Replay.
   const routePoints = useSyncExternalStore(subscribeDriveRoute, getDriveRoute);
@@ -47,5 +54,8 @@ export function useDriveMapViewModel(): DriveMapViewModel {
     heading,
     isDriving,
     travelledIndex,
+    mapType,
+    showTraffic,
+    northUp,
   };
 }

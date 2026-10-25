@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import type { HazardType, UpcomingAlert } from '@/domain/entities';
+import { alertFeedback } from '@/domain/usecases/drive/alertFeedback';
 import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
 import type { LocationSource } from '@/domain/repositories';
 import { createDemoLocationSource } from '@/services/location';
+import { vibrateForAlert } from '@/services/haptics';
 import { speak } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
@@ -81,8 +83,11 @@ export function useDriveModeViewModel(): DriveModeViewModel {
       if (nearest !== null && isNew) {
         const overlayOpen = drive.activeAlert !== null;
         drive.setActiveAlert(nearest);
-        if (settings.voiceEnabled) {
+        const feedback = alertFeedback(settings.soundMode, settings.voiceEnabled, nearest.kind);
+        if (feedback === 'speak') {
           speak(`${nearest.title} in ${Math.max(1, Math.round(nearest.distanceM))} metres`);
+        } else if (feedback === 'vibrate') {
+          vibrateForAlert();
         }
         // An open overlay re-renders with the new alert instead of stacking another modal.
         if (!overlayOpen) router.push('/alert');
