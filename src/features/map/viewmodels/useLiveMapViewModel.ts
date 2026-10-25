@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { alertTargetFor, nearestPoints } from '@/domain/usecases/drive/fixedPoints';
+import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { getDemoRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
@@ -73,6 +74,7 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const mapType = useSettingsStore((s) => s.mapType);
   const showTraffic = useSettingsStore((s) => s.showTraffic);
   const currentLocation = useDriveStore((s) => s.currentLocation);
+  const hiddenOnMap = useSettingsStore((s) => s.hiddenOnMap);
   const [selected, setSelected] = useState<ReadonlySet<MapFilterKey>>(ALL);
 
   useEffect(() => {
@@ -101,8 +103,8 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const resetFilters = useCallback(() => setSelected(ALL), []);
 
   const activeHazards = useMemo(
-    () => hazards.filter((hazard) => !isHazardExpired(hazard, new Date())),
-    [hazards],
+    () => visibleOnMap(hazards, hiddenOnMap).filter((hazard) => !isHazardExpired(hazard, new Date())),
+    [hazards, hiddenOnMap],
   );
 
   // Memoised so marker lists (and the map re-fit they drive) only change with the filters.
@@ -112,8 +114,9 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   );
 
   const nearbyCameras = useMemo(
-    () => nearestPoints(cameras, currentLocation ?? getDemoRoute()[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M),
-    [cameras, currentLocation],
+    () =>
+      nearestPoints(visibleOnMap(cameras, hiddenOnMap), currentLocation ?? getDemoRoute()[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M),
+    [cameras, hiddenOnMap, currentLocation],
   );
 
   const visibleCameras = useMemo(
