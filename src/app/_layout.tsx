@@ -82,7 +82,7 @@ function ThemedChrome() {
           />
           <Stack.Screen name="settings/alerts" options={{ title: 'Alert settings' }} />
           <Stack.Screen name="report/[id]" options={{ title: 'Report details' }} />
-          <Stack.Screen name="route-preview" options={{ title: 'Route preview' }} />
+          <Stack.Screen name="route-preview" options={{ headerShown: false }} />
           <Stack.Screen name="trip/[id]" options={{ title: 'Trip details' }} />
         </Stack.Protected>
       </Stack>

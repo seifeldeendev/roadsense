@@ -1,6 +1,7 @@
 import type { Destination, LatLng, PlannedRoute } from '../../domain/entities';
 import type { RouteRepository } from '../../domain/repositories';
 import { haversineDistanceM } from '../../domain/usecases/drive/geo';
+import { estimateRoute } from '../../domain/usecases/routes/estimateRoute';
 
 const ROUTE_DELAY_MS = 400;
 const DEFAULT_SPEED_KMH = 45;
@@ -8,8 +9,11 @@ const MIN_POINT_SPACING_M = 35;
 const MAX_POINT_SPACING_M = 650;
 const TARGET_POINT_COUNT = 90;
 
-// The Salah Salem demo trip starts here; every planned route departs from it.
-const START: LatLng = { lat: 30.072, lng: 31.335 };
+// The Salah Salem demo trip starts here; the hand-made routes depart from it.
+export const DEMO_START: LatLng = { lat: 30.072, lng: 31.335 };
+const START = DEMO_START;
+// Close enough to the demo start to reuse the hand-made road-following routes.
+const HAND_MADE_ROUTE_RADIUS_M = 1500;
 
 export const MOCK_DESTINATIONS: Destination[] = [
   { id: 'dest-city-stars', name: 'City Stars', area: 'Nasr City', lat: 30.0732, lng: 31.3482 },
@@ -17,6 +21,11 @@ export const MOCK_DESTINATIONS: Destination[] = [
   { id: 'dest-tahrir', name: 'Tahrir Square', area: 'Downtown', lat: 30.0444, lng: 31.2357 },
   { id: 'dest-airport', name: 'Cairo Airport Terminal 3', area: 'Heliopolis', lat: 30.1115, lng: 31.4078 },
   { id: 'dest-bue', name: 'BUE El Shorouk', area: 'El Shorouk City', lat: 30.5877, lng: 31.7129 },
+  { id: 'dest-mall-of-egypt', name: 'Mall of Egypt', area: '6th of October City', lat: 29.9727, lng: 31.0166 },
+  { id: 'dest-zamalek', name: 'Cairo Tower', area: 'Zamalek', lat: 30.0459, lng: 31.2243 },
+  { id: 'dest-maadi', name: 'Road 9', area: 'Maadi', lat: 29.9602, lng: 31.2569 },
+  { id: 'dest-giza', name: 'Giza Pyramids', area: 'Al Haram, Giza', lat: 29.9792, lng: 31.1342 },
+  { id: 'dest-cairo-uni', name: 'Cairo University', area: 'Giza', lat: 30.0276, lng: 31.2101 },
 ];
 
 // Hand-picked real-road waypoints: the City Stars leg rides Salah Salem past
@@ -118,12 +127,12 @@ export class MockRouteRepository implements RouteRepository {
     return MOCK_DESTINATIONS.map((destination) => ({ ...destination }));
   }
 
-  async getRoute(destinationId: string): Promise<PlannedRoute> {
+  async getRoute(destination: Destination, from: LatLng): Promise<PlannedRoute> {
     await delay();
-    const route = MOCK_ROUTES[destinationId];
-    if (route === undefined) {
-      throw new Error(`No route to ${destinationId}`);
+    const handMade = MOCK_ROUTES[destination.id];
+    if (handMade !== undefined && haversineDistanceM(from, START) <= HAND_MADE_ROUTE_RADIUS_M) {
+      return { ...handMade, points: handMade.points.map((point) => ({ ...point })) };
     }
-    return { ...route, points: route.points.map((point) => ({ ...point })) };
+    return estimateRoute(destination.id, from, destination);
   }
 }

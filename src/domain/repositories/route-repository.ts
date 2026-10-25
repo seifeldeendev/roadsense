@@ -1,6 +1,6 @@
-import type { Destination, PlannedRoute } from '../entities';
+import type { Destination, LatLng, PlannedRoute } from '../entities';
 
 export interface RouteRepository {
   getDestinations(): Promise<Destination[]>;
-  getRoute(destinationId: string): Promise<PlannedRoute>;
+  getRoute(destination: Destination, from: LatLng): Promise<PlannedRoute>;
 }

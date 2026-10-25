@@ -29,7 +29,6 @@ export type DriveControlsViewModel = {
   roadName: string | null;
   recentreSignal: number;
   recentre: () => void;
-  goTo: () => void;
   openAppearance: () => void;
   openAlert: (alert: UpcomingAlert) => void;
   openHazard: (hazardId: string) => void;
@@ -103,7 +102,6 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
     roadName,
     recentreSignal,
     recentre: () => setRecentreSignal((count) => count + 1),
-    goTo: () => router.push('/route-preview'),
     openAppearance: () => {
       setSheet(null);
       router.push('/settings/alerts');
