@@ -4,15 +4,14 @@ import type { HazardType, UpcomingAlert } from '@/domain/entities';
 import { alertFeedback } from '@/domain/usecases/drive/alertFeedback';
 import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
+import { shouldTriggerSpeedAlarm } from '@/domain/usecases/drive/speedAlarm';
 import type { LocationSource } from '@/domain/repositories';
 import { createDemoLocationSource } from '@/services/location';
-import { vibrateForAlert } from '@/services/haptics';
-import { speak } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { hazardMeta } from '@/theme/tokens';
-import { clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
+import { announce, clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
 
 const REPORT_TYPES: HazardType[] = ['accident', 'pothole', 'checkpoint', 'flooding'];
 
@@ -46,6 +45,7 @@ export function useDriveModeViewModel(): DriveModeViewModel {
   const [nextAlert, setNextAlert] = useState<UpcomingAlert | null>(null);
   const [feedback, showFeedback] = useTransientFeedback();
   const sourceRef = useRef<LocationSource | null>(null);
+  const previousSpeedRef = useRef(0);
 
   useEffect(() => {
     void load();
@@ -60,11 +60,19 @@ export function useDriveModeViewModel(): DriveModeViewModel {
 
   const start = useCallback(() => {
     useDriveStore.getState().startDrive();
+    previousSpeedRef.current = 0;
     const source = createDemoLocationSource();
     sourceRef.current = source;
     source.start((point) => {
       useDriveStore.getState().pushPoint(point);
       const settings = useSettingsStore.getState();
+      if (shouldTriggerSpeedAlarm(previousSpeedRef.current, point.speedKmh, settings.speedAlarmKmh)) {
+        announce(
+          alertFeedback(settings.soundMode, settings.voiceEnabled, 'camera'),
+          `Speed alarm, ${settings.speedAlarmKmh} kilometres per hour`,
+        );
+      }
+      previousSpeedRef.current = point.speedKmh;
       const hazardState = useHazardStore.getState();
       const results = findUpcomingAlerts(
         { lat: point.lat, lng: point.lng },
@@ -83,12 +91,10 @@ export function useDriveModeViewModel(): DriveModeViewModel {
       if (nearest !== null && isNew) {
         const overlayOpen = drive.activeAlert !== null;
         drive.setActiveAlert(nearest);
-        const feedback = alertFeedback(settings.soundMode, settings.voiceEnabled, nearest.kind);
-        if (feedback === 'speak') {
-          speak(`${nearest.title} in ${Math.max(1, Math.round(nearest.distanceM))} metres`);
-        } else if (feedback === 'vibrate') {
-          vibrateForAlert();
-        }
+        announce(
+          alertFeedback(settings.soundMode, settings.voiceEnabled, nearest.kind),
+          `${nearest.title} in ${Math.max(1, Math.round(nearest.distanceM))} metres`,
+        );
         // An open overlay re-renders with the new alert instead of stacking another modal.
         if (!overlayOpen) router.push('/alert');
       }

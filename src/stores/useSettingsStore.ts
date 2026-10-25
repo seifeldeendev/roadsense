@@ -14,6 +14,8 @@ interface SettingsState extends Settings {
   setMapType(mapType: MapType): void;
   setShowTraffic(showTraffic: boolean): void;
   setNorthUp(northUp: boolean): void;
+  setShowRoadName(showRoadName: boolean): void;
+  setSpeedAlarm(speedAlarmKmh: number | null): void;
   reset(): void;
 }
 
@@ -35,6 +37,8 @@ export const useSettingsStore = create<SettingsState>()(
       setMapType: (mapType) => set({ mapType }),
       setShowTraffic: (showTraffic) => set({ showTraffic }),
       setNorthUp: (northUp) => set({ northUp }),
+      setShowRoadName: (showRoadName) => set({ showRoadName }),
+      setSpeedAlarm: (speedAlarmKmh) => set({ speedAlarmKmh }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {
