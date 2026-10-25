@@ -2,6 +2,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { nearestPoints } from '@/domain/usecases/drive/fixedPoints';
+import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
@@ -46,6 +47,7 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   const showTraffic = useSettingsStore((s) => s.showTraffic);
   const northUp = useSettingsStore((s) => s.northUp);
   const locationSource = useSettingsStore((s) => s.locationSource);
+  const hiddenOnMap = useSettingsStore((s) => s.hiddenOnMap);
 
   // Where the driver really is, so the idle map opens there (like any navigation app).
   useEffect(() => {
@@ -75,21 +77,22 @@ export function useDriveMapViewModel(): DriveMapViewModel {
 
   // Driving: around the vehicle. Idle: whatever the map is framing (route or position).
   const visibleCameras = useMemo(() => {
+    const shown = visibleOnMap(cameras, hiddenOnMap);
     if (isDriving && position !== null) {
-      return nearestPoints(cameras, position, MAX_MAP_POINTS, DRIVING_RADIUS_M);
+      return nearestPoints(shown, position, MAX_MAP_POINTS, DRIVING_RADIUS_M);
     }
     const center = { lat: routeFrame.latitude, lng: routeFrame.longitude };
     const radiusM = Math.min(
       MAX_IDLE_RADIUS_M,
       Math.max(DRIVING_RADIUS_M, (Math.max(routeFrame.latitudeDelta, routeFrame.longitudeDelta) * METRES_PER_DEGREE) / 2),
     );
-    return nearestPoints(cameras, center, MAX_MAP_POINTS, radiusM);
-  }, [cameras, isDriving, position, routeFrame]);
+    return nearestPoints(shown, center, MAX_MAP_POINTS, radiusM);
+  }, [cameras, hiddenOnMap, isDriving, position, routeFrame]);
 
   // Re-evaluated whenever the hazard list changes (e.g. a vote expires one).
   const activeHazards = useMemo(
-    () => hazards.filter((hazard) => !isHazardExpired(hazard, new Date())),
-    [hazards],
+    () => visibleOnMap(hazards, hiddenOnMap).filter((hazard) => !isHazardExpired(hazard, new Date())),
+    [hazards, hiddenOnMap],
   );
   const travelledIndex = useMemo(
     () => (position === null || routePoints.length === 0 ? -1 : nearestRouteIndex(routePoints, position)),

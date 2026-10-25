@@ -3,15 +3,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
 import { rounded, spacing, touch } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
-import { MapFab } from './MapFab';
 
 type DriveTopBarProps = {
   onGoTo: () => void;
-  onOpenSettings: () => void;
 };
 
-// "Where to?" search pill and the settings button floating over the map.
-export function DriveTopBar({ onGoTo, onOpenSettings }: DriveTopBarProps) {
+// "Where to?" search pill floating over the map.
+export function DriveTopBar({ onGoTo }: DriveTopBarProps) {
   const { colors, elevation } = useTheme();
   return (
     <View style={styles.row}>
@@ -30,7 +28,6 @@ export function DriveTopBar({ onGoTo, onOpenSettings }: DriveTopBarProps) {
           Where to?
         </AppText>
       </Pressable>
-      <MapFab icon="cog-outline" accessibilityLabel="Alert settings" onPress={onOpenSettings} />
     </View>
   );
 }

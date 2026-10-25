@@ -19,6 +19,7 @@ const TAB_ICONS: Record<string, HazardIconName> = {
   map: 'map-outline',
   trips: 'history',
   stats: 'chart-bar',
+  account: 'account-circle-outline',
 };
 
 export default function TabsLayout() {
@@ -57,6 +58,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="stats"
         options={{ title: 'Stats', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.stats} color={color} size={size} /> }}
+      />
+      <Tabs.Screen
+        name="account"
+        options={{ title: 'Account', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.account} color={color} size={size} /> }}
       />
     </Tabs>
   );

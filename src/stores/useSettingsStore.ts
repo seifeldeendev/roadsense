@@ -17,6 +17,9 @@ interface SettingsState extends Settings {
   setShowRoadName(showRoadName: boolean): void;
   setSpeedAlarm(speedAlarmKmh: number | null): void;
   setLocationSource(locationSource: LocationSourceKind): void;
+  // Generic setter for simple on/off preferences.
+  update(patch: Partial<Settings>): void;
+  toggleHiddenOnMap(target: AlertTarget): void;
   reset(): void;
 }
 
@@ -41,6 +44,13 @@ export const useSettingsStore = create<SettingsState>()(
       setShowRoadName: (showRoadName) => set({ showRoadName }),
       setSpeedAlarm: (speedAlarmKmh) => set({ speedAlarmKmh }),
       setLocationSource: (locationSource) => set({ locationSource }),
+      update: (patch) => set(patch),
+      toggleHiddenOnMap: (target) =>
+        set((state) => ({
+          hiddenOnMap: state.hiddenOnMap.includes(target)
+            ? state.hiddenOnMap.filter((t) => t !== target)
+            : [...state.hiddenOnMap, target],
+        })),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {

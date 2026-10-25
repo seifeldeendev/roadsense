@@ -27,6 +27,9 @@ export type DriveControlsViewModel = {
   setNorthUp: (on: boolean) => void;
   activeAlerts: UpcomingAlert[];
   roadName: string | null;
+  showLimitSign: boolean;
+  showSpeedometer: boolean;
+  showAlertsAhead: boolean;
   recentreSignal: number;
   recentre: () => void;
   openAppearance: () => void;
@@ -100,11 +103,14 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
     setNorthUp: settings.setNorthUp,
     activeAlerts,
     roadName,
+    showLimitSign: settings.showLimitSign,
+    showSpeedometer: settings.showSpeedometer,
+    showAlertsAhead: settings.showAlertsAhead,
     recentreSignal,
     recentre: () => setRecentreSignal((count) => count + 1),
     openAppearance: () => {
       setSheet(null);
-      router.push('/settings/alerts');
+      router.push('/settings/appearance');
     },
     openAlert,
     openHazard,

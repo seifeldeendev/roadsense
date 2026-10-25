@@ -171,13 +171,22 @@ test('"Where to?" plans a route on the same screen, ride-hailing style', async (
   expect(screen.queryByText('To Cairo Festival City')).toBeNull();
 });
 
-test('alert settings expose map display and the speed alarm', async () => {
+test('the Account tab opens settings pages that hide map layers and screen parts', async () => {
   const { useSettingsStore } = require('../src/stores/useSettingsStore');
+  await testRouter.push('/account');
+  await advanceVirtualTime();
+  expect(screen.getByText('Demo driver')).toBeTruthy();
+  await fireEvent.press(screen.getAllByLabelText('Map & layers')[0]);
+  await advanceVirtualTime();
+  expect(screen.getByText('Show on map')).toBeTruthy();
+  await fireEvent.press(screen.getAllByLabelText('Speed bumps')[0]);
+  expect(useSettingsStore.getState().hiddenOnMap).toEqual(['bump']);
+  await testRouter.push('/settings/drive-screen');
+  await advanceVirtualTime();
+  await fireEvent.press(screen.getAllByLabelText('Road name')[0]);
+  expect(useSettingsStore.getState().showRoadName).toBe(false);
   await testRouter.push('/settings/alerts');
   await advanceVirtualTime();
-  expect(screen.getByText('Map display')).toBeTruthy();
-  await fireEvent.press(screen.getAllByLabelText('Show road name')[0]);
-  expect(useSettingsStore.getState().showRoadName).toBe(false);
   await fireEvent.press(screen.getByLabelText('100'));
   expect(useSettingsStore.getState().speedAlarmKmh).toBe(100);
 });

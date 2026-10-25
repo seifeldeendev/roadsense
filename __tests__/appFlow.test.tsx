@@ -135,8 +135,8 @@ test('demo sign-in lands on the drive tab', async () => {
   expect(renderResult.getPathname()).toBe('/drive');
 });
 
-test('sign out from settings lands back on sign-in with no history back', async () => {
-  await testRouter.push('/settings/alerts');
+test('sign out from the Account tab lands back on sign-in with no history back', async () => {
+  await testRouter.push('/account');
   await advanceVirtualTime();
   await fireEvent.press(screen.getByLabelText('Sign out'));
   await advanceVirtualTime();

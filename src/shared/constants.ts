@@ -16,6 +16,10 @@ export const DEFAULT_SETTINGS: Settings = {
   showRoadName: true,
   speedAlarmKmh: null,
   locationSource: 'gps',
+  hiddenOnMap: [],
+  showLimitSign: true,
+  showSpeedometer: true,
+  showAlertsAhead: true,
 };
 
 export const SPEED_ALARM_OPTIONS = [80, 100, 120] as const;
