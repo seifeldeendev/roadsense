@@ -6,6 +6,9 @@ export type SoundMode = 'all' | 'cameras' | 'vibrate' | 'muted';
 
 export type MapType = 'standard' | 'satellite';
 
+// Real GPS, or the recorded demo drive for testing indoors.
+export type LocationSourceKind = 'gps' | 'demo';
+
 export interface Settings {
   alertDistanceM: 200 | 300 | 500 | 800;
   enabledTypes: AlertTarget[];
@@ -20,4 +23,5 @@ export interface Settings {
   showRoadName: boolean;
   // Personal over-speed warning, independent of the road limit; null = off.
   speedAlarmKmh: number | null;
+  locationSource: LocationSourceKind;
 }

@@ -1,10 +1,12 @@
-import type { SoundMode } from '@/domain/entities';
+import type { LocationSourceKind, SoundMode } from '@/domain/entities';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 // 0 stands for "off" so the segmented control can hold a plain number.
 export type SpeedAlarmChoice = 0 | 80 | 100 | 120;
 
 export type DisplaySettingsViewModel = {
+  locationSource: LocationSourceKind;
+  setLocationSource: (source: LocationSourceKind) => void;
   soundMode: SoundMode;
   setSoundMode: (mode: SoundMode) => void;
   satellite: boolean;
@@ -22,6 +24,8 @@ export type DisplaySettingsViewModel = {
 export function useDisplaySettingsViewModel(): DisplaySettingsViewModel {
   const settings = useSettingsStore();
   return {
+    locationSource: settings.locationSource,
+    setLocationSource: settings.setLocationSource,
     soundMode: settings.soundMode,
     setSoundMode: settings.setSoundMode,
     satellite: settings.mapType === 'satellite',

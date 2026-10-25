@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { LatLng, TripPoint, UpcomingAlert } from '../domain/entities';
+import type { LatLng, LocationSourceKind, TripPoint, UpcomingAlert } from '../domain/entities';
 
 interface DriveState {
   isDriving: boolean;
@@ -10,7 +10,11 @@ interface DriveState {
   activeAlert: UpcomingAlert | null;
   dismissedAlertIds: string[];
   overLimitCount: number;
-  startDrive(): void;
+  // Last known real position, also available before a drive starts.
+  currentLocation: LatLng | null;
+  driveSource: LocationSourceKind | null;
+  setCurrentLocation(location: LatLng | null): void;
+  startDrive(source?: LocationSourceKind): void;
   stopDrive(): void;
   pushPoint(p: TripPoint): void;
   setActiveAlert(a: UpcomingAlert | null): void;
@@ -26,9 +30,13 @@ export const useDriveStore = create<DriveState>()((set) => ({
   activeAlert: null,
   dismissedAlertIds: [],
   overLimitCount: 0,
-  startDrive: () =>
+  currentLocation: null,
+  driveSource: null,
+  setCurrentLocation: (currentLocation) => set({ currentLocation }),
+  startDrive: (source = 'demo') =>
     set({
       isDriving: true,
+      driveSource: source,
       position: null,
       speedKmh: 0,
       limitKmh: 0,
@@ -41,11 +49,12 @@ export const useDriveStore = create<DriveState>()((set) => ({
   pushPoint: (p) =>
     set((state) => ({
       position: { lat: p.lat, lng: p.lng },
+      currentLocation: state.driveSource === 'gps' ? { lat: p.lat, lng: p.lng } : state.currentLocation,
       speedKmh: p.speedKmh,
       limitKmh: p.limitKmh,
       heading: p.heading,
       overLimitCount:
-        p.speedKmh > p.limitKmh ? state.overLimitCount + 1 : state.overLimitCount,
+        p.limitKmh > 0 && p.speedKmh > p.limitKmh ? state.overLimitCount + 1 : state.overLimitCount,
     })),
   setActiveAlert: (activeAlert) => set({ activeAlert }),
   dismissAlert: (id) =>

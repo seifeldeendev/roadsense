@@ -5,6 +5,11 @@ import { spacing } from '@/theme/tokens';
 import type { DisplaySettingsViewModel, SpeedAlarmChoice } from '../viewmodels/useDisplaySettingsViewModel';
 import { SoundModeList } from './DriveSettingsSheets';
 
+const LOCATION_SEGMENTS = [
+  { label: 'GPS', value: 'gps' },
+  { label: 'Demo drive', value: 'demo' },
+] as const;
+
 const SPEED_ALARM_SEGMENTS: readonly { label: string; value: SpeedAlarmChoice }[] = [
   { label: 'Off', value: 0 },
   ...SPEED_ALARM_OPTIONS.map((kmh) => ({ label: `${kmh}`, value: kmh })),
@@ -14,6 +19,16 @@ const SPEED_ALARM_SEGMENTS: readonly { label: string; value: SpeedAlarmChoice }[
 export function DisplaySettingsSections({ vm }: { vm: DisplaySettingsViewModel }) {
   return (
     <>
+      <View style={styles.section}>
+        <SectionHeader title="Location" />
+        <SegmentedControl options={LOCATION_SEGMENTS} value={vm.locationSource} onChange={vm.setLocationSource} />
+        <AppText variant="bodySm" color="body">
+          {vm.locationSource === 'gps'
+            ? 'Uses your phone’s real position, speed and heading'
+            : 'Plays the recorded Salah Salem drive, for testing indoors'}
+        </AppText>
+      </View>
+
       <View style={styles.section}>
         <SectionHeader title="Sound" />
         <SoundModeList soundMode={vm.soundMode} onChoose={vm.setSoundMode} />

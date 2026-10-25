@@ -41,3 +41,19 @@ describe('alertFeedback', () => {
     expect(alertFeedback('muted', true, 'camera')).toBe('none');
   });
 });
+
+describe('nearestSpeedLimit and the no-limit rule', () => {
+  const { nearestSpeedLimit } = require('../src/domain/usecases/drive/nearestRoadName');
+  const { getSpeedStatus } = require('../src/domain/usecases/drive/getSpeedStatus');
+
+  it('takes the limit of the nearest camera, or 0 when none is near', () => {
+    const cams = [camera('a', 30.07, 31.338, 'Salah Salem')];
+    expect(nearestSpeedLimit({ lat: 30.0702, lng: 31.338 }, cams)).toBe(80);
+    expect(nearestSpeedLimit({ lat: 30.3, lng: 31.6 }, cams)).toBe(0);
+  });
+
+  it('never reports amber or red when the limit is unknown', () => {
+    expect(getSpeedStatus(120, 0)).toBe('ok');
+    expect(getSpeedStatus(85, 80)).toBe('over');
+  });
+});

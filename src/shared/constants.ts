@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   northUp: false,
   showRoadName: true,
   speedAlarmKmh: null,
+  locationSource: 'gps',
 };
 
 export const SPEED_ALARM_OPTIONS = [80, 100, 120] as const;
