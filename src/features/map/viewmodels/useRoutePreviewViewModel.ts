@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import type { Destination, PlannedRoute } from '@/domain/entities';
 import type { RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
-import { getAlertsAlongRoute } from '@/domain/usecases/routes/getAlertsAlongRoute';
+import { describeRouteAlerts, getAlertsAlongRoute } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { bearingDeg } from '@/domain/usecases/drive/geo';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
@@ -127,8 +127,6 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
       ? bearingDeg(route.points[0], route.points[1])
       : 0;
 
-  const cameraCount = alerts.filter((alert) => alert.kind === 'camera').length;
-  const hazardCount = alerts.length - cameraCount;
 
   return {
     isLoading,
@@ -149,8 +147,7 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
     countsLine:
       route === null
         ? null
-        : `${cameraCount} camera${cameraCount === 1 ? '' : 's'} · ` +
-          `${hazardCount} hazard${hazardCount === 1 ? '' : 's'}`,
+        : describeRouteAlerts(alerts),
     alerts,
     alertsEmpty: route !== null && !isLoading && error === null && alerts.length === 0,
     onQueryChange,

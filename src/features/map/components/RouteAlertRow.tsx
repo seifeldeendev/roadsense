@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText, Badge } from '@/components/ui';
 import type { RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance } from '@/shared/format';
-import { hazardMeta, spacing } from '@/theme/tokens';
+import { alertIcon, spacing } from '@/theme/tokens';
 import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 type RouteAlertRowProps = {
@@ -15,7 +15,7 @@ const ROW_ICON_SIZE = 22;
 export function RouteAlertRow({ alert }: RouteAlertRowProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(alertRowStyles, undefined);
-  const icon = hazardMeta[alert.kind === 'camera' ? 'camera' : (alert.hazardType ?? 'accident')].icon;
+  const icon = alertIcon(alert.featureType, alert.hazardType);
 
   return (
     <View style={styles.row}>
@@ -26,7 +26,7 @@ export function RouteAlertRow({ alert }: RouteAlertRowProps) {
           at {formatDistance(alert.distanceAlongM)}
         </AppText>
       </View>
-      {alert.kind === 'camera' ? (
+      {alert.speedLimitKmh !== undefined ? (
         <Badge text={`${alert.speedLimitKmh ?? '–'} km/h`} variant="ink" />
       ) : null}
     </View>

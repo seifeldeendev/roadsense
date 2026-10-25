@@ -43,6 +43,7 @@ export default function LiveMapScreen() {
             lng={camera.lng}
             roadName={camera.roadName}
             speedLimitKmh={camera.speedLimitKmh}
+            type={camera.type}
           />
         ))}
         {vm.visibleHazards.map((hazard) => (

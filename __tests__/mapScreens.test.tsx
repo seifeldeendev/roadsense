@@ -138,9 +138,9 @@ test('live map shows the filter chips and the plan-a-route action', () => {
 
 test('a single-kind filter hides cameras and All restores them', async () => {
   await fireEvent.press(screen.getByText('Potholes'));
-  expect(screen.getByText(/^0 cameras · \d+ hazards? nearby$/)).toBeTruthy();
+  expect(screen.getByText(/^0 road alerts · \d+ hazards? nearby$/)).toBeTruthy();
   await fireEvent.press(screen.getByText('All'));
-  expect(screen.getByText(/^[1-9]\d* cameras? · \d+ hazards? nearby$/)).toBeTruthy();
+  expect(screen.getByText(/^[1-9]\d* road alerts? · \d+ hazards? nearby$/)).toBeTruthy();
 });
 
 test('report details shows the hazard type and voting updates the count', async () => {
