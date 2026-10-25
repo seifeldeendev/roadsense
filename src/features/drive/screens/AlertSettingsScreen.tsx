@@ -11,8 +11,10 @@ import { spacing } from '@/theme/tokens';
 import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
 import { AccountSection } from '../components/AccountSection';
 import { AlertTypeList } from '../components/AlertTypeList';
+import { DisplaySettingsSections } from '../components/DisplaySettingsSections';
 import { ValidationNote } from '../components/ValidationNote';
 import { useAlertSettingsViewModel } from '../viewmodels/useAlertSettingsViewModel';
+import { useDisplaySettingsViewModel } from '../viewmodels/useDisplaySettingsViewModel';
 
 const DISTANCE_SEGMENTS = ALERT_DISTANCE_OPTIONS.map((value) => ({
   label: `${value} m`,
@@ -32,6 +34,7 @@ const APPEARANCE_SEGMENTS = [
 
 export default function AlertSettingsScreen() {
   const vm = useAlertSettingsViewModel();
+  const display = useDisplaySettingsViewModel();
 
   return (
     <Screen scroll>
@@ -51,6 +54,8 @@ export default function AlertSettingsScreen() {
             System follows your phone&apos;s setting
           </AppText>
         </View>
+
+        <DisplaySettingsSections vm={display} />
 
         <View style={styles.section}>
           <SectionHeader title="Alert distance" />

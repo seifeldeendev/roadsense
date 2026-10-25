@@ -160,3 +160,33 @@ test('"Where to?" opens the route planner', async () => {
   await advanceVirtualTime();
   expect(renderResult.getPathname()).toBe('/route-preview');
 });
+
+test('alert settings expose map display and the speed alarm', async () => {
+  const { useSettingsStore } = require('../src/stores/useSettingsStore');
+  await testRouter.push('/settings/alerts');
+  await advanceVirtualTime();
+  expect(screen.getByText('Map display')).toBeTruthy();
+  await fireEvent.press(screen.getAllByLabelText('Show road name')[0]);
+  expect(useSettingsStore.getState().showRoadName).toBe(false);
+  await fireEvent.press(screen.getByLabelText('100'));
+  expect(useSettingsStore.getState().speedAlarmKmh).toBe(100);
+});
+
+test('the alert panel shows the countdown distance and warning progress', async () => {
+  const { useDriveStore } = require('../src/stores/useDriveStore');
+  useDriveStore.setState({
+    activeAlert: {
+      kind: 'camera',
+      refId: 'cam-test',
+      title: 'Speed camera ahead',
+      roadName: 'Salah Salem',
+      distanceM: 150,
+      speedLimitKmh: 80,
+    },
+  });
+  await testRouter.push('/alert');
+  await advanceVirtualTime(4);
+  expect(screen.getByText('Speed camera ahead')).toBeTruthy();
+  expect(screen.getByText('150 m')).toBeTruthy();
+  expect(screen.getByLabelText('Warning progress')).toBeTruthy();
+});

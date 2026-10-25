@@ -17,4 +17,7 @@ export interface Settings {
   mapType: MapType;
   showTraffic: boolean;
   northUp: boolean;
+  showRoadName: boolean;
+  // Personal over-speed warning, independent of the road limit; null = off.
+  speedAlarmKmh: number | null;
 }

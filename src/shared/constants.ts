@@ -13,7 +13,11 @@ export const DEFAULT_SETTINGS: Settings = {
   mapType: 'standard',
   showTraffic: false,
   northUp: false,
+  showRoadName: true,
+  speedAlarmKmh: null,
 };
+
+export const SPEED_ALARM_OPTIONS = [80, 100, 120] as const;
 
 export const ALERT_DISTANCE_OPTIONS = [200, 300, 500, 800] as const;
 export const AMBER_OPTIONS = [85, 90, 95] as const;

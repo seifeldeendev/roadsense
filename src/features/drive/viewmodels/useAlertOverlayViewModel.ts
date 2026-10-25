@@ -6,6 +6,7 @@ import { formatDistance, formatTimeAgo } from '@/shared/format';
 import { stopSpeaking } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 
 const AUTO_DISMISS_MS = 8000;
 const BEHIND_THRESHOLD_DEG = 90;
@@ -17,6 +18,9 @@ export type AlertOverlayViewModel = {
   roadName: string | null;
   distanceLabel: string;
   cameraLimitKmh: number | null;
+  // Share of the warning distance already covered, 0..1.
+  progress: number;
+  isOverCameraLimit: boolean;
   hazard: Hazard | null;
   reportedLine: string | null;
   hasVoted: boolean;
@@ -29,6 +33,8 @@ export function useAlertOverlayViewModel(): AlertOverlayViewModel {
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);
   const isDriving = useDriveStore((s) => s.isDriving);
+  const speedKmh = useDriveStore((s) => s.speedKmh);
+  const alertDistanceM = useSettingsStore((s) => s.alertDistanceM);
   const hazards = useHazardStore((s) => s.hazards);
   const [votedRefId, setVotedRefId] = useState<string | null>(null);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,6 +116,11 @@ export function useAlertOverlayViewModel(): AlertOverlayViewModel {
     roadName: activeAlert?.roadName ?? null,
     distanceLabel: activeAlert === null ? '' : formatDistance(distanceM),
     cameraLimitKmh: activeAlert?.speedLimitKmh ?? null,
+    progress: activeAlert === null ? 0 : Math.min(1, Math.max(0, 1 - distanceM / alertDistanceM)),
+    isOverCameraLimit:
+      activeAlert?.kind === 'camera' &&
+      activeAlert.speedLimitKmh !== undefined &&
+      speedKmh > activeAlert.speedLimitKmh,
     hazard,
     reportedLine,
     hasVoted,

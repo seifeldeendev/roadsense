@@ -1,0 +1,47 @@
+<task>
+Second half of the Radarbot-style driving experience for RoadSense. The Drive tab is already a full-screen map with floating controls (read src/features/drive first, plus useSettingsStore's new soundMode / mapType / showTraffic / northUp fields and src/components/ui/BottomSheet.tsx). Now make the alert presentation and settings behave like a speed-camera app such as Radarbot, styled with DESIGN.md (never use Radarbot's name, logo, icons or colours).
+
+1. Alert overlay (route /alert, already a transparentModal — keep the route, the ViewModel API and every accessibility label: "Dismiss alert", "Confirm hazard is still there", "Hazard is no longer there", "Back"):
+   - Present it as a panel anchored to the TOP of the screen below the safe area (not a centred dimmed modal): the live map stays visible and touchable underneath (no backdrop; outer container pointerEvents="box-none").
+   - Panel = canvas card, rounded.xl, padding lg, level2 shadow (hairline border in dark), 16 px side margins. Row 1: circular canvasSoft icon (hazardMeta), title in displaySm ("Speed camera" / "Pothole" …), road name bodySm body, IconButton close. Row 2: big live distance countdown in displayXl ink (formatDistance, updates as the vehicle approaches) with, for cameras, the LimitBadge on the right. Row 3: a progress bar (track canvasSoft, fill ink — or colors.status.over when the driver's current speed is over the camera's limit) showing how much of the warning distance has been covered: 1 - distance/alertDistance, clamped 0..1. When the driver is over the camera limit, show a bodySmStrong line "Slow down — limit N km/h" (status.over colour is the allowed exception).
+   - Hazards (community reports): below, "Still there?" with two round 56-dp buttons side by side: thumbs-up ('thumb-up-outline', primary black) and thumbs-down ('thumb-down-outline', secondary white) with labels "Yes" / "No" under them; after voting show "Thanks — vote recorded". Keep existing behaviour: auto-dismiss after 8 s, dismiss when the target is behind while driving, stop speech on dismiss.
+   - The ViewModel may add: speedKmh, isOverCameraLimit, progress (0..1). Read the driver's speed from the drive store and alertDistanceM from settings in the ViewModel.
+
+2. Alert settings (route /settings/alerts, title stays "Alert settings"; keep all existing sections, labels and behaviour, including Appearance, Account / Sign out, Test voice, Preview alert, Reset):
+   - New section "Sound" at the top of the alert sections: SegmentedControl or radio faq-rows for soundMode (All sounds / Cameras only / Vibrate only / Muted) — same values the Drive screen's Sound sheet sets.
+   - New section "Map display": ToggleRows "Satellite view" (mapType), "Show traffic", "Keep north up", "Show road name" (add showRoadName: boolean default true to Settings/defaults/store and make the Drive screen hide the road-name pill when it's off — that one Drive change is allowed).
+   - New section "Speed alarm": an over-speed alarm independent of the road limit, like Radarbot's configurable speed alarm: SegmentedControl Off / 80 / 100 / 120 km/h (add speedAlarmKmh: number | null default null to Settings). The Drive ViewModel triggers one spoken warning ("Speed alarm, N kilometres per hour") or vibration per crossing when the driver's speed goes above it (respect soundMode; re-arm after dropping back below). Put the crossing detection in a pure domain use case src/domain/usecases/drive/speedAlarm.ts (shouldTriggerSpeedAlarm(prevSpeed, speed, alarmKmh) -> boolean) with tests.
+   - Keep the screen under ~150 lines by extracting section components into src/features/drive/components/.
+
+3. Live map tab (src/features/map/screens/LiveMapScreen.tsx — minimal, consistent change only): pass mapType and showTraffic from settings through useLiveMapViewModel to RoadMap so the map display options apply app-wide, and restyle its Recentre button to the same 44-dp round floating button as the Drive screen. Don't change anything else there.
+
+Tests: keep everything green. Extend __tests__/driveScreen.test.tsx (or add __tests__/alertSettings.test.tsx with the same renderRouter mock setup and a signed-in session) to cover: /settings/alerts shows "Map display" and toggling "Satellite view" sets mapType 'satellite'; choosing the 100 km/h speed alarm sets speedAlarmKmh 100; /alert with a seeded camera activeAlert shows the distance and the progress bar (accessibilityLabel "Warning progress").
+</task>
+
+<context>
+RoadSense — React Native 0.88 + Expo SDK 58 + TypeScript strict + Expo Router, `@/*` -> `./src/*`, react-native-maps 1.29.11, all data mocked. Architecture is graded — MVVM in Clean Architecture: src/domain (pure TS + tests), src/data (mocks via di.ts), src/stores, src/services, src/features/<f>/{screens,viewmodels,components}. Screens/feature components never import src/stores, src/services, src/data or use-case functions (type-only domain imports OK); ViewModels never import src/data. Theme via useTheme/useThemedStyles; tokens in src/theme/tokens.ts; ui primitives in src/components/ui; map kit in src/components/map (+ web stand-ins).
+DESIGN.md (repo root — read fully) governs visuals: grayscale only (sole exception colors.status.near/over for speed status), pills / round buttons for interactive elements, rounded.xl cards, level-3 shadow for floating controls, level-2 for elevated panels, sentence case, typography tokens only, light + dark schemes. No hex/rgba outside src/theme, no raw fontSize/fontWeight/fontFamily/letterSpacing outside src/theme and src/components, no `any`/`as any`, files under ~150 lines, accessibility labels on every pressable, typed routes, no new npm dependencies. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</context>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (then delete .export-check)
+  npx expo export --platform web --output-dir .export-web   (then delete .export-web)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app; `@/stores|@/services|@/data` in src/features/*/screens, src/features/*/components, src/components; `@/data` in src/features/*/viewmodels; `as any`; "Radarbot" anywhere in src/.
+</verification_loop>
+
+<action_safety>
+Do NOT git add or git commit; the orchestrator reviews every line and commits. Do not modify src/features/trips, src/features/auth, src/features/onboarding, src/features/map beyond item 3, DESIGN.md, docs/, app.json, app.config.ts, package.json.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Alert panel layout and behaviour
+  2. Settings additions and how they reach the Drive screen and Live map
+  3. Files created / modified / deleted
+  4. Gate outcomes (tsc, jest counts, lint, both exports, greps)
+  5. Deviations and anything unverifiable without a device
+</structured_output_contract>

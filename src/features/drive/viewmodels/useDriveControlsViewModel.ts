@@ -55,8 +55,8 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
 
   // Before a drive the road is the one the route starts on.
   const roadName = useMemo(
-    () => nearestRoadName(position ?? getDriveRoute()[0], cameras),
-    [position, cameras],
+    () => (settings.showRoadName ? nearestRoadName(position ?? getDriveRoute()[0], cameras) : null),
+    [settings.showRoadName, position, cameras],
   );
 
   const closeSheet = useCallback(() => setSheet(null), []);

@@ -23,35 +23,42 @@ type SoundSheetProps = {
   onClose: () => void;
 };
 
-export function SoundSheet({ visible, soundMode, onChoose, onClose }: SoundSheetProps) {
+// Radio list of sound modes, shared by the Drive sheet and Alert settings.
+export function SoundModeList({ soundMode, onChoose }: { soundMode: SoundMode; onChoose: (mode: SoundMode) => void }) {
   const { colors } = useTheme();
   return (
+    <View>
+      {SOUND_OPTIONS.map((option) => {
+        const selected = option.mode === soundMode;
+        return (
+          <Pressable
+            key={option.mode}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected }}
+            onPress={() => onChoose(option.mode)}
+            style={[styles.row, { borderBottomColor: colors.hairline }]}
+          >
+            <MaterialCommunityIcons name={option.icon} size={22} color={colors.ink} />
+            <AppText variant="bodyMdStrong" style={styles.label}>
+              {option.label}
+            </AppText>
+            <MaterialCommunityIcons
+              name={selected ? 'radiobox-marked' : 'radiobox-blank'}
+              size={22}
+              color={selected ? colors.ink : colors.mute}
+            />
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+export function SoundSheet({ visible, soundMode, onChoose, onClose }: SoundSheetProps) {
+  return (
     <BottomSheet visible={visible} title="Sound" onClose={onClose}>
-      <View>
-        {SOUND_OPTIONS.map((option) => {
-          const selected = option.mode === soundMode;
-          return (
-            <Pressable
-              key={option.mode}
-              accessibilityRole="radio"
-              accessibilityLabel={option.label}
-              accessibilityState={{ selected }}
-              onPress={() => onChoose(option.mode)}
-              style={[styles.row, { borderBottomColor: colors.hairline }]}
-            >
-              <MaterialCommunityIcons name={option.icon} size={22} color={colors.ink} />
-              <AppText variant="bodyMdStrong" style={styles.label}>
-                {option.label}
-              </AppText>
-              <MaterialCommunityIcons
-                name={selected ? 'radiobox-marked' : 'radiobox-blank'}
-                size={22}
-                color={selected ? colors.ink : colors.mute}
-              />
-            </Pressable>
-          );
-        })}
-      </View>
+      <SoundModeList soundMode={soundMode} onChoose={onChoose} />
     </BottomSheet>
   );
 }
