@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
+import { alertTargetFor, nearestPoints } from '@/domain/usecases/drive/fixedPoints';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
+import { getDemoRoute } from '@/services/location';
+import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import {
@@ -11,7 +14,12 @@ import {
   type HazardKind,
 } from '@/theme/tokens';
 
-export type MapFilterKey = 'all' | 'camera' | Hazard['type'];
+export type MapFilterKey = 'all' | HazardKind;
+
+// The road database covers all of Egypt; only the nearest points around the
+// driver are drawn so the map stays responsive.
+const MAX_FIXED_POINTS = 150;
+const FIXED_POINT_RADIUS_M = 10_000;
 
 export type MapFilterChipVm = {
   key: MapFilterKey;
@@ -23,6 +31,8 @@ export type MapFilterChipVm = {
 const CHIPS: readonly { key: MapFilterKey; label: string; icon?: HazardIconName }[] = [
   { key: 'all', label: 'All' },
   { key: 'camera', label: 'Cameras', icon: hazardMeta.camera.icon },
+  { key: 'police', label: 'Police', icon: hazardMeta.police.icon },
+  { key: 'bump', label: 'Bumps', icon: hazardMeta.bump.icon },
   { key: 'accident', label: 'Accidents', icon: hazardMeta.accident.icon },
   { key: 'pothole', label: 'Potholes', icon: hazardMeta.pothole.icon },
   { key: 'checkpoint', label: 'Checkpoints', icon: hazardMeta.checkpoint.icon },
@@ -62,6 +72,7 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const load = useHazardStore((s) => s.load);
   const mapType = useSettingsStore((s) => s.mapType);
   const showTraffic = useSettingsStore((s) => s.showTraffic);
+  const currentLocation = useDriveStore((s) => s.currentLocation);
   const [selected, setSelected] = useState<ReadonlySet<MapFilterKey>>(ALL);
 
   useEffect(() => {
@@ -100,9 +111,17 @@ export function useLiveMapViewModel(): LiveMapViewModel {
     [selected],
   );
 
+  const nearbyCameras = useMemo(
+    () => nearestPoints(cameras, currentLocation ?? getDemoRoute()[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M),
+    [cameras, currentLocation],
+  );
+
   const visibleCameras = useMemo(
-    () => (kindKeys === null ? cameras : kindKeys.includes('camera') ? cameras : []),
-    [cameras, kindKeys],
+    () =>
+      kindKeys === null
+        ? nearbyCameras
+        : nearbyCameras.filter((camera) => kindKeys.includes(alertTargetFor(camera.type))),
+    [nearbyCameras, kindKeys],
   );
 
   const visibleHazards = useMemo(
@@ -129,7 +148,8 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const cameraCount = visibleCameras.length;
   const hazardCount = visibleHazards.length;
   const summaryLine =
-    `${cameraCount} camera${cameraCount === 1 ? '' : 's'} · ` +
+    // Cameras, police posts and speed bumps together.
+    `${cameraCount} road alert${cameraCount === 1 ? '' : 's'} · ` +
     `${hazardCount} hazard${hazardCount === 1 ? '' : 's'} nearby`;
 
   const openReport = useCallback((id: string) => {
