@@ -104,6 +104,8 @@ async function advanceVirtualTime(count = 24, stepMs = 250): Promise<void> {
 let renderResult: { getPathname: () => string };
 
 beforeAll(async () => {
+  // Routing falls back to the mock routes, so tests never call the live routing service.
+  globalThis.fetch = jest.fn(() => Promise.reject(new Error('offline in tests'))) as unknown as typeof fetch;
   require('../src/stores/useSessionStore').useSessionStore.setState({
     user: { id: 'driver-demo', name: 'Demo driver', email: 'demo@roadsense.app' },
     hasCompletedOnboarding: true,
