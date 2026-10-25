@@ -9,11 +9,11 @@ import { MapFab } from './MapFab';
 type DriveTopOverlayProps = {
   topInset: number;
   showSearch: boolean;
+  showLimitSign: boolean;
   limitKmh: number | null;
   over: boolean;
   soundMode: SoundMode;
   onGoTo: () => void;
-  onOpenSettings: () => void;
   onSound: () => void;
   onOptions: () => void;
   onRecentre: () => void;
@@ -23,9 +23,9 @@ type DriveTopOverlayProps = {
 export function DriveTopOverlay(props: DriveTopOverlayProps) {
   return (
     <View pointerEvents="box-none" style={[styles.top, { paddingTop: props.topInset + spacing.md }]}>
-      {props.showSearch ? <DriveTopBar onGoTo={props.onGoTo} onOpenSettings={props.onOpenSettings} /> : null}
+      {props.showSearch ? <DriveTopBar onGoTo={props.onGoTo} /> : null}
       <View pointerEvents="box-none" style={styles.row}>
-        <LimitBadge limitKmh={props.limitKmh} size="sm" over={props.over} />
+        {props.showLimitSign ? <LimitBadge limitKmh={props.limitKmh} size="sm" over={props.over} /> : <View />}
         <View style={styles.fabColumn}>
           <MapFab icon={soundModeIcon(props.soundMode)} accessibilityLabel="Sound" onPress={props.onSound} />
           <MapFab icon="layers-outline" accessibilityLabel="Other options" onPress={props.onOptions} />

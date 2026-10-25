@@ -61,18 +61,18 @@ export default function DriveModeScreen() {
           <DriveTopOverlay
             topInset={insets.top}
             showSearch={!showsRouteCard}
+            showLimitSign={controls.showLimitSign}
             limitKmh={vm.hasLimit ? vm.limitKmh : null}
             over={vm.status === 'over'}
             soundMode={controls.soundMode}
             onGoTo={planner.openSearch}
-            onOpenSettings={vm.openSettings}
             onSound={() => controls.openSheet('sound')}
             onOptions={() => controls.openSheet('options')}
             onRecentre={controls.recentre}
           />
           <View pointerEvents="box-none" style={styles.bottom}>
             <View pointerEvents="box-none" style={styles.bottomRow}>
-              <SpeedReadout speedKmh={vm.speedKmh} status={vm.status} />
+              {controls.showSpeedometer ? <SpeedReadout speedKmh={vm.speedKmh} status={vm.status} /> : <View />}
               {/* Black only while driving, so the idle screen keeps a single black CTA. */}
               <MapFab icon="plus" accessibilityLabel="New alert" primary={vm.isDriving} onPress={() => controls.openSheet('report')} />
             </View>
@@ -91,7 +91,7 @@ export default function DriveModeScreen() {
             ) : (
               <DriveBottomBar
                 roadName={controls.roadName}
-                alertsAhead={controls.activeAlerts.length}
+                alertsAhead={controls.showAlertsAhead ? controls.activeAlerts.length : null}
                 isDriving={vm.isDriving}
                 onOpenAlerts={() => controls.openSheet('alerts')}
                 onStart={vm.start}

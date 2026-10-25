@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AppText, BottomSheet, ToggleRow } from '@/components/ui';
+import { AppText, BottomSheet, RadioList, ToggleRow } from '@/components/ui';
 import type { SoundMode } from '@/domain/entities';
 import { spacing, touch, type HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
@@ -23,36 +23,9 @@ type SoundSheetProps = {
   onClose: () => void;
 };
 
-// Radio list of sound modes, shared by the Drive sheet and Alert settings.
+// Radio list of sound modes for the Drive sheet.
 export function SoundModeList({ soundMode, onChoose }: { soundMode: SoundMode; onChoose: (mode: SoundMode) => void }) {
-  const { colors } = useTheme();
-  return (
-    <View>
-      {SOUND_OPTIONS.map((option) => {
-        const selected = option.mode === soundMode;
-        return (
-          <Pressable
-            key={option.mode}
-            accessibilityRole="radio"
-            accessibilityLabel={option.label}
-            accessibilityState={{ selected }}
-            onPress={() => onChoose(option.mode)}
-            style={[styles.row, { borderBottomColor: colors.hairline }]}
-          >
-            <MaterialCommunityIcons name={option.icon} size={22} color={colors.ink} />
-            <AppText variant="bodyMdStrong" style={styles.label}>
-              {option.label}
-            </AppText>
-            <MaterialCommunityIcons
-              name={selected ? 'radiobox-marked' : 'radiobox-blank'}
-              size={22}
-              color={selected ? colors.ink : colors.mute}
-            />
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+  return <RadioList options={SOUND_OPTIONS.map(({ mode, label, icon }) => ({ value: mode, label, icon }))} value={soundMode} onChange={onChoose} />;
 }
 
 export function SoundSheet({ visible, soundMode, onChoose, onClose }: SoundSheetProps) {

@@ -80,7 +80,11 @@ function ThemedChrome() {
             name="alert"
             options={{ presentation: 'transparentModal', headerShown: false, animation: 'fade' }}
           />
-          <Stack.Screen name="settings/alerts" options={{ title: 'Alert settings' }} />
+          <Stack.Screen name="settings/alerts" options={{ title: 'Alerts' }} />
+          <Stack.Screen name="settings/map" options={{ title: 'Map & layers' }} />
+          <Stack.Screen name="settings/sound" options={{ title: 'Sound & voice' }} />
+          <Stack.Screen name="settings/drive-screen" options={{ title: 'Drive screen' }} />
+          <Stack.Screen name="settings/appearance" options={{ title: 'Appearance' }} />
           <Stack.Screen name="report/[id]" options={{ title: 'Report details' }} />
           <Stack.Screen name="route-preview" options={{ headerShown: false }} />
           <Stack.Screen name="trip/[id]" options={{ title: 'Trip details' }} />

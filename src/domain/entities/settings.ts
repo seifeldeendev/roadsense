@@ -25,4 +25,10 @@ export interface Settings {
   // Personal over-speed warning, independent of the road limit; null = off.
   speedAlarmKmh: number | null;
   locationSource: LocationSourceKind;
+  // Kinds of point kept off the maps (they can still alert; see enabledTypes).
+  hiddenOnMap: AlertTarget[];
+  // Drive screen elements the driver can hide.
+  showLimitSign: boolean;
+  showSpeedometer: boolean;
+  showAlertsAhead: boolean;
 }

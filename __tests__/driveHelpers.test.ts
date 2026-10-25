@@ -57,3 +57,14 @@ describe('nearestSpeedLimit and the no-limit rule', () => {
     expect(getSpeedStatus(85, 80)).toBe('over');
   });
 });
+
+describe('visibleOnMap', () => {
+  const { visibleOnMap } = require('../src/domain/usecases/drive/mapLayers');
+  const cams = [camera('a', 30.07, 31.338, 'Salah Salem'), { ...camera('b', 30.071, 31.338, 'Omar'), type: 'speed_bump' }];
+
+  it('drops the hidden kinds and keeps the rest', () => {
+    expect(visibleOnMap(cams, []).map((c: Camera) => c.id)).toEqual(['a', 'b']);
+    expect(visibleOnMap(cams, ['bump']).map((c: Camera) => c.id)).toEqual(['a']);
+    expect(visibleOnMap(cams, ['camera', 'bump'])).toEqual([]);
+  });
+});

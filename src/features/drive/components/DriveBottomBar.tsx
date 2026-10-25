@@ -6,7 +6,8 @@ import { useTheme } from '@/theme/useTheme';
 
 type DriveBottomBarProps = {
   roadName: string | null;
-  alertsAhead: number;
+  // null hides the pill (turned off in Drive screen settings).
+  alertsAhead: number | null;
   isDriving: boolean;
   onOpenAlerts: () => void;
   onStart: () => void;
@@ -23,7 +24,7 @@ export function DriveBottomBar({
   onStop,
 }: DriveBottomBarProps) {
   const { colors } = useTheme();
-  const alertsLabel = `${alertsAhead} alert${alertsAhead === 1 ? '' : 's'} ahead`;
+  const alertsLabel = alertsAhead === null ? '' : `${alertsAhead} alert${alertsAhead === 1 ? '' : 's'} ahead`;
   return (
     <Card variant="form">
       <View style={styles.info}>
@@ -37,18 +38,20 @@ export function DriveBottomBar({
             </>
           ) : null}
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Active alerts, ${alertsLabel}`}
-          onPress={onOpenAlerts}
-          style={({ pressed }) => [
-            styles.alertsPill,
-            { backgroundColor: pressed ? colors.surfacePressed : colors.canvasSoft },
-          ]}
-        >
-          <MaterialCommunityIcons name="alert-outline" size={16} color={colors.ink} />
-          <AppText variant="bodySmStrong">{alertsLabel}</AppText>
-        </Pressable>
+        {alertsAhead === null ? null : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Active alerts, ${alertsLabel}`}
+            onPress={onOpenAlerts}
+            style={({ pressed }) => [
+              styles.alertsPill,
+              { backgroundColor: pressed ? colors.surfacePressed : colors.canvasSoft },
+            ]}
+          >
+            <MaterialCommunityIcons name="alert-outline" size={16} color={colors.ink} />
+            <AppText variant="bodySmStrong">{alertsLabel}</AppText>
+          </Pressable>
+        )}
       </View>
       <AppButton
         title={isDriving ? 'Stop drive' : 'Start drive'}

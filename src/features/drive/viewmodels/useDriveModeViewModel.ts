@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
 import type { HazardType, LocationSourceKind, UpcomingAlert } from '@/domain/entities';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
 import { nearestSpeedLimit } from '@/domain/usecases/drive/nearestRoadName';
@@ -31,7 +30,6 @@ export type DriveModeViewModel = {
   start: () => void;
   stop: () => void;
   onReport: (type: HazardType) => void;
-  openSettings: () => void;
 };
 
 export function useDriveModeViewModel(): DriveModeViewModel {
@@ -103,10 +101,6 @@ export function useDriveModeViewModel(): DriveModeViewModel {
     [showFeedback],
   );
 
-  const openSettings = useCallback(() => {
-    router.push('/settings/alerts');
-  }, []);
-
   return {
     isLoading,
     error,
@@ -123,6 +117,5 @@ export function useDriveModeViewModel(): DriveModeViewModel {
     start,
     stop,
     onReport,
-    openSettings,
   };
 }
