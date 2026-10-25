@@ -4,6 +4,7 @@ import type {
   AlertEvent,
   AlertKind,
   Camera,
+  CameraType,
   Hazard,
   HazardType,
   Trip,
@@ -19,7 +20,7 @@ import { hhmm } from './tripFormat';
 export type TripTile = { label: string; value: string };
 
 export type AlertMarkerModel =
-  | { id: string; kind: 'camera'; lat: number; lng: number; roadName: string; speedLimitKmh: number }
+  | { id: string; kind: 'camera'; lat: number; lng: number; roadName: string; speedLimitKmh: number; cameraType: CameraType }
   | { id: string; kind: 'hazard'; lat: number; lng: number; hazardType: HazardType };
 
 export type TripDetailsViewModel = {
@@ -129,6 +130,7 @@ function resolveAlert(
       lng: camera.lng,
       roadName: camera.roadName,
       speedLimitKmh: camera.speedLimitKmh,
+      cameraType: camera.type,
     };
   }
   const hazard = hazards.find((candidate) => candidate.id === alert.refId);

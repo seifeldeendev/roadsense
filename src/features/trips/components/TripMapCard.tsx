@@ -64,6 +64,7 @@ export function TripMapCard({ trip, segments, alertMarkers, frame }: TripMapCard
               lng={marker.lng}
               roadName={marker.roadName}
               speedLimitKmh={marker.speedLimitKmh}
+              type={marker.cameraType}
             />
           ) : (
             <HazardMarker
