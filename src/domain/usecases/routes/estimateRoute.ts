@@ -19,5 +19,6 @@ export function estimateRoute(destinationId: string, from: LatLng, to: LatLng): 
     points,
     distanceM,
     durationS: Math.round(distanceM / (AVERAGE_SPEED_KMH / 3.6)),
+    estimated: true,
   };
 }

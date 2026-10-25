@@ -68,7 +68,7 @@ export function useDriveModeViewModel(): DriveModeViewModel {
       const source =
         kind === 'gps'
           ? new GpsLocationSource((position) => nearestSpeedLimit(position, useHazardStore.getState().cameras))
-          : createDemoLocationSource();
+          : createDemoLocationSource((position) => nearestSpeedLimit(position, useHazardStore.getState().cameras));
       sourceRef.current = source;
       source.start(createDrivePointHandler(setNextAlert));
     })();

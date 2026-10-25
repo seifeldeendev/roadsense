@@ -22,7 +22,8 @@ export class OsrmRouteRepository implements RouteRepository {
     try {
       return await this.fetchRoute(destination, from);
     } catch {
-      return this.fallback.getRoute(destination, from);
+      // Offline or unreachable: the fallback is only an approximation of the roads.
+      return { ...(await this.fallback.getRoute(destination, from)), estimated: true };
     }
   }
 

@@ -1,6 +1,7 @@
 import type { LatLng, TripPoint } from '../domain/entities';
 import type { LocationSource } from '../domain/repositories';
 import { DEMO_TRIP } from '../data/mock/trips';
+import { simulateDrive } from '../domain/usecases/routes/simulateDrive';
 
 let demoRoute: LatLng[] | null = null;
 
@@ -75,6 +76,8 @@ export function setRate(rate: number): void {
 // the next createDemoLocationSource() play that trip instead of DEMO_TRIP;
 // passing null (or consuming a queued route) restores the demo.
 let pendingRoutePoints: TripPoint[] | null = null;
+// The route chosen in a planner; a demo drive follows it instead of Salah Salem.
+let plannedRoute: LatLng[] | null = null;
 
 // The route Drive Mode is about to play or is playing, published so the map
 // can redraw it (subscribe with useSyncExternalStore). Snapshots are stable
@@ -100,15 +103,23 @@ export function subscribeDriveRoute(listener: () => void): () => void {
 
 export function setDriveRoutePoints(points: TripPoint[] | null): void {
   pendingRoutePoints = points;
+  // A replay replaces any planned route.
+  if (points !== null) plannedRoute = null;
   publishDriveRoute(points);
 }
 
-export function createDemoLocationSource(): LocationSource {
+// Demo playback, in order of preference: a queued trip replay, a simulated drive
+// along the planned route, or the recorded Salah Salem drive.
+export function createDemoLocationSource(limitFor: (position: LatLng) => number = () => 0): LocationSource {
   const queued = pendingRoutePoints;
   pendingRoutePoints = null;
-  // A queued replay is already published; otherwise make sure the demo route shows.
-  if (queued === null && getDriveRoute() !== getDemoRoute()) publishDriveRoute(null);
-  demoSource = new MockLocationSource(queued ?? DEMO_TRIP.points, 1000, currentRate);
+  let points: readonly TripPoint[] = queued ?? DEMO_TRIP.points;
+  if (queued === null && plannedRoute !== null) {
+    points = simulateDrive(plannedRoute, Date.now(), limitFor);
+  } else if (queued === null && getDriveRoute() !== getDemoRoute()) {
+    publishDriveRoute(null);
+  }
+  demoSource = new MockLocationSource(points, 1000, currentRate);
   return demoSource;
 }
 
@@ -120,6 +131,7 @@ export function hasQueuedReplay(): boolean {
 // Shows a planned route (from the route planner) on the Drive map without
 // replaying it; null goes back to the demo route.
 export function showPlannedRoute(points: LatLng[] | null): void {
+  plannedRoute = points;
   driveRoute = points ?? getDemoRoute();
   driveRouteListeners.forEach((listener) => listener());
 }
