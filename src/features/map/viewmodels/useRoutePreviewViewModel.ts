@@ -11,7 +11,7 @@ import { useHazardStore } from '@/stores/useHazardStore';
 import { useRouteStore } from '@/stores/useRouteStore';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { getDemoRoute } from '@/services/location';
+import { getDemoRoute, showPlannedRoute } from '@/services/location';
 
 const SUGGESTION_LIMIT = 5;
 const START_MARKER_MIN_POINTS = 2;
@@ -119,6 +119,8 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
   }, [origin]);
 
   const startDrive = useCallback(() => {
+    // Hand the chosen route to the Drive map before switching to it.
+    showPlannedRoute(useRouteStore.getState().route?.points ?? null);
     router.navigate('/drive');
   }, []);
 
@@ -143,7 +145,7 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
     summaryLine:
       route === null
         ? null
-        : `${formatDistance(route.distanceM)} · ${formatDuration(route.durationS)}`,
+        : `${formatDistance(route.distanceM)} · ${formatDuration(route.durationS)}${route.estimated === true ? ' · estimated' : ''}`,
     countsLine:
       route === null
         ? null
