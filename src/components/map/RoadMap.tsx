@@ -47,6 +47,7 @@ const mapProvider: Provider = Platform.select({
 });
 
 const DRIVE_PITCH = 45;
+const STREET_LEVEL_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
 function followCamera(point: FollowPoint, northUp: boolean): Partial<Camera> {
   const center = { latitude: point.lat, longitude: point.lng };
@@ -82,6 +83,14 @@ export function RoadMap({
     ref,
     () => ({
       fit: (coordinates) => {
+        // A single point (the driver) gets a street-level view instead of maximum zoom.
+        if (coordinates.length === 1) {
+          mapRef.current?.animateToRegion(
+            { latitude: coordinates[0].lat, longitude: coordinates[0].lng, ...STREET_LEVEL_DELTA },
+            500,
+          );
+          return;
+        }
         mapRef.current?.fitToCoordinates(
           coordinates.map((c) => ({ latitude: c.lat, longitude: c.lng })),
           { edgePadding: styles.edgePadding, animated: true },

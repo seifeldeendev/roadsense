@@ -41,6 +41,7 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);
   const isDriving = useDriveStore((s) => s.isDriving);
+  const currentLocation = useDriveStore((s) => s.currentLocation);
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
   const settings = useSettingsStore();
@@ -55,8 +56,12 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
 
   // Before a drive the road is the one the route starts on.
   const roadName = useMemo(
-    () => (settings.showRoadName ? nearestRoadName(position ?? getDriveRoute()[0], cameras) : null),
-    [settings.showRoadName, position, cameras],
+    () => {
+      if (!settings.showRoadName) return null;
+      const where = position ?? currentLocation ?? (settings.locationSource === 'demo' ? getDriveRoute()[0] : null);
+      return where === null ? null : nearestRoadName(where, cameras);
+    },
+    [settings.showRoadName, settings.locationSource, position, currentLocation, cameras],
   );
 
   const closeSheet = useCallback(() => setSheet(null), []);

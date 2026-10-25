@@ -44,6 +44,8 @@ export default function DriveModeScreen() {
       <DriveMap
         routePoints={map.routePoints}
         routeFrame={map.routeFrame}
+        idleFitCoords={map.idleFitCoords}
+        currentLocation={map.currentLocation}
         cameras={map.cameras}
         hazards={map.activeHazards}
         position={map.position}

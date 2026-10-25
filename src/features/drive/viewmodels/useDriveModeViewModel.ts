@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import type { HazardType, UpcomingAlert } from '@/domain/entities';
-import { alertFeedback } from '@/domain/usecases/drive/alertFeedback';
-import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
+import type { HazardType, LocationSourceKind, UpcomingAlert } from '@/domain/entities';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
-import { shouldTriggerSpeedAlarm } from '@/domain/usecases/drive/speedAlarm';
+import { nearestSpeedLimit } from '@/domain/usecases/drive/nearestRoadName';
 import type { LocationSource } from '@/domain/repositories';
-import { createDemoLocationSource } from '@/services/location';
+import { GpsLocationSource, requestLocationPermission } from '@/services/gps';
+import { createDemoLocationSource, hasQueuedReplay } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { hazardMeta } from '@/theme/tokens';
-import { announce, clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
+import { clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
+import { createDrivePointHandler } from './drivePointHandler';
 
 const REPORT_TYPES: HazardType[] = ['accident', 'pothole', 'checkpoint', 'flooding'];
 
@@ -45,7 +45,6 @@ export function useDriveModeViewModel(): DriveModeViewModel {
   const [nextAlert, setNextAlert] = useState<UpcomingAlert | null>(null);
   const [feedback, showFeedback] = useTransientFeedback();
   const sourceRef = useRef<LocationSource | null>(null);
-  const previousSpeedRef = useRef(0);
 
   useEffect(() => {
     void load();
@@ -59,47 +58,23 @@ export function useDriveModeViewModel(): DriveModeViewModel {
   const status = getSpeedStatus(speedKmh, limitKmhRaw, amberThresholdPct);
 
   const start = useCallback(() => {
-    useDriveStore.getState().startDrive();
-    previousSpeedRef.current = 0;
-    const source = createDemoLocationSource();
-    sourceRef.current = source;
-    source.start((point) => {
-      useDriveStore.getState().pushPoint(point);
+    void (async () => {
       const settings = useSettingsStore.getState();
-      if (shouldTriggerSpeedAlarm(previousSpeedRef.current, point.speedKmh, settings.speedAlarmKmh)) {
-        announce(
-          alertFeedback(settings.soundMode, settings.voiceEnabled, 'camera'),
-          `Speed alarm, ${settings.speedAlarmKmh} kilometres per hour`,
-        );
+      // A queued trip replay always plays through the demo source.
+      let kind: LocationSourceKind = settings.locationSource === 'gps' && !hasQueuedReplay() ? 'gps' : 'demo';
+      if (kind === 'gps' && !(await requestLocationPermission())) {
+        kind = 'demo';
+        showFeedback('Location is off — playing the demo drive instead');
       }
-      previousSpeedRef.current = point.speedKmh;
-      const hazardState = useHazardStore.getState();
-      const results = findUpcomingAlerts(
-        { lat: point.lat, lng: point.lng },
-        point.heading,
-        hazardState.cameras,
-        hazardState.hazards,
-        settings,
-      );
-      const nearest = results[0] ?? null;
-      setNextAlert(nearest);
-      const drive = useDriveStore.getState();
-      const isNew =
-        nearest !== null &&
-        drive.activeAlert?.refId !== nearest.refId &&
-        !drive.dismissedAlertIds.includes(nearest.refId);
-      if (nearest !== null && isNew) {
-        const overlayOpen = drive.activeAlert !== null;
-        drive.setActiveAlert(nearest);
-        announce(
-          alertFeedback(settings.soundMode, settings.voiceEnabled, nearest.kind),
-          `${nearest.title} in ${Math.max(1, Math.round(nearest.distanceM))} metres`,
-        );
-        // An open overlay re-renders with the new alert instead of stacking another modal.
-        if (!overlayOpen) router.push('/alert');
-      }
-    });
-  }, []);
+      useDriveStore.getState().startDrive(kind);
+      const source =
+        kind === 'gps'
+          ? new GpsLocationSource((position) => nearestSpeedLimit(position, useHazardStore.getState().cameras))
+          : createDemoLocationSource();
+      sourceRef.current = source;
+      source.start(createDrivePointHandler(setNextAlert));
+    })();
+  }, [showFeedback]);
 
   const stop = useCallback(() => {
     sourceRef.current?.stop();

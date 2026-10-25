@@ -5,6 +5,10 @@ export function getSpeedStatus(
   limitKmh: number,
   amberThresholdPct: number = 90,
 ): SpeedStatus {
+  // No known limit (0) means there is nothing to compare against.
+  if (limitKmh <= 0) {
+    return 'ok';
+  }
   if (speedKmh > limitKmh) {
     return 'over';
   }

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { persistStorage } from './persistStorage';
-import type { AlertTarget, MapType, Settings, SoundMode } from '../domain/entities';
+import type { AlertTarget, LocationSourceKind, MapType, Settings, SoundMode } from '../domain/entities';
 import { DEFAULT_SETTINGS } from '../shared/constants';
 
 interface SettingsState extends Settings {
@@ -16,6 +16,7 @@ interface SettingsState extends Settings {
   setNorthUp(northUp: boolean): void;
   setShowRoadName(showRoadName: boolean): void;
   setSpeedAlarm(speedAlarmKmh: number | null): void;
+  setLocationSource(locationSource: LocationSourceKind): void;
   reset(): void;
 }
 
@@ -39,6 +40,7 @@ export const useSettingsStore = create<SettingsState>()(
       setNorthUp: (northUp) => set({ northUp }),
       setShowRoadName: (showRoadName) => set({ showRoadName }),
       setSpeedAlarm: (speedAlarmKmh) => set({ speedAlarmKmh }),
+      setLocationSource: (locationSource) => set({ locationSource }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {

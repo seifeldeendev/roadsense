@@ -13,6 +13,8 @@ import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
 type DriveMapProps = {
   routePoints: LatLng[];
   routeFrame: MapFrame;
+  idleFitCoords: LatLng[];
+  currentLocation: LatLng | null;
   cameras: Camera[];
   hazards: Hazard[];
   position: LatLng | null;
@@ -30,6 +32,8 @@ type DriveMapProps = {
 export function DriveMap({
   routePoints,
   routeFrame,
+  idleFitCoords,
+  currentLocation,
   cameras,
   hazards,
   position,
@@ -46,8 +50,8 @@ export function DriveMap({
   const followPoint = isDriving && position !== null ? { ...position, heading } : null;
 
   useEffect(() => {
-    if (!isDriving) mapRef.current?.fit(routePoints);
-  }, [isDriving, recentreSignal, routePoints]);
+    if (!isDriving) mapRef.current?.fit(idleFitCoords);
+  }, [isDriving, recentreSignal, idleFitCoords]);
 
   return (
     <RoadMap
@@ -81,6 +85,8 @@ export function DriveMap({
         // A flat marker's rotation is geographic, so it points along the heading in both
         // heading-up (the map turns with it) and north-up modes.
         <UserMarker lat={followPoint.lat} lng={followPoint.lng} heading={followPoint.heading} />
+      ) : currentLocation !== null ? (
+        <UserMarker lat={currentLocation.lat} lng={currentLocation.lng} heading={heading} />
       ) : null}
     </RoadMap>
   );

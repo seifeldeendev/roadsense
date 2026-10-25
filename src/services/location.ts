@@ -111,3 +111,15 @@ export function createDemoLocationSource(): LocationSource {
   demoSource = new MockLocationSource(queued ?? DEMO_TRIP.points, 1000, currentRate);
   return demoSource;
 }
+
+// True while a replayed trip is queued for the next drive (it must use the demo source).
+export function hasQueuedReplay(): boolean {
+  return pendingRoutePoints !== null;
+}
+
+// Shows a planned route (from the route planner) on the Drive map without
+// replaying it; null goes back to the demo route.
+export function showPlannedRoute(points: LatLng[] | null): void {
+  driveRoute = points ?? getDemoRoute();
+  driveRouteListeners.forEach((listener) => listener());
+}
