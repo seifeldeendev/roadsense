@@ -103,6 +103,8 @@ async function advanceVirtualTime(count = 24, stepMs = 250): Promise<void> {
 
 let renderResult: { getPathname: () => string };
 beforeAll(async () => {
+  // Routing falls back to the mock routes, so tests never call the live routing service.
+  globalThis.fetch = jest.fn(() => Promise.reject(new Error('offline in tests'))) as unknown as typeof fetch;
   require('../src/stores/useSessionStore').useSessionStore.setState({
     user: { id: 'driver-demo', name: 'Demo driver', email: 'demo@roadsense.app' },
     hasCompletedOnboarding: true,
@@ -155,10 +157,18 @@ test('"Other options" toggles satellite view', async () => {
   await fireEvent.press(screen.getByLabelText('Close Map options'));
 });
 
-test('"Where to?" opens the route planner', async () => {
+test('"Where to?" plans a route on the same screen, ride-hailing style', async () => {
   await fireEvent.press(screen.getByLabelText('Where to?'));
+  expect(screen.getByText('Plan your drive')).toBeTruthy();
+  expect(renderResult.getPathname()).toBe('/drive');
+  await fireEvent.changeText(screen.getByLabelText('Search destination'), 'fest');
+  await fireEvent.press(screen.getByLabelText('Choose Cairo Festival City'));
   await advanceVirtualTime();
-  expect(renderResult.getPathname()).toBe('/route-preview');
+  expect(renderResult.getPathname()).toBe('/drive');
+  expect(screen.getByText('To Cairo Festival City')).toBeTruthy();
+  expect(screen.getByLabelText('Start drive')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Clear route'));
+  expect(screen.queryByText('To Cairo Festival City')).toBeNull();
 });
 
 test('alert settings expose map display and the speed alarm', async () => {

@@ -35,6 +35,8 @@ type RoadMapProps = {
   showsTraffic?: boolean;
   // Keeps north at the top instead of rotating the map with the heading.
   northUp?: boolean;
+  // Called with the map centre whenever the user finishes panning or zooming.
+  onCenterChange?: (center: { lat: number; lng: number }) => void;
   style?: StyleProp<ViewStyle>;
   ref?: Ref<RoadMapHandle>;
 };
@@ -72,6 +74,7 @@ export function RoadMap({
   mapType = 'standard',
   showsTraffic = false,
   northUp = false,
+  onCenterChange,
   style,
   ref,
 }: RoadMapProps) {
@@ -118,6 +121,11 @@ export function RoadMap({
       region={region}
       mapType={mapType}
       showsTraffic={showsTraffic}
+      onRegionChangeComplete={
+        onCenterChange === undefined
+          ? undefined
+          : (region) => onCenterChange({ lat: region.latitude, lng: region.longitude })
+      }
       // The grayscale style only applies to the drawn map, not satellite imagery.
       customMapStyle={mapType === 'standard' ? (scheme === 'dark' ? darkMapStyle : lightMapStyle) : undefined}
       userInterfaceStyle={scheme}
