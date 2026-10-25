@@ -9,6 +9,9 @@ import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion
 import { formatDistance, formatDuration } from '@/shared/format';
 import { useHazardStore } from '@/stores/useHazardStore';
 import { useRouteStore } from '@/stores/useRouteStore';
+import { useDriveStore } from '@/stores/useDriveStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { getDemoRoute } from '@/services/location';
 
 const SUGGESTION_LIMIT = 5;
 const START_MARKER_MIN_POINTS = 2;
@@ -36,7 +39,9 @@ export type RoutePreviewViewModel = {
 
 export function useRoutePreviewViewModel(): RoutePreviewViewModel {
   const destinations = useRouteStore((s) => s.destinations);
-  const selectedDestinationId = useRouteStore((s) => s.selectedDestinationId);
+  const selected = useRouteStore((s) => s.selected);
+  const currentLocation = useDriveStore((s) => s.currentLocation);
+  const locationSource = useSettingsStore((s) => s.locationSource);
   const route = useRouteStore((s) => s.route);
   const isLoading = useRouteStore((s) => s.isLoading);
   const error = useRouteStore((s) => s.error);
@@ -58,10 +63,9 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
     }
   }, [loadDestinations]);
 
-  const selectedDestination = useMemo<Destination | null>(
-    () => destinations.find((item) => item.id === selectedDestinationId) ?? null,
-    [destinations, selectedDestinationId],
-  );
+  const selectedDestination: Destination | null = selected;
+  // Routes start from the real position when known, otherwise the demo start.
+  const origin = locationSource === 'gps' && currentLocation !== null ? currentLocation : getDemoRoute()[0];
 
   const suggestions = useMemo<Destination[]>(() => {
     const q = query.trim().toLowerCase();
@@ -88,7 +92,7 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
   const onQueryChange = useCallback(
     (text: string) => {
       setQuery(text);
-      if (useRouteStore.getState().selectedDestinationId !== null) {
+      if (useRouteStore.getState().selected !== null) {
         resetSelection();
       }
     },
@@ -97,20 +101,22 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
 
   const chooseDestination = useCallback(
     (id: string) => {
+      const destination = useRouteStore.getState().destinations.find((item) => item.id === id);
+      if (destination === undefined) return;
       setQuery('');
-      void selectDestination(id);
+      void selectDestination(destination, origin);
     },
-    [selectDestination],
+    [selectDestination, origin],
   );
 
   const retry = useCallback(() => {
     const state = useRouteStore.getState();
-    if (state.error !== null && state.selectedDestinationId !== null) {
-      void state.selectDestination(state.selectedDestinationId);
+    if (state.error !== null && state.selected !== null) {
+      void state.selectDestination(state.selected, origin);
       return;
     }
     void state.loadDestinations();
-  }, []);
+  }, [origin]);
 
   const startDrive = useCallback(() => {
     router.navigate('/drive');
