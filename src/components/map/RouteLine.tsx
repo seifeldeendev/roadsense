@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Polyline } from 'react-native-maps';
 import type { LatLng as RouteLatLng } from 'react-native-maps';
 import type { LatLng } from '@/domain/entities';
+import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 import { useTheme } from '@/theme/useTheme';
 
 const LINE_WIDTH = 5;
@@ -17,8 +18,7 @@ export function RouteLine({ coordinates, progressIndex }: RouteLineProps) {
 
   if (native.length < 2) return null;
 
-  const travelled = progressIndex === undefined ? [] : native.slice(0, progressIndex + 1);
-  const ahead = progressIndex === undefined ? native : native.slice(progressIndex);
+  const { travelled, ahead } = splitRoute(native, progressIndex);
 
   return (
     <>

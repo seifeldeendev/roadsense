@@ -3,6 +3,7 @@ import type { Destination, LatLng, PlannedRoute } from '@/domain/entities';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { describeRouteAlerts, getAlertsAlongRoute, type RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance, formatDuration } from '@/shared/format';
+import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { getDemoRoute, showPlannedRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
@@ -59,14 +60,15 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     if (useRouteStore.getState().destinations.length === 0) void useRouteStore.getState().loadDestinations();
   }, []);
 
-  // The chosen route is drawn on the Drive map; clearing it brings back the default.
-  // Only real changes count, so mounting doesn't wipe a trip replay queued elsewhere.
+  // Only a route chosen here is drawn on the Drive map (Route Preview shares the
+  // store), and only real changes count, so mounting doesn't wipe a queued replay.
   const shownRoute = useRef<PlannedRoute | null>(null);
   useEffect(() => {
-    if (route === shownRoute.current) return;
-    shownRoute.current = route;
-    showPlannedRoute(route?.points ?? null);
-  }, [route]);
+    const own = mode === 'route' ? route : null;
+    if (own === shownRoute.current) return;
+    shownRoute.current = own;
+    showPlannedRoute(own?.points ?? null);
+  }, [mode, route]);
 
   const sections = useMemo<PlaceSection[]>(() => {
     const withDistance = (place: Destination): PlaceItem => ({
@@ -93,9 +95,20 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     (place: Destination) => {
       setQuery('');
       setMode('route');
-      void useRouteStore.getState().selectDestination(place, origin);
+      void (async () => {
+        // A route must start where the driver is: fetch a fix if none has arrived yet.
+        let from = origin;
+        if (locationSource === 'gps' && useDriveStore.getState().currentLocation === null) {
+          const fix = (await requestLocationPermission()) ? await getCurrentLocation() : null;
+          if (fix !== null) {
+            useDriveStore.getState().setCurrentLocation(fix);
+            from = fix;
+          }
+        }
+        await useRouteStore.getState().selectDestination(place, from);
+      })();
     },
-    [origin],
+    [origin, locationSource],
   );
 
   const confirmPin = useCallback(() => {
@@ -130,7 +143,7 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     detailLabel:
       route === null
         ? ''
-        : `${formatDistance(route.distanceM)} · ${describeRouteAlerts(alerts)}`,
+        : `${route.estimated === true ? 'Estimated · ' : ''}${formatDistance(route.distanceM)} · ${describeRouteAlerts(alerts)}`,
     alerts,
     openSearch: () => setMode('search'),
     openPin: () => {
