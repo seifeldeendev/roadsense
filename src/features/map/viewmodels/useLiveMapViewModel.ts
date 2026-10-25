@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
-import type { Camera, Hazard, LatLng } from '@/domain/entities';
+import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import {
   hazardMeta,
   type HazardIconName,
@@ -45,6 +46,8 @@ export type LiveMapViewModel = {
   summaryLine: string;
   openReport: (id: string) => void;
   planRoute: () => void;
+  mapType: MapType;
+  showTraffic: boolean;
 };
 
 function toKindKeys(kinds: ReadonlySet<MapFilterKey>): HazardKind[] {
@@ -57,6 +60,8 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const isLoading = useHazardStore((s) => s.isLoading);
   const error = useHazardStore((s) => s.error);
   const load = useHazardStore((s) => s.load);
+  const mapType = useSettingsStore((s) => s.mapType);
+  const showTraffic = useSettingsStore((s) => s.showTraffic);
   const [selected, setSelected] = useState<ReadonlySet<MapFilterKey>>(ALL);
 
   useEffect(() => {
@@ -152,5 +157,7 @@ export function useLiveMapViewModel(): LiveMapViewModel {
     summaryLine,
     openReport,
     planRoute,
+    mapType,
+    showTraffic,
   };
 }

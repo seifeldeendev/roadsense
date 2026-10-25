@@ -35,7 +35,7 @@ export default function LiveMapScreen() {
 
   return (
     <Screen padded={false}>
-      <RoadMap ref={mapRef} initialRegion={vm.frame}>
+      <RoadMap ref={mapRef} initialRegion={vm.frame} mapType={vm.mapType} showsTraffic={vm.showTraffic}>
         {vm.visibleCameras.map((camera) => (
           <CameraMarker
             key={camera.id}
