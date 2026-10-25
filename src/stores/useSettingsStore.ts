@@ -46,6 +46,16 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'roadsense.settings',
       storage: persistStorage,
+      // v1 added the police and speed-bump alert switches; turn them on for saved settings.
+      version: 1,
+      migrate: (persisted, version) => {
+        const state = persisted as Partial<Settings>;
+        if (version < 1 && state.enabledTypes !== undefined) {
+          const added: AlertTarget[] = ['police', 'bump'];
+          state.enabledTypes = [...state.enabledTypes, ...added.filter((t) => !state.enabledTypes?.includes(t))];
+        }
+        return state as SettingsState;
+      },
     },
   ),
 );

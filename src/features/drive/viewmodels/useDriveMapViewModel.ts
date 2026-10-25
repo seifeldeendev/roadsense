@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
+import { nearestPoints } from '@/domain/usecases/drive/fixedPoints';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
@@ -8,6 +9,12 @@ import { getDemoRoute, getDriveRoute, subscribeDriveRoute } from '@/services/loc
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+
+// The road database covers all of Egypt; the map draws only nearby points.
+const MAX_MAP_POINTS = 150;
+const DRIVING_RADIUS_M = 4000;
+const MAX_IDLE_RADIUS_M = 30_000;
+const METRES_PER_DEGREE = 111_000;
 
 export type DriveMapViewModel = {
   // Empty when no route applies (a GPS drive with nothing planned).
@@ -66,6 +73,19 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   }, [routePoints, currentLocation, driveRoute]);
   const routeFrame = useMemo(() => fitRouteRegion(idleFitCoords), [idleFitCoords]);
 
+  // Driving: around the vehicle. Idle: whatever the map is framing (route or position).
+  const visibleCameras = useMemo(() => {
+    if (isDriving && position !== null) {
+      return nearestPoints(cameras, position, MAX_MAP_POINTS, DRIVING_RADIUS_M);
+    }
+    const center = { lat: routeFrame.latitude, lng: routeFrame.longitude };
+    const radiusM = Math.min(
+      MAX_IDLE_RADIUS_M,
+      Math.max(DRIVING_RADIUS_M, (Math.max(routeFrame.latitudeDelta, routeFrame.longitudeDelta) * METRES_PER_DEGREE) / 2),
+    );
+    return nearestPoints(cameras, center, MAX_MAP_POINTS, radiusM);
+  }, [cameras, isDriving, position, routeFrame]);
+
   // Re-evaluated whenever the hazard list changes (e.g. a vote expires one).
   const activeHazards = useMemo(
     () => hazards.filter((hazard) => !isHazardExpired(hazard, new Date())),
@@ -81,7 +101,7 @@ export function useDriveMapViewModel(): DriveMapViewModel {
     routeFrame,
     idleFitCoords,
     currentLocation,
-    cameras,
+    cameras: visibleCameras,
     activeHazards,
     position,
     heading,

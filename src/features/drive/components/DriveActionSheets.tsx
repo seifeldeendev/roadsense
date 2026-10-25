@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText, Badge, BottomSheet } from '@/components/ui';
 import type { HazardType, UpcomingAlert } from '@/domain/entities';
 import { formatDistance } from '@/shared/format';
-import { hazardMeta, rounded, spacing, touch } from '@/theme/tokens';
+import { alertIcon, hazardMeta, rounded, spacing, touch } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { ReportButton } from './ReportButton';
 
@@ -57,7 +57,7 @@ export function ActiveAlertsSheet({ visible, alerts, onOpenAlert, onClose }: Act
           </AppText>
         }
         renderItem={({ item }) => {
-          const icon = hazardMeta[item.kind === 'camera' ? 'camera' : (item.hazard?.type ?? 'accident')].icon;
+          const icon = alertIcon(item.camera?.type, item.hazard?.type);
           return (
             <Pressable
               accessibilityRole="button"

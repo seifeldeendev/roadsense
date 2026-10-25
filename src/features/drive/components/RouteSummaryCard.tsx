@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppButton, AppText, Badge, Card, IconButton } from '@/components/ui';
 import type { RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance } from '@/shared/format';
-import { hazardMeta, spacing } from '@/theme/tokens';
+import { alertIcon, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 const MAX_ALERT_ROWS = 3;
@@ -46,7 +46,7 @@ export function RouteSummaryCard(props: RouteSummaryCardProps) {
       {props.alerts.slice(0, MAX_ALERT_ROWS).map((alert) => (
         <View key={alert.refId} style={[styles.alertRow, { borderTopColor: colors.hairline }]}>
           <MaterialCommunityIcons
-            name={hazardMeta[alert.kind === 'camera' ? 'camera' : (alert.hazardType ?? 'accident')].icon}
+            name={alertIcon(alert.featureType, alert.hazardType)}
             size={20}
             color={colors.ink}
           />

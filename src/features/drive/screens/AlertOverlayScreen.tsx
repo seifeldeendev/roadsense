@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton, AppText, EmptyState, IconButton } from '@/components/ui';
-import { hazardMeta, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import { alertIcon, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { LimitBadge } from '../components/LimitBadge';
 import { StillThereSection } from '../components/StillThereSection';
@@ -31,8 +31,7 @@ export default function AlertOverlayScreen() {
     );
   }
 
-  const icon: HazardIconName =
-    vm.alertKind === 'camera' ? hazardMeta.camera.icon : vm.hazard !== null ? hazardMeta[vm.hazard.type].icon : 'alert';
+  const icon: HazardIconName = alertIcon(vm.alert.camera?.type, vm.hazard?.type);
   // Speed status colour is the one accent allowed: it marks driving over the camera's limit.
   const accent = vm.isOverCameraLimit ? colors.status.over : colors.ink;
 

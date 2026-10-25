@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import type { AlertTarget, Camera, Settings, UpcomingAlert, User } from '@/domain/entities';
+import { isSpeedCamera } from '@/domain/usecases/drive/fixedPoints';
 import { speak } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
@@ -58,7 +59,8 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
   }, []);
 
   const sampleCameraAlert = useCallback((): UpcomingAlert | null => {
-    const camera: Camera | undefined = useHazardStore.getState().cameras[0];
+    // The road database also lists police and bumps; the preview uses a speed camera.
+    const camera: Camera | undefined = useHazardStore.getState().cameras.find((item) => isSpeedCamera(item));
     if (camera === undefined) return null;
     return {
       kind: 'camera',
@@ -66,7 +68,7 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
       title: 'Speed camera ahead',
       roadName: camera.roadName,
       distanceM: 300,
-      speedLimitKmh: camera.speedLimitKmh,
+      speedLimitKmh: camera.speedLimitKmh > 0 ? camera.speedLimitKmh : undefined,
       camera,
     };
   }, []);
