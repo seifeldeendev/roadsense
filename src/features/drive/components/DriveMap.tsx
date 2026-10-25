@@ -73,6 +73,7 @@ export function DriveMap({
           lng={camera.lng}
           roadName={camera.roadName}
           speedLimitKmh={camera.speedLimitKmh}
+          type={camera.type}
         />
       ))}
       {hazards.map((hazard) => (

@@ -1,6 +1,6 @@
 import type { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import type { HazardType } from '@/domain/entities';
+import type { CameraType, HazardType } from '@/domain/entities';
 import type { ViewStyle } from 'react-native';
 
 export type ThemeColors = {
@@ -153,14 +153,32 @@ export const touch = {
   large: 56,
 } as const;
 
-export type HazardKind = HazardType | 'camera';
+export type HazardKind = HazardType | 'camera' | 'police' | 'bump';
 
 export type HazardIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 export const hazardMeta: Record<HazardKind, { label: string; icon: HazardIconName }> = {
   camera: { label: 'Camera', icon: 'cctv' },
+  police: { label: 'Police', icon: 'police-station' },
+  bump: { label: 'Speed bump', icon: 'car-brake-alert' },
   accident: { label: 'Accident', icon: 'car-emergency' },
   pothole: { label: 'Pothole', icon: 'road-variant' },
   checkpoint: { label: 'Checkpoint', icon: 'police-badge' },
   flooding: { label: 'Flooding', icon: 'waves' },
 };
+
+// Icon for each kind of fixed road point; speed-bump zones get their own glyph.
+export const fixedPointIcon: Record<CameraType, HazardIconName> = {
+  fixed: 'cctv',
+  average: 'cctv',
+  red_light: 'cctv',
+  police: 'police-station',
+  speed_bump: 'car-brake-alert',
+  bump_zone: 'traffic-cone',
+};
+
+// One place to pick the icon for any alert: fixed points by their type, reports by hazard.
+export function alertIcon(featureType: CameraType | undefined, hazardType: HazardType | undefined): HazardIconName {
+  if (featureType !== undefined) return fixedPointIcon[featureType];
+  return hazardType !== undefined ? hazardMeta[hazardType].icon : 'alert';
+}

@@ -1,6 +1,7 @@
 import type { HazardType } from './hazard-type';
 
-export type AlertTarget = HazardType | 'camera';
+// What a driver can switch alerts on and off for.
+export type AlertTarget = HazardType | 'camera' | 'police' | 'bump';
 
 export type SoundMode = 'all' | 'cameras' | 'vibrate' | 'muted';
 

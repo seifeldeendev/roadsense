@@ -25,6 +25,8 @@ export function nearestRoadName(position: LatLng, cameras: readonly Camera[]): s
 }
 
 // 0 when unknown, matching the speed-status rule that 0 means "no limit".
+// Speed bumps carry no limit, so only points that state one are considered.
 export function nearestSpeedLimit(position: LatLng, cameras: readonly Camera[]): number {
-  return nearestCamera(position, cameras)?.speedLimitKmh ?? 0;
+  const withLimit = cameras.filter((camera) => camera.speedLimitKmh > 0);
+  return nearestCamera(position, withLimit)?.speedLimitKmh ?? 0;
 }

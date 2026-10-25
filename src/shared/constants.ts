@@ -4,7 +4,7 @@ const HOUR_MS = 3_600_000;
 
 export const DEFAULT_SETTINGS: Settings = {
   alertDistanceM: 300,
-  enabledTypes: ['camera', 'accident', 'pothole', 'checkpoint', 'flooding'],
+  enabledTypes: ['camera', 'police', 'bump', 'accident', 'pothole', 'checkpoint', 'flooding'],
   voiceEnabled: true,
   soundEnabled: true,
   units: 'kmh',

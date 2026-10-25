@@ -1,5 +1,6 @@
 import type { Camera, Hazard, HazardType, Settings, UpcomingAlert } from '../../entities';
 import { HEADING_CONE_DEG } from '../../../shared/constants';
+import { alertTargetFor, fixedPointTitle, isSpeedCamera } from './fixedPoints';
 import { angleDiffDeg, bearingDeg, haversineDistanceM } from './geo';
 
 const HAZARD_TITLES: Record<HazardType, string> = {
@@ -20,8 +21,9 @@ export function findUpcomingAlerts(
 ): UpcomingAlert[] {
   const results: UpcomingAlert[] = [];
 
-  if (settings.enabledTypes.includes('camera')) {
+  {
     for (const camera of cameras) {
+      if (!settings.enabledTypes.includes(alertTargetFor(camera.type))) continue;
       const distanceM = haversineDistanceM(position, camera);
       if (distanceM > maxDistanceM) continue;
       if (angleDiffDeg(headingDeg, bearingDeg(position, camera)) > HEADING_CONE_DEG) {
@@ -30,10 +32,11 @@ export function findUpcomingAlerts(
       results.push({
         kind: 'camera',
         refId: camera.id,
-        title: 'Speed camera ahead',
+        title: fixedPointTitle(camera.type),
         roadName: camera.roadName,
         distanceM,
-        speedLimitKmh: camera.speedLimitKmh,
+        // Only speed cameras enforce a limit; police posts and bumps just warn.
+        speedLimitKmh: isSpeedCamera(camera) && camera.speedLimitKmh > 0 ? camera.speedLimitKmh : undefined,
         camera,
       });
     }

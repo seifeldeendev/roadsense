@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Destination, LatLng, PlannedRoute } from '@/domain/entities';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
-import { getAlertsAlongRoute, type RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
+import { describeRouteAlerts, getAlertsAlongRoute, type RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance, formatDuration } from '@/shared/format';
 import { getDemoRoute, showPlannedRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
@@ -114,8 +114,6 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     () => (route === null ? [] : getAlertsAlongRoute(route.points, cameras, hazards)),
     [route, cameras, hazards],
   );
-  const cameraCount = alerts.filter((alert) => alert.kind === 'camera').length;
-  const hazardCount = alerts.length - cameraCount;
 
   return {
     mode,
@@ -132,7 +130,7 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     detailLabel:
       route === null
         ? ''
-        : `${formatDistance(route.distanceM)} · ${cameraCount} camera${cameraCount === 1 ? '' : 's'} · ${hazardCount} hazard${hazardCount === 1 ? '' : 's'}`,
+        : `${formatDistance(route.distanceM)} · ${describeRouteAlerts(alerts)}`,
     alerts,
     openSearch: () => setMode('search'),
     openPin: () => {
