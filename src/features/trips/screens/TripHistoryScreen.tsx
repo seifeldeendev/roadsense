@@ -1,3 +1,4 @@
+import { useTabBarSpace } from '@/components/navigation';
 import { RefreshControl, SectionList, StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme/useTheme';
 import {
@@ -19,6 +20,7 @@ const FILTER_OPTIONS = [
 
 export default function TripHistoryScreen() {
   const vm = useTripHistoryViewModel();
+  const tabBarSpace = useTabBarSpace();
   const { colors } = useTheme();
 
   if (vm.isLoading) {
@@ -78,7 +80,7 @@ export default function TripHistoryScreen() {
                 colors={[colors.ink]}
               />
             }
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, { paddingBottom: tabBarSpace + spacing.md }]}
           />
         )}
       </View>

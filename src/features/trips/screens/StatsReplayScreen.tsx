@@ -1,3 +1,4 @@
+import { useTabBarSpace } from '@/components/navigation';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
@@ -21,6 +22,7 @@ export default function StatsReplayScreen() {
   const vm = useStatsReplayViewModel(
     typeof replayParam === 'string' ? replayParam : undefined,
   );
+  const tabBarSpace = useTabBarSpace();
   const styles = useThemedStyles(statsStyles, undefined);
 
   if (vm.isLoading) {
@@ -52,7 +54,7 @@ export default function StatsReplayScreen() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll bottomInset={tabBarSpace}>
       <View style={styles.container}>
         <View style={styles.section}>
           <SectionHeader title="Weekly stats" size="md" />
