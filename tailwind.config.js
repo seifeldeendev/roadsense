@@ -15,6 +15,10 @@ const kebab = (name) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
+  // Light/dark comes from the CSS variables set at the root, not dark: variants.
+  // 'class' also stops NativeWind's web runtime throwing when it tries to set
+  // the colour scheme under the default 'media' mode.
+  darkMode: 'class',
   // AppText builds text-<colour> from its color prop, so those classes are kept.
   safelist: colorNames.map((name) => `text-${name}`),
   theme: {
