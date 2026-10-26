@@ -4,9 +4,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
 import { useTheme } from '@/theme/useTheme';
 import type { RoadMapHandle } from './RoadMap';
+import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
 
 type RoadMapProps = {
   ref?: Ref<RoadMapHandle>;
+  // The placeholder shows no map, so region changes are nowhere to come from.
+  onRegionChange?: (region: MapFrame) => void;
 };
 
 export function RoadMap({ ref }: RoadMapProps) {

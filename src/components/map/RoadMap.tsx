@@ -38,6 +38,8 @@ type RoadMapProps = {
   northUp?: boolean;
   // Called with the map centre whenever the user finishes panning or zooming.
   onCenterChange?: (center: { lat: number; lng: number }) => void;
+  // Called with the visible region (centre and span) whenever a pan or zoom ends.
+  onRegionChange?: (region: MapFrame) => void;
   style?: StyleProp<ViewStyle>;
   ref?: Ref<RoadMapHandle>;
 };
@@ -76,6 +78,7 @@ export function RoadMap({
   showsTraffic = false,
   northUp = false,
   onCenterChange,
+  onRegionChange,
   style,
   ref,
 }: RoadMapProps) {
@@ -123,9 +126,12 @@ export function RoadMap({
       mapType={mapType}
       showsTraffic={showsTraffic}
       onRegionChangeComplete={
-        onCenterChange === undefined
+        onCenterChange === undefined && onRegionChange === undefined
           ? undefined
-          : (region) => onCenterChange({ lat: region.latitude, lng: region.longitude })
+          : (region) => {
+              if (onCenterChange !== undefined) onCenterChange({ lat: region.latitude, lng: region.longitude });
+              if (onRegionChange !== undefined) onRegionChange(region);
+            }
       }
       // The grayscale style only applies to the drawn map, not satellite imagery.
       customMapStyle={mapType === 'standard' ? (scheme === 'dark' ? darkMapStyle : lightMapStyle) : undefined}

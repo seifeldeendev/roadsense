@@ -16,6 +16,6 @@ Investigated 2026-10-26 by OpenCode (glm-5.3-flash-free, read-only); every claim
 
 Not a cause: no points have invalid coordinates (0 dropped); `speed_limit: "0"` (3,537 points) only hides the km/h badge.
 
-## Suggested fix (not applied)
+## Fix (applied in AI-029)
 1. Feed the map's visible region back into the view models (`onCenterChange`/region, debounced) and recompute `nearestPoints` around it, sizing the radius to the zoom. Panning then always shows nearby points. Or replace the cap with marker clustering (e.g. supercluster) so all 4,215 points are reachable when zoomed in.
 2. Map the extra codes to types once their meaning is known (PN/B look like police/bump variants), or log them.

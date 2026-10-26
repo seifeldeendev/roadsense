@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
-import { nearestPoints } from '@/domain/usecases/drive/fixedPoints';
+import { isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/usecases/drive/fixedPoints';
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
@@ -33,6 +33,8 @@ export type DriveMapViewModel = {
   mapType: MapType;
   showTraffic: boolean;
   northUp: boolean;
+  // Viewport updates after the user pans or zooms the idle map; driving ignores them.
+  onRegionChange: (region: MapFrame) => void;
 };
 
 export function useDriveMapViewModel(): DriveMapViewModel {
@@ -75,11 +77,27 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   }, [routePoints, currentLocation, driveRoute]);
   const routeFrame = useMemo(() => fitRouteRegion(idleFitCoords), [idleFitCoords]);
 
-  // Driving: around the vehicle. Idle: whatever the map is framing (route or position).
+  // What the idle map is looking at since the last pan/zoom, if the user moved it.
+  const [viewport, setViewport] = useState<MapFrame | null>(null);
+
+  // Viewport only shapes the idle map; while driving the vehicle is the centre.
+  const onRegionChange = useCallback(
+    (region: MapFrame) => {
+      if (isDriving) return;
+      setViewport((prev) => (isMinorRegionChange(prev, region) ? prev : region));
+    },
+    [isDriving],
+  );
+
+  // Driving: around the vehicle. Idle: whatever the map is framing (panned viewport,
+  // or the route/position the map was fitted to).
   const visibleCameras = useMemo(() => {
     const shown = visibleOnMap(cameras, hiddenOnMap);
     if (isDriving && position !== null) {
       return nearestPoints(shown, position, MAX_MAP_POINTS, DRIVING_RADIUS_M);
+    }
+    if (!isDriving && viewport !== null) {
+      return pointsInView(shown, viewport, MAX_MAP_POINTS);
     }
     const center = { lat: routeFrame.latitude, lng: routeFrame.longitude };
     const radiusM = Math.min(
@@ -87,7 +105,7 @@ export function useDriveMapViewModel(): DriveMapViewModel {
       Math.max(DRIVING_RADIUS_M, (Math.max(routeFrame.latitudeDelta, routeFrame.longitudeDelta) * METRES_PER_DEGREE) / 2),
     );
     return nearestPoints(shown, center, MAX_MAP_POINTS, radiusM);
-  }, [cameras, hiddenOnMap, isDriving, position, routeFrame]);
+  }, [cameras, hiddenOnMap, isDriving, position, routeFrame, viewport]);
 
   // Re-evaluated whenever the hazard list changes (e.g. a vote expires one).
   const activeHazards = useMemo(
@@ -113,5 +131,6 @@ export function useDriveMapViewModel(): DriveMapViewModel {
     mapType,
     showTraffic,
     northUp,
+    onRegionChange,
   };
 }

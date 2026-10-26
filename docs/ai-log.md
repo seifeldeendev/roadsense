@@ -167,3 +167,8 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Prompt (verbatim):** "and also please using $opencode-delegate search for the cause that all of the data at @src/data/radars/radars_eg.json is not being viewed at the map"
 **Output:** `docs/radar-visibility-findings.md`. Main cause: the maps draw only the nearest 150 points around a fixed centre (GPS fix or demo start) that does not follow panning; also 40 points with unlabelled type codes are skipped. No code changed.
 **Verification:** Claude re-checked the type counts against the JSON and the cap/radius/centre code lines. _Seif: fill in your notes._
+
+### AI-029 · 2026-10-26 · Seif · radar points follow the map when panning · OpenCode (opencode/glm-5.3-flash-free, build agent), reviewed by Claude Code
+**Prompt (verbatim):** "make opencode implement this and review after him" (the fix suggested in docs/radar-visibility-findings.md).
+**Output:** the map reports its visible region after each pan/zoom (`onRegionChange` on native `RoadMap` and the web Google map); new pure `pointsInView` (nearest 150 within half the visible diagonal, 2–50 km) and `isMinorRegionChange` (ignores <100 m / <10% zoom nudges) in `fixedPoints.ts`, with tests. Live Map and the idle Drive map draw the points around what is on screen; driving keeps the 4 km around the car. Live Map refits only on first load, filter change or Recentre (which returns to the driver), so panning never fights the user. The 40 unlabelled type codes are still skipped (meaning not confirmed).
+**Review (Claude):** read the whole diff against the brief (scope, MVVM rules, no refit loop, driving unaffected), reran tsc, lint, jest 123/123 twice, Android + web export. Not yet seen on a device. _Seif: fill in your notes._

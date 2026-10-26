@@ -27,6 +27,7 @@ type DriveMapProps = {
   recentreSignal: number;
   onOpenHazard: (hazardId: string) => void;
   onCenterChange?: (center: LatLng) => void;
+  onRegionChange?: (region: MapFrame) => void;
 };
 
 // Full-screen driving map: follows the vehicle while driving, frames the route when idle.
@@ -47,6 +48,7 @@ export function DriveMap({
   recentreSignal,
   onOpenHazard,
   onCenterChange,
+  onRegionChange,
 }: DriveMapProps) {
   const mapRef = useRef<RoadMapHandle | null>(null);
   const followPoint = isDriving && position !== null ? { ...position, heading } : null;
@@ -64,6 +66,7 @@ export function DriveMap({
       showsTraffic={showTraffic}
       northUp={northUp}
       onCenterChange={onCenterChange}
+      onRegionChange={onRegionChange}
     >
       <RouteLine coordinates={routePoints} progressIndex={isDriving ? travelledIndex : undefined} />
       {cameras.map((camera) => (
