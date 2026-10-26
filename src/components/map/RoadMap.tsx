@@ -5,10 +5,11 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import MapView, {
   PROVIDER_GOOGLE,
   type Camera,
+  type Provider,
   type Region,
 } from 'react-native-maps';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
@@ -44,6 +45,10 @@ type RoadMapProps = {
 
 type MapViewInstance = InstanceType<typeof MapView>;
 
+// Each phone's own map: Apple Maps on iPhone (works in Expo Go, no SDK or key),
+// Google Maps on Android (the only map react-native-maps has there).
+const mapProvider: Provider = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
+
 const DRIVE_PITCH = 45;
 const STREET_LEVEL_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
@@ -53,7 +58,9 @@ function followCamera(point: FollowPoint, northUp: boolean): Partial<Camera> {
     center,
     heading: northUp ? 0 : point.heading,
     pitch: DRIVE_PITCH,
+    // Google honours zoom, Apple Maps reads the altitude equivalent.
     zoom: 16,
+    altitude: 750,
   };
 }
 
@@ -111,8 +118,7 @@ export function RoadMap({
     <MapView
       ref={mapRef}
       style={styles.base}
-      // Google Maps on iOS and Android alike (web uses the Maps JavaScript API).
-      provider={PROVIDER_GOOGLE}
+      provider={mapProvider}
       initialRegion={initialRegion}
       region={region}
       mapType={mapType}
@@ -127,6 +133,8 @@ export function RoadMap({
       }
       // The grayscale style only applies to the drawn map, not satellite imagery.
       customMapStyle={mapType === 'standard' ? (scheme === 'dark' ? darkMapStyle : lightMapStyle) : undefined}
+      // Apple Maps ignores customMapStyle; this keeps it in the app's light/dark scheme.
+      userInterfaceStyle={scheme}
       showsCompass={false}
       showsMyLocationButton={false}
       showsUserLocation={false}
