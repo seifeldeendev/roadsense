@@ -1,21 +1,17 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppButton, EmptyState, ErrorState, LoadingState } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 export function LiveMapLoadingOverlay({ label }: { label: string }) {
-  const styles = useThemedStyles(overlayStyles, undefined);
   return (
-    <View style={styles.fill}>
+    <View className="absolute inset-0 justify-center p-lg">
       <LoadingState label={label} />
     </View>
   );
 }
 
 export function LiveMapErrorOverlay({ message, onRetry }: { message: string; onRetry: () => void }) {
-  const styles = useThemedStyles(overlayStyles, undefined);
   return (
-    <View style={styles.fill}>
+    <View className="absolute inset-0 justify-center p-lg">
       <ErrorState message={message} onRetry={onRetry} />
     </View>
   );
@@ -27,10 +23,9 @@ type MapEmptyOverlayProps = {
 };
 
 export function LiveMapEmptyOverlay({ message, onReset }: MapEmptyOverlayProps) {
-  const styles = useThemedStyles(overlayStyles, undefined);
   return (
-    <View pointerEvents="box-none" style={styles.fill}>
-      <View style={styles.card}>
+    <View pointerEvents="box-none" className="absolute inset-0 justify-center p-lg">
+      <View className="flex-1 justify-center">
         <EmptyState
           icon="filter-variant"
           title="Nothing in view"
@@ -47,18 +42,4 @@ export function LiveMapEmptyOverlay({ message, onReset }: MapEmptyOverlayProps) 
       </View>
     </View>
   );
-}
-
-function overlayStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    fill: {
-      ...StyleSheet.absoluteFill,
-      justifyContent: 'center',
-      padding: spacing.lg,
-    },
-    card: {
-      flex: 1,
-      justifyContent: 'center',
-    },
-  });
 }
