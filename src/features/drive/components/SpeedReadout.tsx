@@ -1,7 +1,7 @@
-import { View } from 'react-native';
-import { AppText } from '@/components/ui';
-import { elevation } from '@/theme/tokens';
+import { AppText, GlassSurface } from '@/components/ui';
 import type { SpeedStatus } from './speedStatusMeta';
+
+const READOUT_SIZE = 88;
 
 // The number takes the speed-status colour, the one allowed accent.
 const statusText: Record<SpeedStatus, string> = {
@@ -15,14 +15,14 @@ type SpeedReadoutProps = {
   status: SpeedStatus;
 };
 
-// Current speed in a floating circle.
+// Current speed in a floating glass circle.
 export function SpeedReadout({ speedKmh, status }: SpeedReadoutProps) {
   return (
-    <View
+    <GlassSurface
       accessibilityRole="text"
       accessibilityLabel={`Speed ${speedKmh} kilometres per hour`}
-      className="h-[88px] w-[88px] items-center justify-center rounded-full bg-canvas"
-      style={elevation.level3}
+      radius={READOUT_SIZE / 2}
+      className="h-[88px] w-[88px] items-center justify-center"
     >
       <AppText variant="displayLg" className={`${statusText[status]} tabular-nums`}>
         {speedKmh}
@@ -30,6 +30,6 @@ export function SpeedReadout({ speedKmh, status }: SpeedReadoutProps) {
       <AppText variant="caption" color="body">
         km/h
       </AppText>
-    </View>
+    </GlassSurface>
   );
 }

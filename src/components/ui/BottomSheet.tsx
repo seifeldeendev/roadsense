@@ -3,7 +3,8 @@ import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from './AppText';
 import { IconButton } from './IconButton';
-import { elevation, spacing } from '@/theme/tokens';
+import { rounded, spacing } from '@/theme/tokens';
+import { GlassSurface } from './GlassSurface';
 
 type BottomSheetProps = {
   visible: boolean;
@@ -23,10 +24,11 @@ export function BottomSheet({ visible, title, onClose, children }: BottomSheetPr
           accessibilityRole="button"
           accessibilityLabel="Dismiss"
         />
-        <View
+        <GlassSurface
           accessibilityViewIsModal
-          className="gap-lg rounded-t-xl bg-canvas px-xxl pt-md"
-          style={[elevation.level2, { paddingBottom: spacing.xxl + insets.bottom }]}
+          radius={rounded.xl}
+          className="gap-lg px-xxl pt-md"
+          style={{ paddingBottom: spacing.xxl + insets.bottom }}
         >
           <View className="h-1 w-10 self-center rounded-pill bg-hairline" />
           <View className="flex-row items-center justify-between">
@@ -34,7 +36,7 @@ export function BottomSheet({ visible, title, onClose, children }: BottomSheetPr
             <IconButton icon="close" accessibilityLabel={`Close ${title}`} onPress={onClose} />
           </View>
           {children}
-        </View>
+        </GlassSurface>
       </View>
     </Modal>
   );

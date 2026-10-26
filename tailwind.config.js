@@ -4,7 +4,7 @@
 const scales = require('./src/theme/scales.json');
 
 const colorNames = [
-  'primary', 'on-primary', 'primary-pressed', 'canvas', 'canvas-soft', 'canvas-softer', 'canvas-glass',
+  'primary', 'on-primary', 'primary-pressed', 'canvas', 'canvas-soft', 'canvas-softer', 'canvas-glass', 'canvas-frost',
   'surface-pressed', 'ink', 'body', 'hairline-mid', 'mute', 'hairline', 'inverse', 'on-inverse',
   'inverse-muted', 'backdrop', 'status-ok', 'status-near', 'status-over',
 ];
