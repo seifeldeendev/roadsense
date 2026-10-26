@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useTabBarSpace } from '@/components/navigation';
 import { IconButton, Screen } from '@/components/ui';
 import {
@@ -8,8 +8,7 @@ import {
   RoadMap,
   type RoadMapHandle,
 } from '@/components/map';
-import { rounded, spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { elevation, spacing } from '@/theme/tokens';
 import { MapFilterBar } from '../components/MapFilterBar';
 import {
   LiveMapEmptyOverlay,
@@ -26,7 +25,6 @@ const FAB_ABOVE_CARD = 132;
 export default function LiveMapScreen() {
   const vm = useLiveMapViewModel();
   const tabBarSpace = useTabBarSpace();
-  const styles = useThemedStyles(screenStyles, undefined);
   const mapRef = useRef<RoadMapHandle | null>(null);
   const [recentreCount, setRecentreCount] = useState(0);
 
@@ -62,7 +60,10 @@ export default function LiveMapScreen() {
 
       <MapFilterBar chips={vm.chips} onToggle={vm.toggleFilter} />
 
-      <View style={[styles.fabShell, { bottom: tabBarSpace + spacing.md + FAB_ABOVE_CARD }]}>
+      <View
+        className="absolute right-lg rounded-full bg-canvas"
+        style={[elevation.level3, { bottom: tabBarSpace + spacing.md + FAB_ABOVE_CARD }]}
+      >
         <IconButton
           icon="crosshairs-gps"
           accessibilityLabel="Recentre map"
@@ -83,16 +84,4 @@ export default function LiveMapScreen() {
       ) : null}
     </Screen>
   );
-}
-
-function screenStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    fabShell: {
-      position: 'absolute',
-      right: spacing.lg,
-      backgroundColor: _theme.colors.canvas,
-      borderRadius: rounded.full,
-      ..._theme.elevation.level3,
-    },
-  });
 }

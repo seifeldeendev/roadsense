@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import {
   PinMarker,
   RoadMap,
@@ -9,8 +9,6 @@ import {
 } from '@/components/map';
 import type { PlannedRoute } from '@/domain/entities';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
-import { rounded } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 type RouteMapCardProps = {
   route: PlannedRoute;
@@ -20,7 +18,6 @@ type RouteMapCardProps = {
 };
 
 export function RouteMapCard({ route, frame, startHeading, destinationName }: RouteMapCardProps) {
-  const styles = useThemedStyles(routeMapCardStyles, undefined);
   const mapRef = useRef<RoadMapHandle | null>(null);
 
   useEffect(() => {
@@ -30,7 +27,7 @@ export function RouteMapCard({ route, frame, startHeading, destinationName }: Ro
   const last = route.points[route.points.length - 1];
 
   return (
-    <View style={styles.frame}>
+    <View className="aspect-video overflow-hidden rounded-xl">
       <RoadMap ref={mapRef} initialRegion={frame}>
         <RouteLine coordinates={route.points} />
         <UserMarker lat={route.points[0].lat} lng={route.points[0].lng} heading={startHeading} />
@@ -42,14 +39,4 @@ export function RouteMapCard({ route, frame, startHeading, destinationName }: Ro
       </RoadMap>
     </View>
   );
-}
-
-function routeMapCardStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    frame: {
-      aspectRatio: 16 / 9,
-      borderRadius: rounded.xl,
-      overflow: 'hidden',
-    },
-  });
 }

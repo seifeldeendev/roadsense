@@ -1,9 +1,8 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Card } from '@/components/ui';
+import { AppText, Card } from '@/components/ui';
 import type { Destination } from '@/domain/entities';
-import { rounded, spacing, typography } from '@/theme/tokens';
-import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { useTheme } from '@/theme/useTheme';
 
 type RouteSearchCardProps = {
   toValue: string;
@@ -19,33 +18,32 @@ export function RouteSearchCard({
   chooseDestination,
 }: RouteSearchCardProps) {
   const { colors } = useTheme();
-  const styles = useThemedStyles(searchCardStyles, undefined);
 
   return (
     <>
       <Card variant="form">
-        <View style={[styles.row, { backgroundColor: colors.canvasSoft }]}>
+        <View className="flex-row items-center gap-md rounded-md bg-canvas-soft p-lg">
           <MaterialCommunityIcons name="crosshairs-gps" size={22} color={colors.ink} />
-          <View style={styles.field}>
-            <Text style={[typography.bodySmStrong, { color: colors.body }]}>From</Text>
+          <View className="flex-1 gap-xxs">
+            <AppText variant="bodySmStrong" color="body">From</AppText>
             <TextInput
               value="Current location"
               editable={false}
-              style={[styles.value, { color: colors.ink }]}
+              className="flex-1 font-inter text-body-md text-ink"
               accessibilityLabel="From, current location"
             />
           </View>
         </View>
-        <View style={[styles.row, { backgroundColor: colors.canvasSoft }]}>
+        <View className="flex-row items-center gap-md rounded-md bg-canvas-soft p-lg">
           <MaterialCommunityIcons name="magnify" size={22} color={colors.ink} />
-          <View style={styles.field}>
-            <Text style={[typography.bodySmStrong, { color: colors.body }]}>To</Text>
+          <View className="flex-1 gap-xxs">
+            <AppText variant="bodySmStrong" color="body">To</AppText>
             <TextInput
               value={toValue}
               onChangeText={onQueryChange}
               placeholder="Where to?"
               placeholderTextColor={colors.mute}
-              style={[styles.value, { color: colors.ink }]}
+              className="flex-1 font-inter text-body-md text-ink"
               accessibilityLabel="Search destination"
             />
           </View>
@@ -57,47 +55,17 @@ export function RouteSearchCard({
           onPress={() => chooseDestination(destination.id)}
           accessibilityRole="button"
           accessibilityLabel={`Choose ${destination.name}`}
-          style={({ pressed }) => [
-            styles.suggestion,
-            pressed && { backgroundColor: colors.canvasSoft },
-          ]}
+          className="flex-row items-center gap-md rounded-md px-sm py-lg active:bg-canvas-soft"
         >
           <MaterialCommunityIcons name="map-marker-outline" size={22} color={colors.ink} />
-          <View style={styles.field}>
-            <Text style={[typography.bodyMdStrong, { color: colors.ink }]}>
-              {destination.name}
-            </Text>
-            <Text style={[typography.bodySm, { color: colors.body }]}>{destination.area}</Text>
+          <View className="flex-1 gap-xxs">
+            <AppText variant="bodyMdStrong">{destination.name}</AppText>
+            <AppText variant="bodySm" color="body">
+              {destination.area}
+            </AppText>
           </View>
         </Pressable>
       ))}
     </>
   );
-}
-
-function searchCardStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      borderRadius: rounded.md,
-      padding: spacing.lg,
-    },
-    value: {
-      flex: 1,
-      ...typography.bodyMd,
-    },
-    field: {
-      flex: 1,
-      gap: spacing.xxs,
-    },
-    suggestion: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      paddingVertical: spacing.lg,
-      paddingHorizontal: spacing.sm,
-    },
-  });
 }

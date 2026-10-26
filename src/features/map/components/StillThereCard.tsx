@@ -1,7 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppButton, AppText, Card } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type StillThereCardProps = {
@@ -17,28 +16,28 @@ export function StillThereCard({ isExpired, hasVoted, onVote }: StillThereCardPr
   const { colors } = useTheme();
   return (
     <Card variant="soft">
-      <AppText variant="displaySm" style={styles.centered}>
+      <AppText variant="displaySm" className="text-center">
         Still there?
       </AppText>
       {isExpired ? (
-        <AppText variant="bodySm" color="body" style={styles.centered}>
+        <AppText variant="bodySm" color="body" className="text-center">
           {VOTING_CLOSED}
         </AppText>
       ) : hasVoted ? (
-        <View style={styles.thanks}>
+        <View className="flex-row items-center justify-center gap-xs">
           <MaterialCommunityIcons name="check" size={16} color={colors.ink} />
           <AppText variant="bodySmStrong">Thanks — vote recorded</AppText>
         </View>
       ) : (
-        <View style={styles.row}>
-          <View style={styles.half}>
+        <View className="flex-row gap-md">
+          <View className="flex-1">
             <AppButton
               title="Yes, still there"
               onPress={() => onVote(true)}
               accessibilityLabel="Confirm hazard is still there"
             />
           </View>
-          <View style={styles.half}>
+          <View className="flex-1">
             <AppButton
               title="No, it's gone"
               variant="secondary"
@@ -51,22 +50,3 @@ export function StillThereCard({ isExpired, hasVoted, onVote }: StillThereCardPr
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  half: {
-    flex: 1,
-  },
-  thanks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  centered: {
-    textAlign: 'center',
-  },
-});
