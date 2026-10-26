@@ -59,7 +59,6 @@ jest.mock('react-native-maps', () => {
     Marker: makeNative('map-marker'),
     Polyline: makeNative('map-polyline'),
     PROVIDER_GOOGLE: 'google',
-    PROVIDER_DEFAULT: undefined,
   };
 });
 jest.mock('react-native-safe-area-context', () => {

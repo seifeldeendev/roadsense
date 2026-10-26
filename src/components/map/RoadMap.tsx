@@ -5,14 +5,12 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import MapView, {
   PROVIDER_GOOGLE,
   type Camera,
-  type Provider,
   type Region,
 } from 'react-native-maps';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { darkMapStyle, lightMapStyle } from '@/theme/mapStyles';
@@ -46,11 +44,6 @@ type RoadMapProps = {
 
 type MapViewInstance = InstanceType<typeof MapView>;
 
-// Google Maps everywhere. Expo Go on iOS has no Google Maps SDK, so only there
-// the map falls back to Apple Maps; development and store builds use Google.
-const inIosExpoGo = Platform.OS === 'ios' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-const mapProvider: Provider = inIosExpoGo ? undefined : PROVIDER_GOOGLE;
-
 const DRIVE_PITCH = 45;
 const STREET_LEVEL_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
@@ -60,9 +53,7 @@ function followCamera(point: FollowPoint, northUp: boolean): Partial<Camera> {
     center,
     heading: northUp ? 0 : point.heading,
     pitch: DRIVE_PITCH,
-    // Google honours zoom, Apple Maps reads the altitude equivalent.
     zoom: 16,
-    altitude: 750,
   };
 }
 
@@ -120,7 +111,8 @@ export function RoadMap({
     <MapView
       ref={mapRef}
       style={styles.base}
-      provider={mapProvider}
+      // Google Maps on iOS and Android alike (web uses the Maps JavaScript API).
+      provider={PROVIDER_GOOGLE}
       initialRegion={initialRegion}
       region={region}
       mapType={mapType}
@@ -135,7 +127,6 @@ export function RoadMap({
       }
       // The grayscale style only applies to the drawn map, not satellite imagery.
       customMapStyle={mapType === 'standard' ? (scheme === 'dark' ? darkMapStyle : lightMapStyle) : undefined}
-      userInterfaceStyle={scheme}
       showsCompass={false}
       showsMyLocationButton={false}
       showsUserLocation={false}
