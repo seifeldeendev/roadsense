@@ -12,6 +12,7 @@ import MapView, {
   type Provider,
   type Region,
 } from 'react-native-maps';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { darkMapStyle, lightMapStyle } from '@/theme/mapStyles';
@@ -43,10 +44,10 @@ type RoadMapProps = {
 
 type MapViewInstance = InstanceType<typeof MapView>;
 
-const mapProvider: Provider = Platform.select({
-  android: PROVIDER_GOOGLE,
-  ios: undefined,
-});
+// Google Maps everywhere. Expo Go on iOS has no Google Maps SDK, so only there
+// the map falls back to Apple Maps; development and store builds use Google.
+const inIosExpoGo = Platform.OS === 'ios' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const mapProvider: Provider = inIosExpoGo ? undefined : PROVIDER_GOOGLE;
 
 const DRIVE_PITCH = 45;
 const STREET_LEVEL_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
