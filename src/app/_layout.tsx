@@ -7,8 +7,11 @@ import {
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
+import '../../global.css';
 import { nativeTypography } from '@/theme/tokens';
+import { themeVars } from '@/theme/cssVars';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useTheme } from '@/theme/useTheme';
 import { useThemeStore } from '@/stores/useThemeStore';
@@ -51,9 +54,11 @@ function ThemedChrome() {
   const hasCompletedOnboarding = useSessionStore((s) => s.hasCompletedOnboarding);
   const [splashShown, setSplashShown] = useState(true);
   const hideSplash = useCallback(() => setSplashShown(false), []);
+  // Palette as CSS variables so NativeWind classes (bg-canvas, text-ink…) follow the theme.
+  const palette = useMemo(() => themeVars(colors), [colors]);
 
   return (
-    <>
+    <View style={[{ flex: 1 }, palette]}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
@@ -93,6 +98,6 @@ function ThemedChrome() {
       {splashShown && (
         <BrandSplash onFinished={hideSplash} />
       )}
-    </>
+    </View>
   );
 }

@@ -2,6 +2,7 @@ import type { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import type { CameraType, HazardType } from '@/domain/entities';
 import type { ViewStyle } from 'react-native';
+import scales from './scales.json';
 
 export type ThemeColors = {
   primary: string;
@@ -79,26 +80,10 @@ export const darkColors: ThemeColors = {
   canvasGlass: 'rgba(0, 0, 0, 0.88)',
 };
 
-export const spacing = {
-  xxs: 4,
-  xs: 6,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-} as const;
+// DESIGN.md scales live in scales.json so tailwind.config.js shares the exact values.
+export const spacing = scales.spacing;
 
-export const rounded = {
-  none: 0,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  pill: 999,
-  pillTab: 36,
-  full: 9999,
-} as const;
+export const rounded = scales.rounded;
 
 export const elevation = {
   level0: {
@@ -117,27 +102,16 @@ export const elevation = {
 
 export type ThemeElevation = typeof elevation;
 
-export const fontFamily = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  bold: 'Inter_700Bold',
-} as const;
+export const fontFamily = scales.fontFamily;
 
-export const typography = {
-  displayXxl: { fontFamily: fontFamily.bold, fontSize: 52, lineHeight: 64 },
-  displayXl: { fontFamily: fontFamily.bold, fontSize: 36, lineHeight: 44 },
-  displayLg: { fontFamily: fontFamily.bold, fontSize: 32, lineHeight: 40 },
-  displayMd: { fontFamily: fontFamily.bold, fontSize: 24, lineHeight: 32 },
-  displaySm: { fontFamily: fontFamily.bold, fontSize: 20, lineHeight: 28 },
-  bodyLg: { fontFamily: fontFamily.medium, fontSize: 18, lineHeight: 24 },
-  bodyMd: { fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 24 },
-  bodyMdStrong: { fontFamily: fontFamily.medium, fontSize: 16, lineHeight: 20 },
-  bodySm: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 20 },
-  bodySmStrong: { fontFamily: fontFamily.medium, fontSize: 14, lineHeight: 16 },
-  caption: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 20 },
-  buttonLarge: { fontFamily: fontFamily.medium, fontSize: 18, lineHeight: 24 },
-  buttonMd: { fontFamily: fontFamily.medium, fontSize: 16, lineHeight: 20 },
-} as const;
+type TypographyStyle = { fontFamily: string; fontSize: number; lineHeight: number };
+
+export const typography = Object.fromEntries(
+  Object.entries(scales.typography).map(([name, { weight, fontSize, lineHeight }]) => [
+    name,
+    { fontFamily: fontFamily[weight as keyof typeof fontFamily], fontSize, lineHeight },
+  ]),
+) as Record<keyof typeof scales.typography, TypographyStyle>;
 
 export type TypographyToken = keyof typeof typography;
 
@@ -152,10 +126,7 @@ export const nativeTypography = {
   },
 } as const;
 
-export const touch = {
-  min: 44,
-  large: 56,
-} as const;
+export const touch = scales.touch;
 
 export type HazardKind = HazardType | 'camera' | 'police' | 'bump';
 
