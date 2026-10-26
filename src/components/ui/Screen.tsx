@@ -8,9 +8,11 @@ type ScreenProps = {
   children: ReactNode;
   scroll?: boolean;
   padded?: boolean;
+  // Extra space under scrolled content, e.g. to clear the floating tab bar.
+  bottomInset?: number;
 };
 
-export function Screen({ children, scroll = false, padded = true }: ScreenProps) {
+export function Screen({ children, scroll = false, padded = true, bottomInset = 0 }: ScreenProps) {
   const { colors } = useTheme();
   const fill: ViewStyle = { flex: 1, backgroundColor: colors.canvas };
   const gutter = padded ? styles.gutter : styles.noGutter;
@@ -26,7 +28,7 @@ export function Screen({ children, scroll = false, padded = true }: ScreenProps)
     <SafeAreaView style={fill}>
       <ScrollView
         style={fill}
-        contentContainerStyle={[gutter, styles.scrollContent]}
+        contentContainerStyle={[gutter, styles.scrollContent, bottomInset > 0 && { paddingBottom: spacing.xl + bottomInset }]}
         alwaysBounceVertical
       >
         {children}

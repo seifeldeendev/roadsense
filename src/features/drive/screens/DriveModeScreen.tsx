@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarSpace } from '@/components/navigation';
 import { ErrorState, LoadingState, Screen } from '@/components/ui';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
@@ -26,6 +27,7 @@ export default function DriveModeScreen() {
   const planner = useTripPlannerViewModel();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const tabBarSpace = useTabBarSpace();
 
   if (vm.isLoading) {
     return (
@@ -70,7 +72,7 @@ export default function DriveModeScreen() {
             onOptions={() => controls.openSheet('options')}
             onRecentre={controls.recentre}
           />
-          <View pointerEvents="box-none" style={styles.bottom}>
+          <View pointerEvents="box-none" style={[styles.bottom, { bottom: tabBarSpace + spacing.md }]}>
             <View pointerEvents="box-none" style={styles.bottomRow}>
               {controls.showSpeedometer ? <SpeedReadout speedKmh={vm.speedKmh} status={vm.status} /> : <View />}
               {/* Black only while driving, so the idle screen keeps a single black CTA. */}
@@ -103,11 +105,12 @@ export default function DriveModeScreen() {
       ) : null}
 
       {planner.mode === 'pin' ? (
-        <PinPickerOverlay topInset={insets.top} label={planner.pinLabel} onBack={planner.back} onConfirm={planner.confirmPin} />
+        <PinPickerOverlay topInset={insets.top} bottomInset={tabBarSpace} label={planner.pinLabel} onBack={planner.back} onConfirm={planner.confirmPin} />
       ) : null}
       {planner.mode === 'search' ? (
         <PlannerSearchPanel
           topInset={insets.top}
+          bottomInset={tabBarSpace}
           originLabel={planner.originLabel}
           query={planner.query}
           sections={planner.sections}

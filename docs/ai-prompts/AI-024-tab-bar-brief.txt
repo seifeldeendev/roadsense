@@ -1,0 +1,54 @@
+<task>
+Redesign the bottom tab bar of RoadSense (React Native 0.88 + Expo SDK 58, TypeScript strict, Expo Router; tabs defined in src/app/(tabs)/_layout.tsx with `Tabs` from 'expo-router/js-tabs'; 5 tabs: drive, map, trips, stats, account) into a floating glassmorphism tab bar.
+
+Visual brief (from the product owner): glassmorphism with frosted-glass effect, soft glowing light, vibrant pink and purple palette, smooth rounded edges, layered depth with a floating bar, modern and sleek. Avoid: low contrast, harsh shadows, clutter, pixelated/blurry icons, dull colours, sharp edges, excessive text.
+This is a deliberate, scoped exception to DESIGN.md (which is grayscale): the pink/purple glass styling applies to the tab bar ONLY. Do not change any other screen's look. Do not edit DESIGN.md.
+
+Build:
+1. Theme tokens (src/theme/tokens.ts and the light/dark palettes — read how ThemeColors / lightColors / darkColors / elevation are defined and add alongside, never inline hex outside src/theme):
+   a `glass` group per scheme: pink '#FF4FA3', purple '#8B5CF6', gradient stops for the active indicator (pink -> purple), a translucent tint over the blur (light: white ~55% with a faint pink wash; dark: near-black ~45% with a faint purple wash), a 1 px rim highlight (white ~35% light / ~18% dark), a glow colour (purple at ~35% opacity), active icon colour white, inactive icon colour (light: ink at ~70%; dark: white at ~70%) — make sure inactive icons keep >= 4.5:1 contrast against the frosted surface.
+   Comment in tokens.ts: "Glass tab bar palette — the one scoped exception to DESIGN.md's grayscale rule, requested by the product owner."
+2. src/components/navigation/GlassTabBar.tsx (+ index.ts), passed to <Tabs tabBar={(props) => <GlassTabBar {...props} />}>:
+   - Floating pill bar: absolutely positioned, 16 px from the left/right edges and 12 px above the bottom safe-area inset, height 68, border radius 34 (fully rounded), overflow hidden for the blur.
+   - Layers (bottom to top): expo-blur BlurView (intensity ~40, tint 'light'/'dark' by scheme, use experimentalBlurMethod 'dimezisBlurView' on Android if the SDK 58 expo-blur docs recommend it — check https://docs.expo.dev/versions/v58.0.0/sdk/blur-view/), a translucent tint View, an expo-linear-gradient LinearGradient wash (pink -> purple at very low opacity, diagonal), and the 1 px rim border. Outside the clipped surface, a soft coloured glow shadow (boxShadow with the glow colour, ~0 10px 30px; no harsh/dark shadows).
+   - Active tab: a floating gradient pill/circle indicator (LinearGradient pink -> purple, 48x40 pill, radius 20) behind the active icon with a soft pink glow, sliding smoothly between tabs (react-native-reanimated is installed — use withSpring/withTiming on the indicator's translateX measured from each tab's layout; respect AccessibilityInfo reduce-motion by skipping the animation). Active icon white and filled; inactive icons use the outline variant (drive 'steering' both; map 'map' / 'map-outline'; trips 'history' both; stats 'chart-bar' / 'chart-bar' with reduced opacity is fine; account 'account-circle' / 'account-circle-outline' — verify every glyph exists in node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/MaterialCommunityIcons.json).
+   - Minimal text: show the label only for the active tab, under or beside its icon in bodySmStrong-sized type taken from typography tokens (no raw fontSize); inactive tabs are icon-only but keep accessibilityLabel = the tab title.
+   - Each tab: Pressable with accessibilityRole "tab", accessibilityState { selected }, accessibilityLabel (title), min 44x44 touch target, onPress/onLongPress wired exactly like React Navigation's default tab bar (emit 'tabPress', navigate if not focused and not defaultPrevented, emit 'tabLongPress').
+   - Works in light and dark schemes and on web (BlurView falls back gracefully).
+3. Space for the floating bar: export `TAB_BAR_HEIGHT` and a `useTabBarSpace()` hook (bar height + gap + bottom inset) from src/components/navigation. Apply it so nothing is hidden behind the bar:
+   - src/features/drive/screens/DriveModeScreen.tsx: the absolutely positioned bottom group (`styles.bottom`, currently bottom: spacing.lg) must sit above the bar.
+   - src/features/drive/components/PinPickerOverlay.tsx bottom card, likewise.
+   - src/features/map/components/MapBottomBar.tsx and the Live map recentre FAB offset (FAB_BOTTOM_OFFSET in src/features/map/screens/LiveMapScreen.tsx).
+   - Scrollable tab screens (Trips SectionList, Stats, Account) need extra bottom content padding equal to the bar space: add an optional `bottomInset` (number) prop to src/components/ui/Screen.tsx that adds to the scroll content's bottom padding, and pass it from those screens; SectionList in TripHistoryScreen needs it in contentContainerStyle.
+   Screens get the value through the hook in the screen file (it's a UI concern, allowed) — do not import stores/services there.
+4. Tab bar position: screenOptions tabBarStyle position 'absolute' (or rely on the custom tabBar rendering absolutely) so screen content (the Drive map) runs underneath the glass.
+
+Keep everything else unchanged: tab order, names, titles, routes, behaviour.
+</task>
+
+<context>
+Architecture rules (graded): src/components holds presentational primitives (props only; no stores/services/data imports). Theme via useTheme()/useThemedStyles (src/theme). No hex/rgba literals outside src/theme. Typography from tokens only (no raw fontSize/fontWeight/fontFamily/letterSpacing outside src/theme and src/components). No `any`/`as any`. Files under ~150 lines. Accessibility labels on every pressable. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording. expo-blur and expo-linear-gradient are already installed — add no other dependencies. Jest uses jest-expo and router tests in __tests__ (appFlow, driveScreen, mapScreens, tripScreens) render the real app: if BlurView/LinearGradient or reanimated need mocking there, add the mocks to those test files (keep them minimal) so all tests stay green.
+</context>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false --runInBand
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (then delete .export-check)
+  npx expo export --platform web --output-dir .export-web   (then delete .export-web)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app; `@/stores|@/services|@/data` in src/features/*/screens, src/features/*/components, src/components; `as any`.
+</verification_loop>
+
+<action_safety>
+Do NOT git add or git commit; the orchestrator reviews every line and commits. Do not edit DESIGN.md, docs/, app.json, package.json.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Tab bar structure (layers, indicator animation, active/inactive states) and the tokens added
+  2. How bottom space is reserved on each affected screen
+  3. Files created / modified
+  4. Gate outcomes (tsc, jest counts, lint, both exports, greps)
+  5. Anything unverifiable without a device (blur quality, glow on Android) and deviations
+</structured_output_contract>

@@ -25,6 +25,8 @@ export type ThemeColors = {
     near: string;
     over: string;
   };
+  // Translucent canvas behind the floating tab bar's frosted blur.
+  canvasGlass: string;
 };
 
 export const lightColors: ThemeColors = {
@@ -49,6 +51,7 @@ export const lightColors: ThemeColors = {
     near: '#F5A623',
     over: '#E11900',
   },
+  canvasGlass: 'rgba(255, 255, 255, 0.9)',
 };
 
 export const darkColors: ThemeColors = {
@@ -73,6 +76,7 @@ export const darkColors: ThemeColors = {
     near: '#F5A623',
     over: '#FF5A45',
   },
+  canvasGlass: 'rgba(0, 0, 0, 0.88)',
 };
 
 export const spacing = {

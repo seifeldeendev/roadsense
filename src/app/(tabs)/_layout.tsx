@@ -1,68 +1,26 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import { StyleSheet, type ColorValue } from 'react-native';
-import { nativeTypography, spacing, type HazardIconName } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { GlassTabBar, type TabIcons } from '@/components/navigation';
 
-function TabIcon({ icon, color, size }: { icon: HazardIconName; color: ColorValue | null; size: number }) {
-  return (
-    <MaterialCommunityIcons
-      name={icon}
-      color={typeof color === 'string' ? color : undefined}
-      size={size}
-    />
-  );
-}
-
-const TAB_ICONS: Record<string, HazardIconName> = {
-  drive: 'steering',
-  map: 'map-outline',
-  trips: 'history',
-  stats: 'chart-bar',
-  account: 'account-circle-outline',
+const TAB_ICONS: TabIcons = {
+  drive: { active: 'steering', inactive: 'steering' },
+  map: { active: 'map', inactive: 'map-outline' },
+  trips: { active: 'history', inactive: 'history' },
+  stats: { active: 'chart-box', inactive: 'chart-box-outline' },
+  account: { active: 'account-circle', inactive: 'account-circle-outline' },
 };
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
-
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.mute,
-        tabBarStyle: {
-          backgroundColor: colors.canvas,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: colors.hairline,
-          paddingTop: spacing.xxs,
-        },
-        tabBarLabelStyle: {
-          ...nativeTypography.tabLabel,
-          paddingVertical: spacing.xs,
-        },
-      }}
+      tabBar={(props) => <GlassTabBar {...props} icons={TAB_ICONS} />}
+      // The bar floats over the screens, so content (the Drive map) runs underneath it.
+      screenOptions={{ headerShown: false, tabBarStyle: { position: 'absolute' } }}
     >
-      <Tabs.Screen
-        name="drive"
-        options={{ title: 'Drive', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.drive} color={color} size={size} /> }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{ title: 'Map', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.map} color={color} size={size} /> }}
-      />
-      <Tabs.Screen
-        name="trips"
-        options={{ title: 'Trips', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.trips} color={color} size={size} /> }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{ title: 'Stats', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.stats} color={color} size={size} /> }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{ title: 'Account', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.account} color={color} size={size} /> }}
-      />
+      <Tabs.Screen name="drive" options={{ title: 'Drive' }} />
+      <Tabs.Screen name="map" options={{ title: 'Map' }} />
+      <Tabs.Screen name="trips" options={{ title: 'Trips' }} />
+      <Tabs.Screen name="stats" options={{ title: 'Stats' }} />
+      <Tabs.Screen name="account" options={{ title: 'Account' }} />
     </Tabs>
   );
 }

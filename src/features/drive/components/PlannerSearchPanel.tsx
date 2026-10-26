@@ -11,6 +11,7 @@ const ICON_CIRCLE = 40;
 
 type PlannerSearchPanelProps = {
   topInset: number;
+  bottomInset: number;
   originLabel: string;
   query: string;
   sections: PlaceSection[];
@@ -34,6 +35,7 @@ export function PlannerSearchPanel(props: PlannerSearchPanelProps) {
         sections={props.sections}
         keyExtractor={(item, index) => `${item.id}-${index}`}
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: props.bottomInset }}
         ListHeaderComponent={
           <PlaceRow icon="map-marker-radius-outline" title="Set location on map" onPress={props.onSetOnMap} />
         }
