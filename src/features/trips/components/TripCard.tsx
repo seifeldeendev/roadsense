@@ -1,9 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText, Badge, Card } from '@/components/ui';
 import type { Trip } from '@/domain/entities';
 import { formatDistance, formatDuration } from '@/shared/format';
-import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { tripTimeRange } from '../viewmodels/tripFormat';
 
@@ -21,17 +20,17 @@ export function TripCard({ trip, onPress }: TripCardProps) {
       accessibilityRole="button"
       accessibilityLabel={cardLabel(trip)}
       onPress={onPress}
-      style={({ pressed }) => pressed && styles.pressed}
+      className="active:opacity-60"
     >
       <Card variant="soft">
-          <View style={styles.row}>
-            <View style={styles.main}>
+          <View className="flex-row items-center gap-md">
+            <View className="flex-1 gap-xxs">
               <AppText variant="bodyMdStrong">{tripTimeRange(trip)}</AppText>
               <AppText variant="bodySm" color="body">
                 {`${formatDistance(trip.distanceM)} · ${formatDuration(trip.durationS)}`}
               </AppText>
             </View>
-            <View style={styles.side}>
+            <View className="items-end gap-xxs">
               <AppText variant="bodySm" color="body">
                 {`${trip.maxSpeedKmh} km/h max`}
               </AppText>
@@ -62,22 +61,3 @@ function cardLabel(trip: Trip): string {
       : 'within limit';
   return `Open trip ${tripTimeRange(trip)}, ${formatDistance(trip.distanceM)}, ${over}`;
 }
-
-const styles = StyleSheet.create({
-  pressed: {
-    opacity: 0.6,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  main: {
-    flex: 1,
-    gap: spacing.xxs,
-  },
-  side: {
-    alignItems: 'flex-end',
-    gap: spacing.xxs,
-  },
-});

@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   AppButton,
@@ -8,8 +8,6 @@ import {
   Screen,
   SectionHeader,
 } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles } from '@/theme/useTheme';
 import { useTripDetailsViewModel } from '../viewmodels/useTripDetailsViewModel';
 import { StatTiles } from '../components/StatTiles';
 import { TripMapCard, TripMapLegend } from '../components/TripMapCard';
@@ -18,7 +16,6 @@ import { TripTimeline } from '../components/TripTimeline';
 export default function TripDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const vm = useTripDetailsViewModel(id);
-  const styles = useThemedStyles(detailsStyles, undefined);
 
   if (vm.isLoading) {
     return (
@@ -58,8 +55,8 @@ export default function TripDetailsScreen() {
 
   return (
     <Screen scroll>
-      <View style={styles.container}>
-        <View style={styles.mapStack}>
+      <View className="gap-xxxl pb-xl pt-sm">
+        <View className="gap-sm">
           <TripMapCard
             trip={vm.trip}
             segments={vm.segments}
@@ -69,12 +66,12 @@ export default function TripDetailsScreen() {
           <TripMapLegend />
         </View>
 
-        <View style={styles.section}>
+        <View className="gap-md">
           <SectionHeader title="Your drive" size="md" />
           <StatTiles tiles={vm.tiles} />
         </View>
 
-        <View style={styles.section}>
+        <View className="gap-md">
           <SectionHeader
             title="Timeline"
             subtitle="Over-limit stretches and alerts in order"
@@ -91,20 +88,4 @@ export default function TripDetailsScreen() {
       </View>
     </Screen>
   );
-}
-
-function detailsStyles() {
-  return StyleSheet.create({
-    container: {
-      gap: spacing.xxxl,
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.xl,
-    },
-    mapStack: {
-      gap: spacing.sm,
-    },
-    section: {
-      gap: spacing.md,
-    },
-  });
 }
