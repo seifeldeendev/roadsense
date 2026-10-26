@@ -10,7 +10,7 @@ import { MapOptionsSheet, SoundSheet } from '../components/DriveSettingsSheets';
 import { DriveTopOverlay } from '../components/DriveTopOverlay';
 import { MapFab } from '../components/MapFab';
 import { PinPickerOverlay } from '../components/PinPickerOverlay';
-import { PlannerSearchPanel } from '../components/PlannerSearchPanel';
+import { PlannerDropdown } from '../components/PlannerDropdown';
 import { ReportBanner } from '../components/ReportBanner';
 import { RouteSummaryCard } from '../components/RouteSummaryCard';
 import { SpeedReadout } from '../components/SpeedReadout';
@@ -62,6 +62,8 @@ export default function DriveModeScreen() {
           <DriveTopOverlay
             topInset={insets.top}
             showSearch={!showsRouteCard}
+            quickPlaces={vm.isDriving ? [] : planner.quickPlaces}
+            onChoosePlace={planner.choose}
             showLimitSign={controls.showLimitSign}
             limitKmh={vm.hasLimit ? vm.limitKmh : null}
             over={vm.status === 'over'}
@@ -107,16 +109,15 @@ export default function DriveModeScreen() {
         <PinPickerOverlay topInset={insets.top} bottomInset={tabBarSpace} label={planner.pinLabel} onBack={planner.back} onConfirm={planner.confirmPin} />
       ) : null}
       {planner.mode === 'search' ? (
-        <PlannerSearchPanel
+        <PlannerDropdown
           topInset={insets.top}
-          bottomInset={tabBarSpace}
           originLabel={planner.originLabel}
           query={planner.query}
           sections={planner.sections}
           onQueryChange={planner.setQuery}
           onChoose={planner.choose}
           onSetOnMap={planner.openPin}
-          onBack={planner.back}
+          onClose={planner.back}
         />
       ) : null}
 
