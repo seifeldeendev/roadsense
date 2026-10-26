@@ -8,7 +8,7 @@ import {
   RoadMap,
   type RoadMapHandle,
 } from '@/components/map';
-import { elevation, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { MapFilterBar } from '../components/MapFilterBar';
 import {
   LiveMapEmptyOverlay,
@@ -80,12 +80,10 @@ export default function LiveMapScreen() {
 
       <MapFilterBar chips={vm.chips} onToggle={vm.toggleFilter} />
 
-      <View
-        className="absolute right-lg rounded-full bg-canvas"
-        style={[elevation.level3, { bottom: tabBarSpace + spacing.md + FAB_ABOVE_CARD }]}
-      >
+      <View className="absolute right-lg" style={{ bottom: tabBarSpace + spacing.md + FAB_ABOVE_CARD }}>
         <IconButton
           icon="crosshairs-gps"
+          surface="glass"
           accessibilityLabel="Recentre map"
           onPress={() => {
             vm.recentre();
