@@ -1,13 +1,9 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from './AppText';
 import { IconButton } from './IconButton';
-import { rounded, spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
-
-const HANDLE_WIDTH = 40;
-const HANDLE_HEIGHT = 4;
+import { elevation, spacing } from '@/theme/tokens';
 
 type BottomSheetProps = {
   visible: boolean;
@@ -17,23 +13,23 @@ type BottomSheetProps = {
 };
 
 export function BottomSheet({ visible, title, onClose, children }: BottomSheetProps) {
-  const styles = useThemedStyles(sheetStyles, undefined);
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.root}>
+      <View className="flex-1 justify-end">
         <Pressable
-          style={styles.backdrop}
+          className="absolute inset-0 bg-backdrop"
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel="Dismiss"
         />
         <View
           accessibilityViewIsModal
-          style={[styles.panel, { paddingBottom: spacing.xxl + insets.bottom }]}
+          className="gap-lg rounded-t-xl bg-canvas px-xxl pt-md"
+          style={[elevation.level2, { paddingBottom: spacing.xxl + insets.bottom }]}
         >
-          <View style={styles.handle} />
-          <View style={styles.header}>
+          <View className="h-1 w-10 self-center rounded-pill bg-hairline" />
+          <View className="flex-row items-center justify-between">
             <AppText variant="displaySm">{title}</AppText>
             <IconButton icon="close" accessibilityLabel={`Close ${title}`} onPress={onClose} />
           </View>
@@ -42,38 +38,4 @@ export function BottomSheet({ visible, title, onClose, children }: BottomSheetPr
       </View>
     </Modal>
   );
-}
-
-function sheetStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    root: {
-      flex: 1,
-      justifyContent: 'flex-end',
-    },
-    backdrop: {
-      ...StyleSheet.absoluteFill,
-      backgroundColor: theme.colors.backdrop,
-    },
-    panel: {
-      backgroundColor: theme.colors.canvas,
-      borderTopLeftRadius: rounded.xl,
-      borderTopRightRadius: rounded.xl,
-      paddingHorizontal: spacing.xxl,
-      paddingTop: spacing.md,
-      gap: spacing.lg,
-      ...theme.elevation.level2,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    handle: {
-      alignSelf: 'center',
-      width: HANDLE_WIDTH,
-      height: HANDLE_HEIGHT,
-      borderRadius: rounded.pill,
-      backgroundColor: theme.colors.hairline,
-    },
-  });
 }

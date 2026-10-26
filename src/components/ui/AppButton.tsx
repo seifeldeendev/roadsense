@@ -1,79 +1,27 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import {
-  rounded,
-  spacing,
-  touch,
-  typography,
-  type HazardIconName,
-  type ThemeColors,
-} from '@/theme/tokens';
-import { useTheme, type ResolvedTheme } from '@/theme/useTheme';
+import { elevation, typography, type HazardIconName } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
+import { AppText, type AppTextColor } from './AppText';
 
 export type AppButtonVariant = 'primary' | 'secondary' | 'subtle' | 'floating' | 'large';
 export type AppButtonSize = 'md' | 'lg';
 
-type VariantStyle = {
-  container: ViewStyle;
-  textColor: string;
-  pressedBackground: string;
+// Surface + pressed colour per DESIGN.md button variant.
+const variantClass: Record<AppButtonVariant, string> = {
+  primary: 'bg-primary active:bg-primary-pressed',
+  large: 'bg-primary active:bg-primary-pressed',
+  secondary: 'border-hairline bg-canvas active:bg-surface-pressed',
+  subtle: 'bg-canvas-soft active:bg-surface-pressed',
+  floating: 'bg-canvas active:bg-surface-pressed',
 };
 
-function variantStyle(
-  colors: ThemeColors,
-  elevation: ResolvedTheme['elevation'],
-  variant: AppButtonVariant,
-  pill: boolean,
-): VariantStyle {
-  const padding: ViewStyle = pill ? pillPadding : { paddingVertical: spacing.lg, paddingHorizontal: spacing.xl };
-  switch (variant) {
-    case 'primary':
-    case 'large':
-      return {
-        container: { backgroundColor: colors.primary, ...padding },
-        textColor: colors.onPrimary,
-        pressedBackground: colors.primaryPressed,
-      };
-    case 'secondary':
-      return {
-        container: {
-          backgroundColor: colors.canvas,
-          ...padding,
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: colors.hairline,
-        },
-        textColor: colors.ink,
-        pressedBackground: colors.surfacePressed,
-      };
-    case 'subtle': {
-      const subtlePadding: ViewStyle = pill
-        ? { ...padding, paddingHorizontal: spacing.lg }
-        : padding;
-      return {
-        container: {
-          backgroundColor: colors.canvasSoft,
-          ...subtlePadding,
-        },
-        textColor: colors.ink,
-        pressedBackground: colors.surfacePressed,
-      };
-    }
-    case 'floating':
-      return {
-        container: {
-          backgroundColor: colors.canvas,
-          ...padding,
-          ...elevation.level3,
-        },
-        textColor: colors.ink,
-        pressedBackground: colors.surfacePressed,
-      };
-  }
-}
-
-const pillPadding: ViewStyle = {
-  paddingVertical: spacing.md,
-  paddingHorizontal: spacing.md,
+const variantText: Record<AppButtonVariant, AppTextColor> = {
+  primary: 'onPrimary',
+  large: 'onPrimary',
+  secondary: 'ink',
+  subtle: 'ink',
+  floating: 'ink',
 };
 
 type AppButtonProps = {
@@ -97,12 +45,15 @@ export function AppButton({
   icon,
   accessibilityLabel,
 }: AppButtonProps) {
-  const theme = useTheme();
-  const styles = stylesBase;
+  const { colors } = useTheme();
   const isLarge = variant === 'large' || size === 'lg';
-  const style = variantStyle(theme.colors, theme.elevation, variant, !isLarge);
   const inactive = disabled || loading;
-  const labelTypography = isLarge ? typography.buttonLarge : typography.buttonMd;
+  const textColor = variantText[variant];
+  const labelVariant = isLarge ? 'buttonLarge' : 'buttonMd';
+  // Large buttons are full-width rounded.xl blocks; the rest are 44pt pills.
+  const shape = isLarge
+    ? 'min-h-touch-lg rounded-xl px-xl py-lg'
+    : `min-h-touch min-w-[88px] rounded-pill py-md ${variant === 'subtle' ? 'px-lg' : 'px-md'}`;
 
   return (
     <Pressable
@@ -111,62 +62,28 @@ export function AppButton({
       accessibilityState={{ disabled: inactive, busy: loading }}
       onPress={onPress}
       disabled={inactive}
-      style={({ pressed }) => [
-        styles.base,
-        isLarge ? styles.largeBase : styles.pillBase,
-        style.container,
-        pressed && !inactive && { backgroundColor: style.pressedBackground },
-        inactive && styles.inactive,
+      className={`items-center justify-center ${shape} ${variantClass[variant]} ${inactive ? 'opacity-40' : ''}`}
+      style={[
+        variant === 'secondary' && styles.hairline,
+        variant === 'floating' && elevation.level3,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={style.textColor} />
+        <ActivityIndicator color={colors[textColor]} />
       ) : (
-        <View style={styles.row}>
+        <View className="flex-row items-center gap-sm">
           {icon !== undefined && (
-            <MaterialCommunityIcons
-              name={icon}
-              size={labelTypography.fontSize}
-              color={style.textColor}
-            />
+            <MaterialCommunityIcons name={icon} size={typography[labelVariant].fontSize} color={colors[textColor]} />
           )}
-          <Text style={[labelTypography, { color: style.textColor }]} numberOfLines={1}>
+          <AppText variant={labelVariant} color={textColor} numberOfLines={1}>
             {title}
-          </Text>
+          </AppText>
         </View>
       )}
     </Pressable>
   );
 }
 
-type ButtonStyles = {
-  base: ViewStyle;
-  pillBase: ViewStyle;
-  largeBase: ViewStyle;
-  inactive: ViewStyle;
-  row: ViewStyle;
-};
-
-const stylesBase: ButtonStyles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillBase: {
-    borderRadius: rounded.pill,
-    minHeight: touch.min,
-    minWidth: touch.min * 2,
-  },
-  largeBase: {
-    borderRadius: rounded.xl,
-    minHeight: touch.large,
-  },
-  inactive: {
-    opacity: 0.4,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
+const styles = StyleSheet.create({
+  hairline: { borderWidth: StyleSheet.hairlineWidth },
 });

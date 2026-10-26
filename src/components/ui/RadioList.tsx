@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from './AppText';
-import { spacing, touch, type HazardIconName } from '@/theme/tokens';
+import type { HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 export type RadioOption<T> = { value: T; label: string; icon?: HazardIconName };
@@ -26,16 +26,13 @@ export function RadioList<T>({ options, value, onChange }: RadioListProps<T>) {
             accessibilityLabel={option.label}
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={({ pressed }) => [
-              styles.row,
-              { borderBottomColor: colors.hairline },
-              pressed && { backgroundColor: colors.canvasSoft },
-            ]}
+            className="min-h-touch-lg flex-row items-center gap-md border-hairline py-lg active:bg-canvas-soft"
+            style={styles.divider}
           >
             {option.icon !== undefined ? (
               <MaterialCommunityIcons name={option.icon} size={22} color={colors.ink} />
             ) : null}
-            <AppText variant="bodyMdStrong" style={styles.label}>
+            <AppText variant="bodyMdStrong" className="flex-1">
               {option.label}
             </AppText>
             <MaterialCommunityIcons
@@ -51,13 +48,5 @@ export function RadioList<T>({ options, value, onChange }: RadioListProps<T>) {
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    minHeight: touch.large,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  label: { flex: 1 },
+  divider: { borderBottomWidth: StyleSheet.hairlineWidth },
 });

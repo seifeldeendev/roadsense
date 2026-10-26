@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Switch, View, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { AppText } from './AppText';
-import { rounded, spacing, touch } from '@/theme/tokens';
-import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { useTheme } from '@/theme/useTheme';
 
 type ToggleRowProps = {
   label: string;
@@ -14,22 +13,19 @@ type ToggleRowProps = {
 
 export function ToggleRow({ label, description, icon, value, onValueChange }: ToggleRowProps) {
   const { colors } = useTheme();
-  const styles = useThemedStyles(toggleRowStyles, undefined);
   return (
     <Pressable
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityState={{ checked: value }}
       onPress={() => onValueChange(!value)}
-      style={({ pressed }) => [
-        styles.row,
-        pressed && pressedRow(colors),
-      ]}
+      className="min-h-touch-lg flex-row items-center gap-md border-hairline py-lg active:bg-canvas-softer"
+      style={styles.divider}
     >
       {icon !== undefined && (
-        <View style={[styles.iconCircle, { backgroundColor: colors.canvasSoft }]}>{icon}</View>
+        <View className="h-touch w-touch items-center justify-center rounded-full bg-canvas-soft">{icon}</View>
       )}
-      <View style={styles.textBlock}>
+      <View className="flex-1 gap-xxs">
         <AppText variant="bodyMdStrong">{label}</AppText>
         {description !== undefined && <AppText variant="bodySm" color="body">{description}</AppText>}
       </View>
@@ -44,31 +40,6 @@ export function ToggleRow({ label, description, icon, value, onValueChange }: To
   );
 }
 
-function toggleRowStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      paddingVertical: spacing.lg,
-      minHeight: touch.large,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.hairline,
-    },
-    iconCircle: {
-      width: touch.min,
-      height: touch.min,
-      borderRadius: rounded.full,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    textBlock: {
-      flex: 1,
-      gap: spacing.xxs,
-    },
-  });
-}
-
-function pressedRow(colors: ResolvedTheme['colors']): ViewStyle {
-  return { backgroundColor: colors.canvasSofter };
-}
+const styles = StyleSheet.create({
+  divider: { borderBottomWidth: StyleSheet.hairlineWidth },
+});
