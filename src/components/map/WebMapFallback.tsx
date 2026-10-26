@@ -1,8 +1,7 @@
 import { useImperativeHandle, type Ref } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import type { RoadMapHandle } from './RoadMap';
 
@@ -16,7 +15,7 @@ export function RoadMap({ ref }: RoadMapProps) {
 
   return (
     <View
-      style={[styles.fill, { backgroundColor: colors.canvasSoft }]}
+      className="absolute inset-0 items-center justify-center gap-sm bg-canvas-soft"
       accessibilityLabel="Map is available in the mobile app"
     >
       <MaterialCommunityIcons name="map-outline" size={32} color={colors.body} />
@@ -41,12 +40,3 @@ export const HazardMarker = NoOverlay;
 export const UserMarker = NoOverlay;
 export const RouteLine = NoOverlay;
 export const PinMarker = NoOverlay;
-
-const styles = StyleSheet.create({
-  fill: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-});

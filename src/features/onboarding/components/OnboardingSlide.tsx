@@ -7,9 +7,10 @@ import type { OnboardingSlideData } from '../viewmodels/useOnboardingViewModel';
 type OnboardingSlideProps = {
   slide: OnboardingSlideData;
   width: number;
+  height?: number | undefined;
 };
 
-export function OnboardingSlide({ slide, width }: OnboardingSlideProps) {
+export function OnboardingSlide({ slide, width, height }: OnboardingSlideProps) {
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
 
   const measureIllustrationBox = (event: LayoutChangeEvent) => {
@@ -34,7 +35,7 @@ export function OnboardingSlide({ slide, width }: OnboardingSlideProps) {
   }, [box]);
 
   return (
-    <View className="flex-1 items-center justify-center gap-lg px-lg" style={{ width }}>
+    <View className="flex-1 items-center justify-center gap-lg px-lg" style={{ width, height }}>
       <View className="w-full flex-1 items-center justify-center" onLayout={measureIllustrationBox}>
         <OnboardingIllustration icons={slide.icons} style={frameStyle} />
       </View>
