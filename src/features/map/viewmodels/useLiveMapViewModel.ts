@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
-import { alertTargetFor, nearestPoints } from '@/domain/usecases/drive/fixedPoints';
+import { alertTargetFor, isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/usecases/drive/fixedPoints';
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { getDemoRoute } from '@/services/location';
@@ -59,6 +59,10 @@ export type LiveMapViewModel = {
   planRoute: () => void;
   mapType: MapType;
   showTraffic: boolean;
+  // Viewport updates after the user pans or zooms; recentre discards it and
+  // goes back to the alerts around the driver.
+  onRegionChange: (region: MapFrame) => void;
+  recentre: () => void;
 };
 
 function toKindKeys(kinds: ReadonlySet<MapFilterKey>): HazardKind[] {
@@ -76,6 +80,22 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const currentLocation = useDriveStore((s) => s.currentLocation);
   const hiddenOnMap = useSettingsStore((s) => s.hiddenOnMap);
   const [selected, setSelected] = useState<ReadonlySet<MapFilterKey>>(ALL);
+  // What the map has been showing since the user last moved it, or null before
+  // the first pan (when the points still track the driver).
+  const [viewport, setViewport] = useState<MapFrame | null>(null);
+
+  const onRegionChange = useCallback(
+    (region: MapFrame) => {
+      // Skips the nudges of a routine pan/zoom that change nothing visibly.
+      setViewport((prev) => (isMinorRegionChange(prev, region) ? prev : region));
+    },
+    [],
+  );
+
+  const recentre = useCallback(() => {
+    // The driver is put back into view, so viewport tracking starts over.
+    setViewport(null);
+  }, []);
 
   useEffect(() => {
     const state = useHazardStore.getState();
@@ -113,11 +133,13 @@ export function useLiveMapViewModel(): LiveMapViewModel {
     [selected],
   );
 
-  const nearbyCameras = useMemo(
-    () =>
-      nearestPoints(visibleOnMap(cameras, hiddenOnMap), currentLocation ?? getDemoRoute()[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M),
-    [cameras, hiddenOnMap, currentLocation],
-  );
+  const shownCameras = useMemo(() => visibleOnMap(cameras, hiddenOnMap), [cameras, hiddenOnMap]);
+
+  const nearbyCameras = useMemo(() => {
+    // After a pan, the drawn points follow what the map is looking at.
+    if (viewport !== null) return pointsInView(shownCameras, viewport, MAX_FIXED_POINTS);
+    return nearestPoints(shownCameras, currentLocation ?? getDemoRoute()[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M);
+  }, [shownCameras, viewport, currentLocation]);
 
   const visibleCameras = useMemo(
     () =>
@@ -182,5 +204,7 @@ export function useLiveMapViewModel(): LiveMapViewModel {
     planRoute,
     mapType,
     showTraffic,
+    onRegionChange,
+    recentre,
   };
 }
