@@ -1,7 +1,6 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppButton, AppText, Card } from '@/components/ui';
-import { rounded, spacing, touch } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type DriveBottomBarProps = {
@@ -27,12 +26,12 @@ export function DriveBottomBar({
   const alertsLabel = alertsAhead === null ? '' : `${alertsAhead} alert${alertsAhead === 1 ? '' : 's'} ahead`;
   return (
     <Card variant="form">
-      <View style={styles.info}>
-        <View style={styles.road}>
+      <View className="mb-md flex-row items-center gap-md">
+        <View className="flex-1 flex-row items-center gap-xs">
           {roadName !== null ? (
             <>
               <MaterialCommunityIcons name="road-variant" size={18} color={colors.ink} />
-              <AppText variant="bodySmStrong" numberOfLines={1} style={styles.roadText}>
+              <AppText variant="bodySmStrong" numberOfLines={1} className="shrink">
                 {roadName}
               </AppText>
             </>
@@ -43,10 +42,7 @@ export function DriveBottomBar({
             accessibilityRole="button"
             accessibilityLabel={`Active alerts, ${alertsLabel}`}
             onPress={onOpenAlerts}
-            style={({ pressed }) => [
-              styles.alertsPill,
-              { backgroundColor: pressed ? colors.surfacePressed : colors.canvasSoft },
-            ]}
+            className="min-h-touch flex-row items-center gap-xs rounded-pill bg-canvas-soft px-lg active:bg-surface-pressed"
           >
             <MaterialCommunityIcons name="alert-outline" size={16} color={colors.ink} />
             <AppText variant="bodySmStrong">{alertsLabel}</AppText>
@@ -62,29 +58,3 @@ export function DriveBottomBar({
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  info: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
-  road: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  roadText: {
-    flexShrink: 1,
-  },
-  alertsPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    minHeight: touch.min,
-    paddingHorizontal: spacing.lg,
-    borderRadius: rounded.pill,
-  },
-});

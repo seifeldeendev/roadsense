@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText, BottomSheet, RadioList, ToggleRow } from '@/components/ui';
 import type { SoundMode } from '@/domain/entities';
-import { spacing, touch, type HazardIconName } from '@/theme/tokens';
+import type { HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 const SOUND_OPTIONS: { mode: SoundMode; label: string; icon: HazardIconName }[] = [
@@ -65,10 +65,11 @@ export function MapOptionsSheet(props: MapOptionsSheetProps) {
           accessibilityRole="button"
           accessibilityLabel="Appearance settings"
           onPress={props.onOpenAppearance}
-          style={styles.row}
+          className="min-h-touch-lg flex-row items-center gap-md border-hairline py-lg active:bg-canvas-soft"
+          style={divider.bottom}
         >
           <MaterialCommunityIcons name="theme-light-dark" size={22} color={colors.ink} />
-          <AppText variant="bodyMdStrong" style={styles.label}>
+          <AppText variant="bodyMdStrong" className="flex-1">
             Appearance
           </AppText>
           <MaterialCommunityIcons name="chevron-right" size={22} color={colors.mute} />
@@ -78,16 +79,6 @@ export function MapOptionsSheet(props: MapOptionsSheetProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    minHeight: touch.large,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  label: {
-    flex: 1,
-  },
+const divider = StyleSheet.create({
+  bottom: { borderBottomWidth: StyleSheet.hairlineWidth },
 });

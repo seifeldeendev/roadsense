@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppButton, AppText, Badge, Card, IconButton } from '@/components/ui';
 import type { RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance } from '@/shared/format';
-import { alertIcon, spacing } from '@/theme/tokens';
+import { alertIcon } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 const MAX_ALERT_ROWS = 3;
@@ -24,13 +24,13 @@ export function RouteSummaryCard(props: RouteSummaryCardProps) {
   const { colors } = useTheme();
   return (
     <Card variant="form">
-      <View style={styles.header}>
-        <View style={styles.titles}>
+      <View className="flex-row items-start gap-md">
+        <View className="flex-1 gap-xxs">
           <AppText variant="bodySm" color="body" numberOfLines={1}>
             To {props.destinationName}
           </AppText>
           {props.isRouting ? (
-            <ActivityIndicator color={colors.ink} style={styles.loading} />
+            <ActivityIndicator color={colors.ink} className="my-sm self-start" />
           ) : (
             <AppText variant="displayMd">{props.error ?? props.durationLabel}</AppText>
           )}
@@ -44,20 +44,20 @@ export function RouteSummaryCard(props: RouteSummaryCardProps) {
       </View>
 
       {props.alerts.slice(0, MAX_ALERT_ROWS).map((alert) => (
-        <View key={alert.refId} style={[styles.alertRow, { borderTopColor: colors.hairline }]}>
+        <View key={alert.refId} className="flex-row items-center gap-sm border-hairline py-sm" style={divider.top}>
           <MaterialCommunityIcons
             name={alertIcon(alert.featureType, alert.hazardType)}
             size={20}
             color={colors.ink}
           />
-          <AppText variant="bodySm" style={styles.alertText} numberOfLines={1}>
+          <AppText variant="bodySm" className="flex-1" numberOfLines={1}>
             {alert.title} · at {formatDistance(alert.distanceAlongM)}
           </AppText>
           {alert.speedLimitKmh !== undefined ? <Badge text={`${alert.speedLimitKmh} km/h`} variant="ink" /> : null}
         </View>
       ))}
 
-      <View style={styles.cta}>
+      <View className="mt-md">
         <AppButton
           title="Start drive"
           variant="large"
@@ -70,17 +70,6 @@ export function RouteSummaryCard(props: RouteSummaryCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  titles: { flex: 1, gap: spacing.xxs },
-  loading: { alignSelf: 'flex-start', marginVertical: spacing.sm },
-  alertRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  alertText: { flex: 1 },
-  cta: { marginTop: spacing.md },
+const divider = StyleSheet.create({
+  top: { borderTopWidth: StyleSheet.hairlineWidth },
 });

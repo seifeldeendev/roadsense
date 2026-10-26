@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
-import { rounded, spacing, touch } from '@/theme/tokens';
+import { elevation } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type DriveTopBarProps = {
@@ -10,18 +10,15 @@ type DriveTopBarProps = {
 
 // "Where to?" search pill floating over the map.
 export function DriveTopBar({ onGoTo }: DriveTopBarProps) {
-  const { colors, elevation } = useTheme();
+  const { colors } = useTheme();
   return (
-    <View style={styles.row}>
+    <View className="flex-row items-center gap-md">
       <Pressable
         accessibilityRole="search"
         accessibilityLabel="Where to?"
         onPress={onGoTo}
-        style={({ pressed }) => [
-          styles.search,
-          elevation.level3,
-          { backgroundColor: pressed ? colors.surfacePressed : colors.canvas },
-        ]}
+        className="min-h-touch flex-1 flex-row items-center gap-sm rounded-pill bg-canvas px-lg active:bg-surface-pressed"
+        style={elevation.level3}
       >
         <MaterialCommunityIcons name="magnify" size={22} color={colors.ink} />
         <AppText variant="bodyMd" color="body">
@@ -31,20 +28,3 @@ export function DriveTopBar({ onGoTo }: DriveTopBarProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  search: {
-    flex: 1,
-    minHeight: touch.min,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: rounded.pill,
-  },
-});

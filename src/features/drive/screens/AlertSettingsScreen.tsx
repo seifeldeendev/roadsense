@@ -1,6 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppButton, AppText, Screen, SectionHeader, SegmentedControl } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
 import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
 import { AlertTypeList } from '../components/AlertTypeList';
 import { SpeedAlarmSection } from '../components/DisplaySettingsSections';
@@ -18,23 +17,23 @@ export default function AlertSettingsScreen() {
 
   return (
     <Screen scroll>
-      <View style={styles.container}>
+      <View className="gap-xxxl pb-xl pt-lg">
         <AppText variant="bodyMd" color="body">
           Choose what RoadSense warns you about and how early.
         </AppText>
 
-        <View style={styles.section}>
+        <View className="gap-sm">
           <SectionHeader title="Alert distance" />
           <SegmentedControl options={DISTANCE_SEGMENTS} value={vm.alertDistanceM} onChange={vm.setAlertDistance} />
         </View>
 
-        <View style={styles.section}>
+        <View className="gap-sm">
           <SectionHeader title="Alert types" />
           {vm.message !== null && <ValidationNote message={vm.message} />}
           <AlertTypeList enabledTypes={vm.enabledTypes} onToggle={vm.toggleType} />
         </View>
 
-        <View style={styles.section}>
+        <View className="gap-sm">
           <SectionHeader title="Amber warning" />
           <SegmentedControl options={AMBER_SEGMENTS} value={vm.amberThresholdPct} onChange={vm.setAmberThreshold} />
           <AppText variant="bodySm" color="body">
@@ -44,7 +43,7 @@ export default function AlertSettingsScreen() {
 
         <SpeedAlarmSection vm={display} />
 
-        <View style={styles.actions}>
+        <View className="gap-md">
           <AppButton title="Preview alert" onPress={vm.previewAlert} accessibilityLabel="Preview alert" />
           <AppButton
             title="Reset to defaults"
@@ -57,9 +56,3 @@ export default function AlertSettingsScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { gap: spacing.xxxl, paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  section: { gap: spacing.sm },
-  actions: { gap: spacing.md },
-});

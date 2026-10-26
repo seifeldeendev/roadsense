@@ -1,25 +1,24 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton, AppText, EmptyState, IconButton } from '@/components/ui';
-import { alertIcon, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import { alertIcon, elevation, spacing, type HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { LimitBadge } from '../components/LimitBadge';
 import { StillThereSection } from '../components/StillThereSection';
 import { useAlertOverlayViewModel } from '../viewmodels/useAlertOverlayViewModel';
 
-const PROGRESS_HEIGHT = 6;
+const PANEL = 'gap-md rounded-xl bg-canvas p-lg';
 
 export default function AlertOverlayScreen() {
   const vm = useAlertOverlayViewModel();
-  const { colors, elevation } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const panel = [styles.panel, elevation.level2, { backgroundColor: colors.canvas }];
 
   if (vm.alert === null) {
     return (
-      <View pointerEvents="box-none" style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
-        <View style={panel}>
+      <View pointerEvents="box-none" className="flex-1 px-lg" style={{ paddingTop: insets.top + spacing.md }}>
+        <View className={PANEL} style={elevation.level2}>
           <EmptyState
             icon="traffic-light"
             title="No active alert"
@@ -33,17 +32,17 @@ export default function AlertOverlayScreen() {
 
   const icon: HazardIconName = alertIcon(vm.alert.camera?.type, vm.hazard?.type);
   // Speed status colour is the one accent allowed: it marks driving over the camera's limit.
-  const accent = vm.isOverCameraLimit ? colors.status.over : colors.ink;
+  const accent = vm.isOverCameraLimit ? 'bg-status-over' : 'bg-ink';
 
   // Anchored to the top like a speed-camera app's alert banner; the map stays visible below.
   return (
-    <View pointerEvents="box-none" style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
-      <View style={panel}>
-        <View style={styles.header}>
-          <View style={[styles.iconWrap, { backgroundColor: colors.canvasSoft }]}>
+    <View pointerEvents="box-none" className="flex-1 px-lg" style={{ paddingTop: insets.top + spacing.md }}>
+      <View className={PANEL} style={elevation.level2}>
+        <View className="flex-row items-center gap-md">
+          <View className="h-touch w-touch items-center justify-center rounded-full bg-canvas-soft">
             <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
           </View>
-          <View style={styles.titles}>
+          <View className="flex-1 gap-xxs">
             <AppText variant="displaySm" numberOfLines={1}>
               {vm.title}
             </AppText>
@@ -56,7 +55,7 @@ export default function AlertOverlayScreen() {
           <IconButton icon="close" accessibilityLabel="Dismiss alert" onPress={vm.onDismiss} />
         </View>
 
-        <View style={styles.distanceRow}>
+        <View className="flex-row items-center justify-between">
           <AppText variant="displayXl">{vm.distanceLabel}</AppText>
           {vm.alertKind === 'camera' && vm.cameraLimitKmh !== null && (
             <LimitBadge limitKmh={vm.cameraLimitKmh} size="sm" over={vm.isOverCameraLimit} />
@@ -67,13 +66,13 @@ export default function AlertOverlayScreen() {
           accessibilityRole="progressbar"
           accessibilityLabel="Warning progress"
           accessibilityValue={{ min: 0, max: 100, now: Math.round(vm.progress * 100) }}
-          style={[styles.track, { backgroundColor: colors.canvasSoft }]}
+          className="h-1.5 overflow-hidden rounded-pill bg-canvas-soft"
         >
-          <View style={[styles.fill, { width: `${Math.round(vm.progress * 100)}%`, backgroundColor: accent }]} />
+          <View className={`h-full rounded-pill ${accent}`} style={{ width: `${Math.round(vm.progress * 100)}%` }} />
         </View>
 
         {vm.isOverCameraLimit && vm.cameraLimitKmh !== null && (
-          <AppText variant="bodySmStrong" style={{ color: colors.status.over }}>
+          <AppText variant="bodySmStrong" className="text-status-over">
             Slow down — limit {vm.cameraLimitKmh} km/h
           </AppText>
         )}
@@ -85,20 +84,3 @@ export default function AlertOverlayScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: spacing.lg },
-  panel: { borderRadius: rounded.xl, padding: spacing.lg, gap: spacing.md },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  iconWrap: {
-    width: touch.min,
-    height: touch.min,
-    borderRadius: rounded.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  titles: { flex: 1, gap: spacing.xxs },
-  distanceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  track: { height: PROGRESS_HEIGHT, borderRadius: rounded.pill, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: rounded.pill },
-});

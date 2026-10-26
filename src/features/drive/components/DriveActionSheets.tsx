@@ -3,11 +3,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText, Badge, BottomSheet } from '@/components/ui';
 import type { HazardType, UpcomingAlert } from '@/domain/entities';
 import { formatDistance } from '@/shared/format';
-import { alertIcon, hazardMeta, rounded, spacing, touch } from '@/theme/tokens';
+import { alertIcon, hazardMeta } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { ReportButton } from './ReportButton';
-
-const ICON_CIRCLE = 40;
 
 type ReportSheetProps = {
   visible: boolean;
@@ -22,7 +20,7 @@ export function ReportSheet({ visible, reportTypes, onReport, onClose }: ReportS
       <AppText variant="bodySm" color="body">
         Your location and time are added for you.
       </AppText>
-      <View style={styles.grid}>
+      <View className="flex-row flex-wrap gap-md">
         {reportTypes.map((type) => (
           <ReportButton
             key={type}
@@ -50,7 +48,7 @@ export function ActiveAlertsSheet({ visible, alerts, onOpenAlert, onClose }: Act
       <FlatList
         data={alerts}
         keyExtractor={(alert) => alert.refId}
-        style={styles.list}
+        className="max-h-[360px]"
         ListEmptyComponent={
           <AppText variant="bodyMd" color="body">
             Nothing ahead right now
@@ -63,12 +61,13 @@ export function ActiveAlertsSheet({ visible, alerts, onOpenAlert, onClose }: Act
               accessibilityRole="button"
               accessibilityLabel={`${item.title}, ${formatDistance(item.distanceM)}`}
               onPress={() => onOpenAlert(item)}
-              style={[styles.row, { borderBottomColor: colors.hairline }]}
+              className="min-h-touch-lg flex-row items-center gap-md border-hairline py-md active:bg-canvas-soft"
+              style={divider.bottom}
             >
-              <View style={[styles.iconCircle, { backgroundColor: colors.canvasSoft }]}>
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-canvas-soft">
                 <MaterialCommunityIcons name={icon} size={20} color={colors.ink} />
               </View>
-              <View style={styles.text}>
+              <View className="flex-1 gap-xxs">
                 <AppText variant="bodyMdStrong">{item.title}</AppText>
                 <AppText variant="bodySm" color="body">
                   {formatDistance(item.distanceM)}
@@ -86,32 +85,6 @@ export function ActiveAlertsSheet({ visible, alerts, onOpenAlert, onClose }: Act
   );
 }
 
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  list: {
-    maxHeight: 360,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    minHeight: touch.large,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  iconCircle: {
-    width: ICON_CIRCLE,
-    height: ICON_CIRCLE,
-    borderRadius: rounded.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    flex: 1,
-    gap: spacing.xxs,
-  },
+const divider = StyleSheet.create({
+  bottom: { borderBottomWidth: StyleSheet.hairlineWidth },
 });
