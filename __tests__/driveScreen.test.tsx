@@ -171,6 +171,22 @@ test('"Where to?" plans a route on the same screen, ride-hailing style', async (
   expect(screen.queryByText('To Cairo Festival City')).toBeNull();
 });
 
+test('a quick place under "Where to?" plans that route in one tap', async () => {
+  // The previous test made Cairo Festival City a recent place.
+  await fireEvent.press(screen.getByLabelText('Choose Cairo Festival City'));
+  await advanceVirtualTime();
+  expect(screen.getByText('To Cairo Festival City')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Clear route'));
+});
+
+test('tapping the map outside the planner closes it', async () => {
+  await fireEvent.press(screen.getByLabelText('Where to?'));
+  expect(screen.getByText('Plan your drive')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Close planner'));
+  expect(screen.queryByText('Plan your drive')).toBeNull();
+  expect(screen.getByLabelText('Where to?')).toBeTruthy();
+});
+
 test('the Account tab opens settings pages that hide map layers and screen parts', async () => {
   const { useSettingsStore } = require('../src/stores/useSettingsStore');
   await testRouter.push('/account');

@@ -1,6 +1,5 @@
 import { TextInput, View } from 'react-native';
 import { AppText, IconButton } from '@/components/ui';
-import { elevation } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type TripInputsCardProps = {
@@ -10,11 +9,12 @@ type TripInputsCardProps = {
 };
 
 // Pickup and destination stacked like a ride-hailing request: a dot for where you
-// are, a square for where you're going, joined by a line.
+// are, a square for where you're going, joined by a line. Sits inside the planner's
+// glass card, so it has no surface of its own.
 export function TripInputsCard({ originLabel, query, onQueryChange }: TripInputsCardProps) {
   const { colors } = useTheme();
   return (
-    <View className="flex-row gap-md rounded-xl bg-canvas p-lg" style={elevation.level2}>
+    <View className="flex-row gap-md">
       <View className="w-2.5 items-center py-xl">
         <View className="h-2.5 w-2.5 rounded-full bg-ink" />
         <View className="my-xxs w-0.5 flex-1 bg-hairline" />

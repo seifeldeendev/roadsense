@@ -21,6 +21,8 @@ export type TripPlannerViewModel = {
   setQuery: (text: string) => void;
   originLabel: string;
   sections: PlaceSection[];
+  // A few one-tap destinations for the home screen: recent first, then nearest.
+  quickPlaces: PlaceItem[];
   pinLabel: string;
   isRouting: boolean;
   routeError: string | null;
@@ -39,6 +41,7 @@ export type TripPlannerViewModel = {
 };
 
 const SUGGESTION_COUNT = 6;
+const QUICK_PLACE_COUNT = 3;
 
 export function useTripPlannerViewModel(): TripPlannerViewModel {
   const [mode, setMode] = useState<PlannerMode>('idle');
@@ -91,6 +94,14 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     return [{ title: 'Results', kind: 'place' as const, data: [...matches, ...geoResults].map(withDistance) }];
   }, [query, destinations, recent, geoResults, origin]);
 
+  const quickPlaces = useMemo<PlaceItem[]>(() => {
+    const nearest = [...destinations].sort((a, b) => haversineDistanceM(origin, a) - haversineDistanceM(origin, b));
+    const picks = [...recent, ...nearest.filter((place) => !recent.some((r) => r.id === place.id))];
+    return picks
+      .slice(0, QUICK_PLACE_COUNT)
+      .map((place) => ({ ...place, distanceLabel: formatDistance(haversineDistanceM(origin, place)) }));
+  }, [destinations, recent, origin]);
+
   const choose = useCallback(
     (place: Destination) => {
       setQuery('');
@@ -134,6 +145,7 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     setQuery,
     originLabel,
     sections,
+    quickPlaces,
     pinLabel,
     isRouting: isLoading && selected !== null && route === null,
     routeError: error,
