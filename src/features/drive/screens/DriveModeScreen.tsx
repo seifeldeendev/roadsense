@@ -54,6 +54,7 @@ export default function DriveModeScreen() {
         recentreSignal={controls.recentreSignal}
         onOpenHazard={controls.openHazard}
         onCenterChange={planner.mode === 'pin' ? planner.onPinMove : undefined}
+        onRegionChange={map.onRegionChange}
       />
 
       {showsDriveControls ? (

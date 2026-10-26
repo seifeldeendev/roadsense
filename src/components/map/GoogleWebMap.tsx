@@ -43,6 +43,7 @@ type RoadMapProps = {
   showsTraffic?: boolean;
   northUp?: boolean;
   onCenterChange?: (center: { lat: number; lng: number }) => void;
+  onRegionChange?: (region: MapFrame) => void;
   ref?: Ref<RoadMapHandle>;
 };
 
@@ -57,6 +58,7 @@ export function RoadMap({
   showsTraffic = false,
   northUp = false,
   onCenterChange,
+  onRegionChange,
   ref,
 }: RoadMapProps) {
   const { scheme } = useTheme();
@@ -74,11 +76,23 @@ export function RoadMap({
           disableDefaultUI
           clickableIcons={false}
           onIdle={
-            onCenterChange === undefined
+            onCenterChange === undefined && onRegionChange === undefined
               ? undefined
               : (event) => {
                   const center = event.map.getCenter();
-                  if (center) onCenterChange({ lat: center.lat(), lng: center.lng() });
+                  if (center && onCenterChange !== undefined) onCenterChange({ lat: center.lat(), lng: center.lng() });
+                  if (onRegionChange === undefined) return;
+                  // The JS API exposes the visible area as lat/lng bounds.
+                  const bounds = event.map.getBounds();
+                  if (bounds == null) return;
+                  const northEast = bounds.getNorthEast();
+                  const southWest = bounds.getSouthWest();
+                  onRegionChange({
+                    latitude: (northEast.lat() + southWest.lat()) / 2,
+                    longitude: (northEast.lng() + southWest.lng()) / 2,
+                    latitudeDelta: northEast.lat() - southWest.lat(),
+                    longitudeDelta: northEast.lng() - southWest.lng(),
+                  });
                 }
           }
           style={{ width: '100%', height: '100%' }}
