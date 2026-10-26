@@ -1,12 +1,13 @@
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export const TAB_BAR_HEIGHT = 68;
-// Space between the floating bar and the bottom safe-area edge.
-export const TAB_BAR_GAP = 12;
+// Standard iOS tab bar height; the native bar cannot be measured from JS.
+const IOS_TAB_BAR_HEIGHT = 49;
 
-// How much bottom space a tab screen must keep clear so nothing sits under the
-// floating glass bar.
+// How far bottom-anchored overlays must sit from the screen bottom to stay
+// above the native tab bar. On iOS the bar floats over the content; on Android
+// the content already ends above the bar, so nothing extra is needed.
 export function useTabBarSpace(): number {
   const { bottom } = useSafeAreaInsets();
-  return TAB_BAR_HEIGHT + TAB_BAR_GAP + bottom;
+  return Platform.OS === 'ios' ? IOS_TAB_BAR_HEIGHT + bottom : 0;
 }
