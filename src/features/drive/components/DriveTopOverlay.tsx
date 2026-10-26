@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import type { SoundMode } from '@/domain/entities';
 import { spacing } from '@/theme/tokens';
 import { soundModeIcon } from './DriveSettingsSheets';
@@ -22,11 +22,11 @@ type DriveTopOverlayProps = {
 // Search bar, speed-limit sign and the right-hand column of round map controls.
 export function DriveTopOverlay(props: DriveTopOverlayProps) {
   return (
-    <View pointerEvents="box-none" style={[styles.top, { paddingTop: props.topInset + spacing.md }]}>
+    <View pointerEvents="box-none" className="absolute left-lg right-lg top-0 gap-md" style={{ paddingTop: props.topInset + spacing.md }}>
       {props.showSearch ? <DriveTopBar onGoTo={props.onGoTo} /> : null}
-      <View pointerEvents="box-none" style={styles.row}>
+      <View pointerEvents="box-none" className="flex-row items-start justify-between">
         {props.showLimitSign ? <LimitBadge limitKmh={props.limitKmh} size="sm" over={props.over} /> : <View />}
-        <View style={styles.fabColumn}>
+        <View className="gap-md">
           <MapFab icon={soundModeIcon(props.soundMode)} accessibilityLabel="Sound" onPress={props.onSound} />
           <MapFab icon="layers-outline" accessibilityLabel="Other options" onPress={props.onOptions} />
           <MapFab icon="crosshairs-gps" accessibilityLabel="Recentre map" onPress={props.onRecentre} />
@@ -35,9 +35,3 @@ export function DriveTopOverlay(props: DriveTopOverlayProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  top: { position: 'absolute', top: 0, left: spacing.lg, right: spacing.lg, gap: spacing.md },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  fabColumn: { gap: spacing.md },
-});

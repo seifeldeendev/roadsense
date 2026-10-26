@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
-import { rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import type { HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type StillThereSectionProps = {
@@ -14,20 +14,20 @@ type StillThereSectionProps = {
 export function StillThereSection({ hasVoted, reportedLine, onVote }: StillThereSectionProps) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.box, { borderTopColor: colors.hairline }]}>
-      <View style={styles.header}>
+    <View className="gap-md border-hairline pt-md" style={hairline.top}>
+      <View className="gap-xxs">
         <AppText variant="bodyMdStrong">Still there?</AppText>
         <AppText variant="caption" color="body" numberOfLines={1}>
           {reportedLine}
         </AppText>
       </View>
       {hasVoted ? (
-        <View style={styles.thanks}>
+        <View className="flex-row items-center justify-center gap-xs">
           <MaterialCommunityIcons name="check" size={16} color={colors.ink} />
           <AppText variant="bodySmStrong">Thanks — vote recorded</AppText>
         </View>
       ) : (
-        <View style={styles.votes}>
+        <View className="flex-row justify-center gap-xxxl">
           <VoteButton icon="thumb-up-outline" label="Yes" a11y="Confirm hazard is still there" primary onPress={() => onVote(true)} />
           <VoteButton icon="thumb-down-outline" label="No" a11y="Hazard is no longer there" onPress={() => onVote(false)} />
         </View>
@@ -47,21 +47,15 @@ type VoteButtonProps = {
 function VoteButton({ icon, label, a11y, primary = false, onPress }: VoteButtonProps) {
   const { colors } = useTheme();
   return (
-    <View style={styles.vote}>
+    <View className="items-center gap-xs">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={a11y}
         onPress={onPress}
-        style={({ pressed }) => [
-          styles.voteCircle,
-          primary
-            ? { backgroundColor: pressed ? colors.primaryPressed : colors.primary }
-            : {
-                backgroundColor: pressed ? colors.surfacePressed : colors.canvas,
-                borderColor: colors.hairline,
-                borderWidth: StyleSheet.hairlineWidth,
-              },
-        ]}
+        className={`h-touch-lg w-touch-lg items-center justify-center rounded-full ${
+          primary ? 'bg-primary active:bg-primary-pressed' : 'border-hairline bg-canvas active:bg-surface-pressed'
+        }`}
+        style={primary ? undefined : hairline.all}
       >
         <MaterialCommunityIcons name={icon} size={24} color={primary ? colors.onPrimary : colors.ink} />
       </Pressable>
@@ -70,35 +64,7 @@ function VoteButton({ icon, label, a11y, primary = false, onPress }: VoteButtonP
   );
 }
 
-const styles = StyleSheet.create({
-  box: {
-    gap: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  header: {
-    gap: spacing.xxs,
-  },
-  votes: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xxxl,
-  },
-  vote: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  voteCircle: {
-    width: touch.large,
-    height: touch.large,
-    borderRadius: rounded.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thanks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
+const hairline = StyleSheet.create({
+  top: { borderTopWidth: StyleSheet.hairlineWidth },
+  all: { borderWidth: StyleSheet.hairlineWidth },
 });

@@ -1,9 +1,8 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTabBarSpace } from '@/components/navigation';
 import { ErrorState, LoadingState, Screen } from '@/components/ui';
 import { spacing } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
 import { ActiveAlertsSheet, ReportSheet } from '../components/DriveActionSheets';
 import { DriveBottomBar } from '../components/DriveBottomBar';
 import { DriveMap } from '../components/DriveMap';
@@ -25,7 +24,6 @@ export default function DriveModeScreen() {
   const map = useDriveMapViewModel();
   const controls = useDriveControlsViewModel();
   const planner = useTripPlannerViewModel();
-  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarSpace = useTabBarSpace();
 
@@ -49,7 +47,7 @@ export default function DriveModeScreen() {
   const showsDriveControls = planner.mode === 'idle' || planner.mode === 'route';
 
   return (
-    <View style={[styles.fill, { backgroundColor: colors.canvas }]}>
+    <View className="flex-1 bg-canvas">
       <DriveMap
         {...map}
         hazards={map.activeHazards}
@@ -72,8 +70,8 @@ export default function DriveModeScreen() {
             onOptions={() => controls.openSheet('options')}
             onRecentre={controls.recentre}
           />
-          <View pointerEvents="box-none" style={[styles.bottom, { bottom: tabBarSpace + spacing.md }]}>
-            <View pointerEvents="box-none" style={styles.bottomRow}>
+          <View pointerEvents="box-none" className="absolute left-lg right-lg gap-md" style={{ bottom: tabBarSpace + spacing.md }}>
+            <View pointerEvents="box-none" className="flex-row items-end justify-between">
               {controls.showSpeedometer ? <SpeedReadout speedKmh={vm.speedKmh} status={vm.status} /> : <View />}
               {/* Black only while driving, so the idle screen keeps a single black CTA. */}
               <MapFab icon="plus" accessibilityLabel="New alert" primary={vm.isDriving} onPress={() => controls.openSheet('report')} />
@@ -146,9 +144,3 @@ export default function DriveModeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  bottom: { position: 'absolute', bottom: spacing.lg, left: spacing.lg, right: spacing.lg, gap: spacing.md },
-  bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-});

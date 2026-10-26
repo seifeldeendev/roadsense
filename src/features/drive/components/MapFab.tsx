@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { rounded, touch, type HazardIconName } from '@/theme/tokens';
+import { elevation, type HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 const ICON_SIZE = 22;
@@ -16,21 +16,18 @@ type MapFabProps = {
 
 // Round floating control that sits over the map (DESIGN.md button-floating, as an icon).
 export function MapFab({ icon, accessibilityLabel, onPress, primary = false }: MapFabProps) {
-  const { colors, elevation } = useTheme();
-  const size = primary ? touch.large : touch.min;
+  const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        elevation.level3,
-        { width: size, height: size },
+      className={`items-center justify-center rounded-full ${
         primary
-          ? { backgroundColor: pressed ? colors.primaryPressed : colors.primary }
-          : { backgroundColor: pressed ? colors.surfacePressed : colors.canvas },
-      ]}
+          ? 'h-touch-lg w-touch-lg bg-primary active:bg-primary-pressed'
+          : 'h-touch w-touch bg-canvas active:bg-surface-pressed'
+      }`}
+      style={elevation.level3}
     >
       <MaterialCommunityIcons
         name={icon}
@@ -40,11 +37,3 @@ export function MapFab({ icon, accessibilityLabel, onPress, primary = false }: M
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: rounded.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

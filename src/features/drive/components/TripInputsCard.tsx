@@ -1,10 +1,7 @@
-import { StyleSheet, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 import { AppText, IconButton } from '@/components/ui';
-import { rounded, spacing, touch, typography } from '@/theme/tokens';
+import { elevation } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
-
-const MARKER_SIZE = 10;
-const CONNECTOR_WIDTH = 2;
 
 type TripInputsCardProps = {
   originLabel: string;
@@ -15,21 +12,21 @@ type TripInputsCardProps = {
 // Pickup and destination stacked like a ride-hailing request: a dot for where you
 // are, a square for where you're going, joined by a line.
 export function TripInputsCard({ originLabel, query, onQueryChange }: TripInputsCardProps) {
-  const { colors, elevation } = useTheme();
+  const { colors } = useTheme();
   return (
-    <View style={[styles.card, elevation.level2, { backgroundColor: colors.canvas }]}>
-      <View style={styles.rail}>
-        <View style={[styles.dot, { backgroundColor: colors.ink }]} />
-        <View style={[styles.connector, { backgroundColor: colors.hairline }]} />
-        <View style={[styles.square, { backgroundColor: colors.ink }]} />
+    <View className="flex-row gap-md rounded-xl bg-canvas p-lg" style={elevation.level2}>
+      <View className="w-2.5 items-center py-xl">
+        <View className="h-2.5 w-2.5 rounded-full bg-ink" />
+        <View className="my-xxs w-0.5 flex-1 bg-hairline" />
+        <View className="h-2.5 w-2.5 bg-ink" />
       </View>
-      <View style={styles.fields}>
-        <View style={[styles.field, { backgroundColor: colors.canvasSofter }]}>
+      <View className="flex-1 gap-sm">
+        <View className="min-h-touch justify-center rounded-md bg-canvas-softer px-lg">
           <AppText variant="bodyMd" numberOfLines={1}>
             {originLabel}
           </AppText>
         </View>
-        <View style={[styles.field, styles.inputRow, { backgroundColor: colors.canvasSoft }]}>
+        <View className="min-h-touch flex-row items-center rounded-md bg-canvas-soft pl-lg pr-xxs">
           <TextInput
             value={query}
             onChangeText={onQueryChange}
@@ -38,7 +35,7 @@ export function TripInputsCard({ originLabel, query, onQueryChange }: TripInputs
             autoFocus
             returnKeyType="search"
             accessibilityLabel="Search destination"
-            style={[styles.input, { color: colors.ink }]}
+            className="flex-1 py-sm font-inter text-body-md text-ink"
           />
           {query.length > 0 ? (
             <IconButton icon="close" accessibilityLabel="Clear search" onPress={() => onQueryChange('')} />
@@ -48,15 +45,3 @@ export function TripInputsCard({ originLabel, query, onQueryChange }: TripInputs
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: rounded.xl },
-  rail: { alignItems: 'center', paddingVertical: spacing.xl, width: MARKER_SIZE },
-  dot: { width: MARKER_SIZE, height: MARKER_SIZE, borderRadius: rounded.full },
-  connector: { flex: 1, width: CONNECTOR_WIDTH, marginVertical: spacing.xxs },
-  square: { width: MARKER_SIZE, height: MARKER_SIZE },
-  fields: { flex: 1, gap: spacing.sm },
-  field: { minHeight: touch.min, borderRadius: rounded.md, paddingHorizontal: spacing.lg, justifyContent: 'center' },
-  inputRow: { flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xxs },
-  input: { ...typography.bodyMd, flex: 1, paddingVertical: spacing.sm },
-});

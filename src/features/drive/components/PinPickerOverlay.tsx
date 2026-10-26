@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppButton, AppText, Card } from '@/components/ui';
 import { spacing } from '@/theme/tokens';
@@ -19,17 +19,17 @@ type PinPickerOverlayProps = {
 export function PinPickerOverlay({ topInset, bottomInset, label, onBack, onConfirm }: PinPickerOverlayProps) {
   const { colors } = useTheme();
   return (
-    <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <View pointerEvents="box-none" style={[styles.top, { paddingTop: topInset + spacing.md }]}>
+    <View pointerEvents="box-none" className="absolute inset-0">
+      <View pointerEvents="box-none" className="absolute left-lg top-0" style={{ paddingTop: topInset + spacing.md }}>
         <MapFab icon="arrow-left" accessibilityLabel="Back to search" onPress={onBack} />
       </View>
       {/* The pin tip marks the centre, so the icon sits just above it. */}
-      <View pointerEvents="none" style={styles.centre}>
-        <MaterialCommunityIcons name="map-marker" size={PIN_SIZE} color={colors.ink} style={styles.pin} />
+      <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
+        <MaterialCommunityIcons name="map-marker" size={PIN_SIZE} color={colors.ink} style={{ marginBottom: PIN_SIZE }} />
       </View>
-      <View pointerEvents="box-none" style={[styles.bottom, { bottom: bottomInset + spacing.md }]}>
+      <View pointerEvents="box-none" className="absolute left-lg right-lg" style={{ bottom: bottomInset + spacing.md }}>
         <Card variant="form">
-          <View style={styles.copy}>
+          <View className="mb-md gap-xxs">
             <AppText variant="bodySm" color="body">
               Move the map to set your destination
             </AppText>
@@ -43,11 +43,3 @@ export function PinPickerOverlay({ topInset, bottomInset, label, onBack, onConfi
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  top: { position: 'absolute', top: 0, left: spacing.lg },
-  centre: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  pin: { marginBottom: PIN_SIZE },
-  bottom: { position: 'absolute', bottom: spacing.lg, left: spacing.lg, right: spacing.lg },
-  copy: { gap: spacing.xxs, marginBottom: spacing.md },
-});

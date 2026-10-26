@@ -1,7 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppText, SectionHeader, SegmentedControl } from '@/components/ui';
 import { SPEED_ALARM_OPTIONS } from '@/shared/constants';
-import { spacing } from '@/theme/tokens';
 import type { DisplaySettingsViewModel, SpeedAlarmChoice } from '../viewmodels/useDisplaySettingsViewModel';
 
 const SPEED_ALARM_SEGMENTS: readonly { label: string; value: SpeedAlarmChoice }[] = [
@@ -12,7 +11,7 @@ const SPEED_ALARM_SEGMENTS: readonly { label: string; value: SpeedAlarmChoice }[
 // Personal over-speed warning, independent of the road limit.
 export function SpeedAlarmSection({ vm }: { vm: DisplaySettingsViewModel }) {
   return (
-    <View style={styles.section}>
+    <View className="gap-sm">
       <SectionHeader title="Speed alarm" />
       <SegmentedControl options={SPEED_ALARM_SEGMENTS} value={vm.speedAlarm} onChange={vm.setSpeedAlarm} />
       <AppText variant="bodySm" color="body">
@@ -23,9 +22,3 @@ export function SpeedAlarmSection({ vm }: { vm: DisplaySettingsViewModel }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    gap: spacing.sm,
-  },
-});
