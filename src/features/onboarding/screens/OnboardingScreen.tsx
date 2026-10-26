@@ -17,9 +17,15 @@ export default function OnboardingScreen() {
   const vm = useOnboardingViewModel();
   const listRef = useRef<FlatList<OnboardingSlideData>>(null);
   const [pagerWidth, setPagerWidth] = useState(windowWidth);
+  // List cells don't stretch to the pager on every platform, so slides get its height.
+  const [pagerHeight, setPagerHeight] = useState<number | undefined>(undefined);
 
   const measurePager = useCallback((event: LayoutChangeEvent) => {
     const next = event.nativeEvent.layout.width;
+    const height = event.nativeEvent.layout.height;
+    if (height > 0) {
+      setPagerHeight(height);
+    }
     if (next > 0) {
       setPagerWidth(next);
     }
@@ -68,7 +74,7 @@ export default function OnboardingScreen() {
               index,
             })}
             renderItem={({ item }) => (
-              <OnboardingSlide slide={item} width={pagerWidth} />
+              <OnboardingSlide slide={item} width={pagerWidth} height={pagerHeight} />
             )}
             onMomentumScrollEnd={deriveIndex}
             onScrollToIndexFailed={(info) => {
