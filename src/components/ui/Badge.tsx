@@ -1,6 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { rounded, spacing, typography } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { View } from 'react-native';
+import { AppText } from './AppText';
 
 export type BadgeVariant = 'soft' | 'ink';
 
@@ -11,22 +10,15 @@ type BadgeProps = {
 };
 
 export function Badge({ text, variant = 'soft', color }: BadgeProps) {
-  const { colors } = useTheme();
-  const background = color ?? (variant === 'ink' ? colors.ink : colors.canvasSoft);
-  const textColor = variant === 'ink' ? colors.onInverse : colors.ink;
-
+  const ink = variant === 'ink';
   return (
-    <View style={[styles.badge, { backgroundColor: background }]}>
-      <Text style={[typography.bodySmStrong, { color: textColor }]}>{text}</Text>
+    <View
+      className={`self-start rounded-pill px-xs py-xxs ${ink ? 'bg-ink' : 'bg-canvas-soft'}`}
+      style={color !== undefined ? { backgroundColor: color } : undefined}
+    >
+      <AppText variant="bodySmStrong" color={ink ? 'onInverse' : 'ink'}>
+        {text}
+      </AppText>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    borderRadius: rounded.pill,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xxs,
-    alignSelf: 'flex-start',
-  },
-});

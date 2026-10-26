@@ -15,17 +15,24 @@ const kebab = (name) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
+  // AppText builds text-<colour> from its color prop, so those classes are kept.
+  safelist: colorNames.map((name) => `text-${name}`),
   theme: {
     extend: {
       colors: Object.fromEntries(colorNames.map((name) => [name, `var(--color-${name})`])),
       spacing: Object.fromEntries(Object.entries(scales.spacing).map(([k, v]) => [k, `${v}px`])),
       borderRadius: Object.fromEntries(Object.entries(scales.rounded).map(([k, v]) => [kebab(k), `${v}px`])),
-      fontFamily: Object.fromEntries(Object.entries(scales.fontFamily).map(([k, v]) => [k, [v]])),
+      // font-inter, font-inter-medium, font-inter-bold (font-medium/bold stay font weights).
+      fontFamily: Object.fromEntries(
+        Object.entries(scales.fontFamily).map(([k, v]) => [k === 'regular' ? 'inter' : `inter-${k}`, [v]]),
+      ),
       fontSize: Object.fromEntries(
         Object.entries(scales.typography).map(([k, t]) => [kebab(k), [`${t.fontSize}px`, { lineHeight: `${t.lineHeight}px` }]]),
       ),
       minHeight: { touch: `${scales.touch.min}px`, 'touch-lg': `${scales.touch.large}px` },
       minWidth: { touch: `${scales.touch.min}px` },
+      height: { touch: `${scales.touch.min}px`, 'touch-lg': `${scales.touch.large}px` },
+      width: { touch: `${scales.touch.min}px` },
     },
   },
   plugins: [],

@@ -1,21 +1,12 @@
 import { useState, type Ref } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type TextInputProps,
-  type TextInputInstance,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { rounded, spacing, touch, typography } from '@/theme/tokens';
+import { touch } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
+import { AppText } from './AppText';
 
-// The border is always drawn (transparent when idle) so focus does not shift layout;
-// padding absorbs its width to keep the DESIGN.md text-input at 16 + 24 + 16 = 56.
-const BORDER_WIDTH = 1.5;
+// The 1.5px border is always drawn (transparent when idle) so focus does not shift
+// layout; padding absorbs it to keep the DESIGN.md text-input at 16 + 24 + 16 = 56.
 const TOGGLE_SIZE = 24;
 
 type TextFieldProps = Omit<TextInputProps, 'style'> & {
@@ -38,25 +29,22 @@ export function TextField({
   const [secure, setSecure] = useState(secureToggle);
 
   const showError = error !== undefined && error.length > 0;
-  const borderColor = focused || showError ? colors.ink : 'transparent';
-
-  const boxStyle: ViewStyle = {
-    borderColor,
-    borderWidth: BORDER_WIDTH,
-    backgroundColor: colors.canvasSoft,
-    borderRadius: rounded.md,
-  };
 
   return (
-    <View style={styles.root}>
-      <Text style={[styles.label, { color: colors.ink }]}>{label}</Text>
-      <View style={[styles.inputRow, boxStyle]}>
+    <View className="gap-sm">
+      <AppText variant="bodySmStrong">{label}</AppText>
+      <View
+        className={`flex-row items-center gap-sm rounded-md border-[1.5px] bg-canvas-soft p-[14.5px] ${
+          focused || showError ? 'border-ink' : 'border-transparent'
+        }`}
+      >
         <TextInput
           {...inputProps}
           ref={ref}
           placeholder={placeholder}
           placeholderTextColor={colors.mute}
-          style={[styles.input, { color: colors.ink }]}
+          className="h-6 flex-1 p-0 font-inter text-body-md text-ink"
+          style={{ includeFontPadding: false, textAlignVertical: 'center' }}
           secureTextEntry={secure}
           onFocus={(event) => {
             setFocused(true);
@@ -74,69 +62,19 @@ export function TextField({
             onPress={() => {
               setSecure((value) => !value);
             }}
-            style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
+            className="h-6 w-6 items-center justify-center active:opacity-50"
             hitSlop={(touch.min - TOGGLE_SIZE) / 2}
           >
-            <MaterialCommunityIcons
-              name={secure ? 'eye-off' : 'eye'}
-              size={20}
-              color={colors.ink}
-            />
+            <MaterialCommunityIcons name={secure ? 'eye-off' : 'eye'} size={20} color={colors.ink} />
           </Pressable>
         )}
       </View>
       {showError && (
-        <View style={styles.errorRow}>
-          <MaterialCommunityIcons
-            name="alert-circle-outline"
-            size={16}
-            color={colors.ink}
-          />
-          <Text style={[styles.errorText, { color: colors.ink }]}>{error}</Text>
+        <View className="flex-row items-center gap-xs px-xs">
+          <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.ink} />
+          <AppText variant="bodySm">{error}</AppText>
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    gap: spacing.sm,
-  },
-  label: {
-    ...typography.bodySmStrong,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.lg - BORDER_WIDTH,
-    gap: spacing.sm,
-  },
-  input: {
-    ...typography.bodyMd,
-    flex: 1,
-    height: typography.bodyMd.lineHeight,
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-  },
-  toggle: {
-    width: TOGGLE_SIZE,
-    height: TOGGLE_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressed: {
-    opacity: 0.5,
-  },
-  errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  errorText: {
-    ...typography.bodySm,
-  },
-});

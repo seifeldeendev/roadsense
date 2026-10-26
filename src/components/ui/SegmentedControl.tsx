@@ -1,11 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  rounded,
-  spacing,
-  touch,
-  typography,
-} from '@/theme/tokens';
-import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { Pressable, View } from 'react-native';
+import { elevation } from '@/theme/tokens';
+import { AppText } from './AppText';
 
 type SegmentedOption<T> = {
   label: string;
@@ -18,11 +13,11 @@ type SegmentedControlProps<T> = {
   onChange: (value: T) => void;
 };
 
+// Pill track (rounded.pillTab) with the selected segment lifted onto canvas.
+// Segment radius = pillTab - track padding, so the curves stay concentric.
 export function SegmentedControl<T>({ options, value, onChange }: SegmentedControlProps<T>) {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(segmentedStyles, undefined);
   return (
-    <View style={styles.track}>
+    <View className="min-h-touch flex-row rounded-pill-tab bg-canvas-soft p-xs">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -32,51 +27,17 @@ export function SegmentedControl<T>({ options, value, onChange }: SegmentedContr
             accessibilityLabel={option.label}
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={({ pressed }) => [
-              styles.segment,
-              selected && styles.selected,
-              pressed && !selected && styles.pressed,
-            ]}
+            className={`flex-1 items-center justify-center rounded-[30px] px-sm ${
+              selected ? 'bg-canvas' : 'active:bg-surface-pressed'
+            }`}
+            style={selected ? elevation.level3 : undefined}
           >
-            <Text
-              style={
-                selected
-                  ? [typography.bodyMdStrong, { color: colors.ink }]
-                  : [typography.bodyMd, { color: colors.body }]
-              }
-              numberOfLines={1}
-            >
+            <AppText variant={selected ? 'bodyMdStrong' : 'bodyMd'} color={selected ? 'ink' : 'body'} numberOfLines={1}>
               {option.label}
-            </Text>
+            </AppText>
           </Pressable>
         );
       })}
     </View>
   );
-}
-
-function segmentedStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    track: {
-      flexDirection: 'row',
-      backgroundColor: theme.colors.canvasSoft,
-      borderRadius: rounded.pillTab,
-      padding: spacing.xs,
-      minHeight: touch.min,
-    },
-    segment: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: spacing.sm,
-      borderRadius: rounded.pillTab - spacing.xs,
-    },
-    selected: {
-      backgroundColor: theme.colors.canvas,
-      ...theme.elevation.level3,
-    },
-    pressed: {
-      backgroundColor: theme.colors.surfacePressed,
-    },
-  });
 }
