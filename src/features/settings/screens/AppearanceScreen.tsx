@@ -1,6 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { RadioList, Screen, SectionHeader } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
 import { useAppSettingsViewModel, type AppSettingsViewModel } from '../viewmodels/useAppSettingsViewModel';
 
 type ThemePreference = AppSettingsViewModel['themePreference'];
@@ -15,14 +14,10 @@ export default function AppearanceScreen() {
   const vm = useAppSettingsViewModel();
   return (
     <Screen scroll>
-      <View style={styles.container}>
+      <View className="gap-sm pb-xl pt-lg">
         <SectionHeader title="Theme" />
         <RadioList options={THEMES} value={vm.themePreference} onChange={vm.setThemePreference} />
       </View>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { gap: spacing.sm, paddingTop: spacing.lg, paddingBottom: spacing.xl },
-});

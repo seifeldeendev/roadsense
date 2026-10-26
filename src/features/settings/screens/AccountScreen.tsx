@@ -1,6 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppButton, AppText, Card, Screen } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
 import { AccountHeader, QuickTile, SettingsRow } from '../components/AccountParts';
 import { useAccountViewModel } from '../viewmodels/useAccountViewModel';
 
@@ -9,17 +8,17 @@ export default function AccountScreen() {
   const vm = useAccountViewModel();
   return (
     <Screen scroll>
-      <View style={styles.container}>
+      <View className="gap-xxxl pb-xl pt-lg">
         <AccountHeader name={vm.name} email={vm.email} initials={vm.initials} />
 
-        <View style={styles.tiles}>
+        <View className="flex-row gap-md">
           <QuickTile icon="bell-outline" label="Alerts" onPress={() => vm.open('/settings/alerts')} />
           <QuickTile icon="layers-outline" label="Map layers" onPress={() => vm.open('/settings/map')} />
           <QuickTile icon="history" label="Activity" onPress={() => vm.open('/trips')} />
         </View>
 
         <Card variant="inverse">
-          <View style={styles.promo}>
+          <View className="mb-lg gap-sm">
             <AppText variant="displaySm" color="onInverse">
               {vm.isDemoDrive ? 'Demo drive is on' : 'Test alerts indoors'}
             </AppText>
@@ -56,9 +55,3 @@ export default function AccountScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { gap: spacing.xxxl, paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  tiles: { flexDirection: 'row', gap: spacing.md },
-  promo: { gap: spacing.sm, marginBottom: spacing.lg },
-});

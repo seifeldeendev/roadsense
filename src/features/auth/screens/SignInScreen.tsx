@@ -1,10 +1,8 @@
 import { useRef } from 'react';
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import type { TextInputInstance } from 'react-native';
 import { AppButton, AppText, TextField } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { AuthBrand, AuthLink } from '../components/AuthBrand';
 import { AuthFormCard } from '../components/AuthFormCard';
 import { FormErrorNote } from '../components/FormErrorNote';
@@ -16,14 +14,13 @@ import { useSignInViewModel } from '../viewmodels/useSignInViewModel';
 export default function SignInScreen() {
   const vm = useSignInViewModel();
   const social = useSocialAuthViewModel();
-  const styles = useThemedStyles(signInStyles, undefined);
   const router = useRouter();
   const passwordRef = useRef<TextInputInstance | null>(null);
 
   return (
     <AuthScreenShell>
       <AuthBrand />
-      <View style={styles.heading}>
+      <View className="gap-xs">
         <AppText variant="displayXl">Welcome back</AppText>
         <AppText variant="bodyMd" color="body">
           Sign in to report hazards and keep your trips.
@@ -80,20 +77,9 @@ export default function SignInScreen() {
           router.push('/sign-up');
         }}
       />
-      <AppText variant="caption" color="mute" style={styles.demoCaption}>
+      <AppText variant="caption" color="mute" className="text-center">
         Demo account: demo@roadsense.app · Drive2026
       </AppText>
     </AuthScreenShell>
   );
-}
-
-function signInStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    heading: {
-      gap: spacing.xs,
-    },
-    demoCaption: {
-      textAlign: 'center',
-    },
-  });
 }
