@@ -9,13 +9,14 @@ const PIN_SIZE = 44;
 
 type PinPickerOverlayProps = {
   topInset: number;
+  bottomInset: number;
   label: string;
   onBack: () => void;
   onConfirm: () => void;
 };
 
 // Fixed pin in the middle of the live map: the driver pans the map under it.
-export function PinPickerOverlay({ topInset, label, onBack, onConfirm }: PinPickerOverlayProps) {
+export function PinPickerOverlay({ topInset, bottomInset, label, onBack, onConfirm }: PinPickerOverlayProps) {
   const { colors } = useTheme();
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
@@ -26,7 +27,7 @@ export function PinPickerOverlay({ topInset, label, onBack, onConfirm }: PinPick
       <View pointerEvents="none" style={styles.centre}>
         <MaterialCommunityIcons name="map-marker" size={PIN_SIZE} color={colors.ink} style={styles.pin} />
       </View>
-      <View pointerEvents="box-none" style={styles.bottom}>
+      <View pointerEvents="box-none" style={[styles.bottom, { bottom: bottomInset + spacing.md }]}>
         <Card variant="form">
           <View style={styles.copy}>
             <AppText variant="bodySm" color="body">

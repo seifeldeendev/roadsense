@@ -1,3 +1,4 @@
+import { useTabBarSpace } from '@/components/navigation';
 import { StyleSheet, View } from 'react-native';
 import { AppButton, AppText, Card, Screen } from '@/components/ui';
 import { spacing } from '@/theme/tokens';
@@ -7,8 +8,9 @@ import { useAccountViewModel } from '../viewmodels/useAccountViewModel';
 // Account tab: name and avatar, shortcut tiles, a promo band, then settings rows.
 export default function AccountScreen() {
   const vm = useAccountViewModel();
+  const tabBarSpace = useTabBarSpace();
   return (
-    <Screen scroll>
+    <Screen scroll bottomInset={tabBarSpace}>
       <View style={styles.container}>
         <AccountHeader name={vm.name} email={vm.email} initials={vm.initials} />
 
