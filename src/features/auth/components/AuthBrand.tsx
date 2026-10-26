@@ -1,14 +1,13 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
-import { rounded, spacing, touch } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 export function AuthBrand() {
   const { colors } = useTheme();
   return (
-    <View style={styles.root}>
-      <View style={[styles.circle, { backgroundColor: colors.canvasSoft }]}>
+    <View className="flex-row items-center gap-sm self-center">
+      <View className="h-touch w-touch items-center justify-center rounded-full bg-canvas-soft">
         <MaterialCommunityIcons name="speedometer" size={24} color={colors.ink} />
       </View>
       <AppText variant="bodyMdStrong">RoadSense</AppText>
@@ -24,7 +23,7 @@ type AuthLinkProps = {
 
 export function AuthLink({ prompt, label, onPress }: AuthLinkProps) {
   return (
-    <View style={styles.linkRow}>
+    <View className="flex-row flex-wrap items-center justify-center gap-xs">
       <AppText variant="bodyMd" color="body">
         {prompt}
       </AppText>
@@ -33,41 +32,12 @@ export function AuthLink({ prompt, label, onPress }: AuthLinkProps) {
         accessibilityLabel={label}
         onPress={onPress}
         hitSlop={8}
-        style={({ pressed }) => pressed && styles.pressed}
+        className="active:opacity-50"
       >
-        <AppText variant="bodyMdStrong" style={styles.underline}>
+        <AppText variant="bodyMdStrong" className="underline">
           {label}
         </AppText>
       </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    alignSelf: 'center',
-  },
-  circle: {
-    width: touch.min,
-    height: touch.min,
-    borderRadius: rounded.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  linkRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  underline: {
-    textDecorationLine: 'underline',
-  },
-  pressed: {
-    opacity: 0.5,
-  },
-});

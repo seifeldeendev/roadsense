@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
-  StyleSheet,
   useWindowDimensions,
   View,
   type LayoutChangeEvent,
@@ -9,8 +8,6 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { Screen } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { OnboardingSlide } from '../components/OnboardingSlide';
 import { OnboardingFooter } from '../components/OnboardingFooter';
 import { useOnboardingViewModel, type OnboardingSlideData } from '../viewmodels/useOnboardingViewModel';
@@ -18,7 +15,6 @@ import { useOnboardingViewModel, type OnboardingSlideData } from '../viewmodels/
 export default function OnboardingScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const vm = useOnboardingViewModel();
-  const styles = useThemedStyles(screenStyles, undefined);
   const listRef = useRef<FlatList<OnboardingSlideData>>(null);
   const [pagerWidth, setPagerWidth] = useState(windowWidth);
 
@@ -57,8 +53,8 @@ export default function OnboardingScreen() {
 
   return (
     <Screen padded={false}>
-      <View style={styles.fill}>
-        <View style={styles.slides} onLayout={measurePager}>
+      <View className="flex-1 gap-md">
+        <View className="flex-1" onLayout={measurePager}>
           <FlatList<OnboardingSlideData>
             ref={listRef}
             data={vm.slides}
@@ -94,16 +90,4 @@ export default function OnboardingScreen() {
       </View>
     </Screen>
   );
-}
-
-function screenStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    fill: {
-      flex: 1,
-      gap: spacing.md,
-    },
-    slides: {
-      flex: 1,
-    },
-  });
 }

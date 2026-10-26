@@ -1,17 +1,14 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
-import { rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import type { HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
-
-const AVATAR_SIZE = 64;
 
 // Large name on the left, round avatar on the right.
 export function AccountHeader({ name, email, initials }: { name: string; email: string; initials: string }) {
-  const { colors } = useTheme();
   return (
-    <View style={styles.header}>
-      <View style={styles.headerText}>
+    <View className="flex-row items-center gap-lg">
+      <View className="flex-1 gap-xxs">
         <AppText variant="displayXl" numberOfLines={1}>
           {name}
         </AppText>
@@ -21,7 +18,7 @@ export function AccountHeader({ name, email, initials }: { name: string; email: 
           </AppText>
         ) : null}
       </View>
-      <View style={[styles.avatar, { backgroundColor: colors.canvasSoft }]}>
+      <View className="h-16 w-16 items-center justify-center rounded-full bg-canvas-soft">
         <AppText variant="displaySm">{initials}</AppText>
       </View>
     </View>
@@ -38,7 +35,7 @@ export function QuickTile({ icon, label, onPress }: QuickTileProps) {
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.tile, { backgroundColor: pressed ? colors.surfacePressed : colors.canvasSoft }]}
+      className="min-h-[88px] flex-1 items-center justify-center gap-sm rounded-xl bg-canvas-soft p-md active:bg-surface-pressed"
     >
       <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
       <AppText variant="bodySmStrong">{label}</AppText>
@@ -56,10 +53,10 @@ export function SettingsRow({ icon, label, detail, onPress }: SettingsRowProps) 
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.canvasSoft }]}
+      className="min-h-touch-lg flex-row items-center gap-lg py-lg active:bg-canvas-soft"
     >
       <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
-      <AppText variant="bodyLg" style={styles.rowLabel}>
+      <AppText variant="bodyLg" className="flex-1">
         {label}
       </AppText>
       {detail !== undefined ? (
@@ -67,35 +64,7 @@ export function SettingsRow({ icon, label, detail, onPress }: SettingsRowProps) 
           {detail}
         </AppText>
       ) : null}
+      <MaterialCommunityIcons name="chevron-right" size={20} color={colors.mute} />
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  headerText: { flex: 1, gap: spacing.xxs },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: rounded.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tile: {
-    flex: 1,
-    minHeight: 88,
-    borderRadius: rounded.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    minHeight: touch.large,
-    paddingVertical: spacing.lg,
-  },
-  rowLabel: { flex: 1 },
-});

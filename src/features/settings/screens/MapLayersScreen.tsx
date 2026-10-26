@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppText, Screen, SectionHeader, SegmentedControl, ToggleRow } from '@/components/ui';
 import type { AlertTarget } from '@/domain/entities';
-import { hazardMeta, spacing } from '@/theme/tokens';
+import { hazardMeta } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { useAppSettingsViewModel } from '../viewmodels/useAppSettingsViewModel';
 
@@ -26,8 +26,8 @@ export default function MapLayersScreen() {
   const { colors } = useTheme();
   return (
     <Screen scroll>
-      <View style={styles.container}>
-        <View style={styles.section}>
+      <View className="gap-xxxl pb-xl pt-lg">
+        <View className="gap-sm">
           <SectionHeader title="Location" />
           <SegmentedControl options={LOCATION_SEGMENTS} value={vm.locationSource} onChange={vm.setLocationSource} />
           <AppText variant="bodySm" color="body">
@@ -37,7 +37,7 @@ export default function MapLayersScreen() {
           </AppText>
         </View>
 
-        <View style={styles.section}>
+        <View className="gap-sm">
           <SectionHeader title="Map display" />
           <ToggleRow label="Satellite view" value={vm.satellite} onValueChange={vm.setSatellite} />
           <ToggleRow label="Show traffic" value={vm.showTraffic} onValueChange={vm.setShowTraffic} />
@@ -49,7 +49,7 @@ export default function MapLayersScreen() {
           />
         </View>
 
-        <View style={styles.section}>
+        <View className="gap-sm">
           <SectionHeader title="Show on map" subtitle="Hidden items still alert you unless you turn them off in Alerts" />
           {LAYERS.map(({ target, label }) => (
             <ToggleRow
@@ -65,8 +65,3 @@ export default function MapLayersScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { gap: spacing.xxxl, paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  section: { gap: spacing.sm },
-});

@@ -1,6 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Screen, SectionHeader, ToggleRow } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
 import { useAppSettingsViewModel, type DriveScreenToggle } from '../viewmodels/useAppSettingsViewModel';
 
 const ITEMS: { key: DriveScreenToggle; label: string; description: string }[] = [
@@ -15,8 +14,8 @@ export default function DriveScreenSettingsScreen() {
   const vm = useAppSettingsViewModel();
   return (
     <Screen scroll>
-      <View style={styles.container}>
-        <View style={styles.section}>
+      <View className="pb-xl pt-lg">
+        <View className="gap-sm">
           <SectionHeader title="Show on the Drive screen" subtitle="Turn off anything you don’t want to see" />
           {ITEMS.map(({ key, label, description }) => (
             <ToggleRow
@@ -32,8 +31,3 @@ export default function DriveScreenSettingsScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  section: { gap: spacing.sm },
-});

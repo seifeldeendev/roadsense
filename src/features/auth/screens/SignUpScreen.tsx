@@ -1,10 +1,8 @@
 import { useRef } from 'react';
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import type { TextInputInstance } from 'react-native';
 import { AppButton, AppText, TextField } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { AuthBrand, AuthLink } from '../components/AuthBrand';
 import { AuthFormCard } from '../components/AuthFormCard';
 import { FormErrorNote } from '../components/FormErrorNote';
@@ -16,7 +14,6 @@ import { useSignUpViewModel } from '../viewmodels/useSignUpViewModel';
 export default function SignUpScreen() {
   const vm = useSignUpViewModel();
   const social = useSocialAuthViewModel();
-  const styles = useThemedStyles(signUpStyles, undefined);
   const router = useRouter();
   const emailRef = useRef<TextInputInstance | null>(null);
   const passwordRef = useRef<TextInputInstance | null>(null);
@@ -25,7 +22,7 @@ export default function SignUpScreen() {
   return (
     <AuthScreenShell>
       <AuthBrand />
-      <View style={styles.heading}>
+      <View className="gap-xs">
         <AppText variant="displayXl">Create your account</AppText>
         <AppText variant="bodyMd" color="body">
           Sign up to report hazards and keep your trips.
@@ -111,20 +108,9 @@ export default function SignUpScreen() {
           router.push('/sign-in');
         }}
       />
-      <AppText variant="caption" color="mute" style={styles.legalCaption}>
+      <AppText variant="caption" color="mute" className="text-center">
         By continuing you agree to drive safely and follow local traffic law.
       </AppText>
     </AuthScreenShell>
   );
-}
-
-function signUpStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    heading: {
-      gap: spacing.xs,
-    },
-    legalCaption: {
-      textAlign: 'center',
-    },
-  });
 }

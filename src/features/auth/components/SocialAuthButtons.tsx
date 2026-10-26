@@ -1,8 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { AppButton, AppText } from '@/components/ui';
 import type { AuthProvider } from '@/domain/repositories';
-import { spacing } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
 import { FormErrorNote } from './FormErrorNote';
 
 type SocialAuthButtonsProps = {
@@ -13,17 +11,16 @@ type SocialAuthButtonsProps = {
 
 // Both providers use the white secondary pill so the form keeps a single black CTA.
 export function SocialAuthButtons({ pendingProvider, error, onContinue }: SocialAuthButtonsProps) {
-  const { colors } = useTheme();
   const busy = pendingProvider !== null;
 
   return (
-    <View style={styles.root}>
-      <View style={styles.divider}>
-        <View style={[styles.line, { backgroundColor: colors.hairline }]} />
+    <View className="gap-md">
+      <View className="flex-row items-center gap-md">
+        <View className="flex-1 bg-hairline" style={lineStyles.line} />
         <AppText variant="bodySm" color="body">
           or
         </AppText>
-        <View style={[styles.line, { backgroundColor: colors.hairline }]} />
+        <View className="flex-1 bg-hairline" style={lineStyles.line} />
       </View>
       <AppButton
         title="Continue with Google"
@@ -48,17 +45,6 @@ export function SocialAuthButtons({ pendingProvider, error, onContinue }: Social
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    gap: spacing.md,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  line: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-  },
+const lineStyles = StyleSheet.create({
+  line: { height: StyleSheet.hairlineWidth },
 });
