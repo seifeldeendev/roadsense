@@ -6,12 +6,14 @@ import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 type MapBottomBarProps = {
   summaryLine: string;
   onPlanRoute: () => void;
+  // Distance from the screen bottom, clearing the floating tab bar.
+  bottomInset: number;
 };
 
-export function MapBottomBar({ summaryLine, onPlanRoute }: MapBottomBarProps) {
+export function MapBottomBar({ summaryLine, onPlanRoute, bottomInset }: MapBottomBarProps) {
   const styles = useThemedStyles(bottomBarStyles, undefined);
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { bottom: bottomInset }]}>
       <Card variant="form">
         <AppText variant="bodyMdStrong">{summaryLine}</AppText>
         <AppButton

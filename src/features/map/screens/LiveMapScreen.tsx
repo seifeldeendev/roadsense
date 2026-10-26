@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useTabBarSpace } from '@/components/navigation';
 import { IconButton, Screen } from '@/components/ui';
 import {
   CameraMarker,
@@ -19,10 +20,12 @@ import { MapBottomBar } from '../components/MapBottomBar';
 import { useLiveMapViewModel } from '../viewmodels/useLiveMapViewModel';
 
 const EMPTY_MESSAGE = 'No cameras or hazards match these filters';
-const FAB_BOTTOM_OFFSET = 148;
+// Above the bottom card (which itself sits above the floating tab bar).
+const FAB_ABOVE_CARD = 132;
 
 export default function LiveMapScreen() {
   const vm = useLiveMapViewModel();
+  const tabBarSpace = useTabBarSpace();
   const styles = useThemedStyles(screenStyles, undefined);
   const mapRef = useRef<RoadMapHandle | null>(null);
   const [recentreCount, setRecentreCount] = useState(0);
@@ -59,7 +62,7 @@ export default function LiveMapScreen() {
 
       <MapFilterBar chips={vm.chips} onToggle={vm.toggleFilter} />
 
-      <View style={styles.fabShell}>
+      <View style={[styles.fabShell, { bottom: tabBarSpace + spacing.md + FAB_ABOVE_CARD }]}>
         <IconButton
           icon="crosshairs-gps"
           accessibilityLabel="Recentre map"
@@ -67,7 +70,7 @@ export default function LiveMapScreen() {
         />
       </View>
 
-      <MapBottomBar summaryLine={vm.summaryLine} onPlanRoute={vm.planRoute} />
+      <MapBottomBar summaryLine={vm.summaryLine} onPlanRoute={vm.planRoute} bottomInset={tabBarSpace + spacing.md} />
 
       {vm.isLoading && vm.fitCoords.length === 0 ? (
         <LiveMapLoadingOverlay label="Loading cameras and hazards…" />
@@ -87,7 +90,6 @@ function screenStyles(_theme: ResolvedTheme) {
     fabShell: {
       position: 'absolute',
       right: spacing.lg,
-      bottom: FAB_BOTTOM_OFFSET,
       backgroundColor: _theme.colors.canvas,
       borderRadius: rounded.full,
       ..._theme.elevation.level3,
