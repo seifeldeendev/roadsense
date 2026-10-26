@@ -6,7 +6,8 @@ const googleMapsKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 
 // Google Maps on every platform. The react-native-maps plugin writes the key
 // into the Android manifest and adds the Google Maps SDK to the iOS build
-// (iOS needs a development build; Expo Go only ships Apple Maps). Web reads
+// (iOS uses the Google Maps SDK, so it needs a development or store build;
+// Expo Go on iOS cannot show the map). Web reads
 // the same EXPO_PUBLIC_ key at runtime for the Maps JavaScript API.
 const config: ExpoConfig = {
   ...expo,
