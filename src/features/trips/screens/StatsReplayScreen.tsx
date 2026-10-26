@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   Chip,
@@ -8,8 +8,6 @@ import {
   Screen,
   SectionHeader,
 } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles } from '@/theme/useTheme';
 import { useStatsReplayViewModel } from '../viewmodels/useStatsReplayViewModel';
 import { WeekSelector } from '../components/WeekSelector';
 import { WeekBarChart } from '../components/WeekBarChart';
@@ -21,7 +19,6 @@ export default function StatsReplayScreen() {
   const vm = useStatsReplayViewModel(
     typeof replayParam === 'string' ? replayParam : undefined,
   );
-  const styles = useThemedStyles(statsStyles, undefined);
 
   if (vm.isLoading) {
     return (
@@ -53,8 +50,8 @@ export default function StatsReplayScreen() {
 
   return (
     <Screen scroll>
-      <View style={styles.container}>
-        <View style={styles.section}>
+      <View className="gap-xxxl pb-xl pt-sm">
+        <View className="gap-md">
           <SectionHeader title="Weekly stats" size="md" />
           <WeekSelector
             label={vm.weekLabel}
@@ -66,13 +63,13 @@ export default function StatsReplayScreen() {
           <StatTiles tiles={vm.tiles} />
         </View>
 
-        <View style={styles.section}>
+        <View className="gap-md">
           <SectionHeader
             title="Replay a trip"
             subtitle="Pick a drive, then scrub or change speed"
           />
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.chipRow}>
+            <View className="flex-row gap-md px-xxs">
               {vm.chips.map((chip) => (
                 <Chip
                   key={chip.id}
@@ -88,22 +85,4 @@ export default function StatsReplayScreen() {
       </View>
     </Screen>
   );
-}
-
-function statsStyles() {
-  return StyleSheet.create({
-    container: {
-      gap: spacing.xxxl,
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.xl,
-    },
-    section: {
-      gap: spacing.md,
-    },
-    chipRow: {
-      flexDirection: 'row',
-      gap: spacing.md,
-      paddingHorizontal: spacing.xxs,
-    },
-  });
 }

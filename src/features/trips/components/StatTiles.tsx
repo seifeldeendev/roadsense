@@ -1,7 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppText } from '@/components/ui';
-import { rounded, spacing } from '@/theme/tokens';
-import { useTheme, useThemedStyles } from '@/theme/useTheme';
 
 const COLUMNS = 2;
 
@@ -15,15 +13,14 @@ type StatTilesProps = {
 };
 
 export function StatTiles({ tiles }: StatTilesProps) {
-  const styles = useThemedStyles(gridStyles, undefined);
   const rows = [];
   for (let i = 0; i < tiles.length; i += COLUMNS) {
     rows.push(tiles.slice(i, i + COLUMNS));
   }
   return (
-    <View style={styles.grid}>
+    <View className="gap-sm">
       {rows.map((row, index) => (
-        <View key={`row-${index}`} style={styles.row}>
+        <View key={`row-${index}`} className="flex-row gap-sm">
           {row.map((tile) => (
             <StatTile key={tile.label} tile={tile} />
           ))}
@@ -34,12 +31,11 @@ export function StatTiles({ tiles }: StatTilesProps) {
 }
 
 function StatTile({ tile }: { tile: StatTileModel }) {
-  const { colors } = useTheme();
   return (
     <View
       accessibilityLabel={`${tile.label}: ${tile.value}`}
       accessibilityRole="text"
-      style={[statStyles.tile, { backgroundColor: colors.canvasSoft }]}
+      className="flex-1 gap-xxs rounded-xl bg-canvas-soft p-md"
     >
       <AppText variant="bodyMdStrong">{tile.value}</AppText>
       <AppText variant="bodySm" color="body" numberOfLines={1}>
@@ -47,25 +43,4 @@ function StatTile({ tile }: { tile: StatTileModel }) {
       </AppText>
     </View>
   );
-}
-
-const statStyles = StyleSheet.create({
-  tile: {
-    flex: 1,
-    borderRadius: rounded.xl,
-    padding: spacing.md,
-    gap: spacing.xxs,
-  },
-});
-
-function gridStyles() {
-  return StyleSheet.create({
-    grid: {
-      gap: spacing.sm,
-    },
-    row: {
-      flexDirection: 'row',
-      gap: spacing.sm,
-    },
-  });
 }
