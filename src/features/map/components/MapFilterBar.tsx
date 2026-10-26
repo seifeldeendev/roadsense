@@ -1,6 +1,6 @@
 import { ScrollView, View } from 'react-native';
-import { Chip } from '@/components/ui';
-import { elevation } from '@/theme/tokens';
+import { Chip, GlassSurface } from '@/components/ui';
+import { rounded } from '@/theme/tokens';
 import type { MapFilterChipVm, MapFilterKey } from '../viewmodels/useLiveMapViewModel';
 
 type MapFilterBarProps = {
@@ -11,7 +11,7 @@ type MapFilterBarProps = {
 export function MapFilterBar({ chips, onToggle }: MapFilterBarProps) {
   return (
     <View pointerEvents="box-none" className="absolute left-lg right-lg top-md">
-      <View className="rounded-xl bg-canvas" style={elevation.level3}>
+      <GlassSurface radius={rounded.xl}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -27,7 +27,7 @@ export function MapFilterBar({ chips, onToggle }: MapFilterBarProps) {
             />
           ))}
         </ScrollView>
-      </View>
+      </GlassSurface>
     </View>
   );
 }
