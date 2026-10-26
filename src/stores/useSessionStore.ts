@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { persistStorage } from './persistStorage';
 import type { User } from '../domain/entities';
-import type { AuthProvider } from '../domain/repositories';
+import type { AuthProvider, ProfileChanges } from '../domain/repositories';
 import { repositories } from '../data/di';
 
 type SessionState = {
@@ -14,12 +14,13 @@ type SessionState = {
   signIn(email: string, password: string): Promise<void>;
   signUp(name: string, email: string, password: string): Promise<void>;
   signInWithProvider(provider: AuthProvider): Promise<void>;
+  updateProfile(changes: ProfileChanges): Promise<void>;
   signOut(): Promise<void>;
 };
 
 export const useSessionStore = create<SessionState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       hasCompletedOnboarding: false,
       hasHydrated: false,
@@ -35,6 +36,12 @@ export const useSessionStore = create<SessionState>()(
       },
       signInWithProvider: async (provider) => {
         const user = await repositories.auth.signInWithProvider(provider);
+        set({ user });
+      },
+      updateProfile: async (changes) => {
+        const current = get().user;
+        if (current === null) return;
+        const user = await repositories.auth.updateProfile(current, changes);
         set({ user });
       },
       signOut: async () => {

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AppText } from '@/components/ui';
+import { AppText } from './AppText';
 import { useTheme } from '@/theme/useTheme';
 
 type FormErrorNoteProps = {

@@ -1,5 +1,5 @@
 import type { User } from '../../domain/entities';
-import type { AuthProvider, AuthRepository } from '../../domain/repositories';
+import type { AuthProvider, AuthRepository, ProfileChanges } from '../../domain/repositories';
 import { DEMO_CREDENTIALS } from '../../shared/constants';
 
 const AUTH_DELAY_MS = 600;
@@ -22,7 +22,7 @@ function normalizeEmail(email: string): string {
 }
 
 function toUser(user: StoredUser): User {
-  return { id: user.id, name: user.name, email: user.email };
+  return { id: user.id, name: user.name, email: user.email, phone: user.phone, avatarUri: user.avatarUri };
 }
 
 export class MockAuthRepository implements AuthRepository {
@@ -69,6 +69,27 @@ export class MockAuthRepository implements AuthRepository {
       name: `${label} Driver`,
       email: `${provider}.driver@roadsense.app`,
     };
+  }
+
+  async updateProfile(user: User, changes: ProfileChanges): Promise<User> {
+    await delay();
+    const email = normalizeEmail(changes.email);
+    const taken = this.users.some((stored) => stored.email === email && stored.id !== user.id);
+    if (taken) {
+      throw new Error('An account with this email already exists');
+    }
+    const phone = changes.phone?.trim();
+    const updated: User = {
+      ...user,
+      name: changes.name.trim(),
+      email,
+      phone: phone === undefined || phone.length === 0 ? undefined : phone,
+      avatarUri: changes.avatarUri,
+    };
+    // Provider sign-ins are not stored, so only stored accounts are kept in sync.
+    const stored = this.users.find((candidate) => candidate.id === user.id);
+    if (stored !== undefined) Object.assign(stored, updated);
+    return updated;
   }
 
   async signOut(): Promise<void> {
