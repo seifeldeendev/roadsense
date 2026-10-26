@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
-import { AppButton, AppText } from '@/components/ui';
+import { AppButton, AppText, FormErrorNote } from '@/components/ui';
 import type { AuthProvider } from '@/domain/repositories';
-import { FormErrorNote } from './FormErrorNote';
+
 
 type SocialAuthButtonsProps = {
   pendingProvider: AuthProvider | null;

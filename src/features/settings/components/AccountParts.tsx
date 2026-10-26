@@ -1,13 +1,20 @@
 import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AppText } from '@/components/ui';
+import { AppText, Avatar } from '@/components/ui';
 import type { HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
-// Large name on the left, round avatar on the right.
-export function AccountHeader({ name, email, initials }: { name: string; email: string; initials: string }) {
+type AccountHeaderProps = { name: string; email: string; initials: string; avatarUri: string | undefined; onPress: () => void };
+
+// Large name on the left, round photo on the right; opens the Profile screen.
+export function AccountHeader({ name, email, initials, avatarUri, onPress }: AccountHeaderProps) {
   return (
-    <View className="flex-row items-center gap-lg">
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Edit profile, ${name}`}
+      onPress={onPress}
+      className="flex-row items-center gap-lg active:opacity-70"
+    >
       <View className="flex-1 gap-xxs">
         <AppText variant="displayXl" numberOfLines={1}>
           {name}
@@ -18,10 +25,8 @@ export function AccountHeader({ name, email, initials }: { name: string; email: 
           </AppText>
         ) : null}
       </View>
-      <View className="h-16 w-16 items-center justify-center rounded-full bg-canvas-soft">
-        <AppText variant="displaySm">{initials}</AppText>
-      </View>
-    </View>
+      <Avatar initials={initials} uri={avatarUri} size={64} />
+    </Pressable>
   );
 }
 

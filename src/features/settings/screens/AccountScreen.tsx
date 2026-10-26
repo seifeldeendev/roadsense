@@ -9,7 +9,13 @@ export default function AccountScreen() {
   return (
     <Screen scroll>
       <View className="gap-xxxl pb-xl pt-lg">
-        <AccountHeader name={vm.name} email={vm.email} initials={vm.initials} />
+        <AccountHeader
+          name={vm.name}
+          email={vm.email}
+          initials={vm.initials}
+          avatarUri={vm.avatarUri}
+          onPress={() => vm.open('/settings/profile')}
+        />
 
         <View className="flex-row gap-md">
           <QuickTile icon="bell-outline" label="Alerts" onPress={() => vm.open('/settings/alerts')} />
@@ -37,6 +43,7 @@ export default function AccountScreen() {
         </Card>
 
         <View>
+          <SettingsRow icon="account-outline" label="Personal info" onPress={() => vm.open('/settings/profile')} />
           <SettingsRow icon="bell-ring-outline" label="Alerts" onPress={() => vm.open('/settings/alerts')} />
           <SettingsRow icon="map-outline" label="Map & layers" onPress={() => vm.open('/settings/map')} />
           <SettingsRow icon="volume-high" label="Sound & voice" onPress={() => vm.open('/settings/sound')} />

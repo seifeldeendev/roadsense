@@ -2,10 +2,10 @@ import { useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import type { TextInputInstance } from 'react-native';
-import { AppButton, AppText, TextField } from '@/components/ui';
+import { AppButton, AppText, FormErrorNote, TextField } from '@/components/ui';
 import { AuthBrand, AuthLink } from '../components/AuthBrand';
 import { AuthFormCard } from '../components/AuthFormCard';
-import { FormErrorNote } from '../components/FormErrorNote';
+
 import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import { AuthScreenShell } from '../components/AuthScreenShell';
 import { useSocialAuthViewModel } from '../viewmodels/useSocialAuthViewModel';

@@ -2,22 +2,19 @@ import { useCallback, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { initialsOf } from './initials';
 
 export type AccountViewModel = {
   name: string;
   email: string;
   initials: string;
+  avatarUri: string | undefined;
   isDemoDrive: boolean;
   signingOut: boolean;
   open: (href: Href) => void;
   toggleDemoDrive: () => void;
   signOut: () => void;
 };
-
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return (parts[0]?.[0] ?? '?').toUpperCase() + (parts[1]?.[0] ?? '').toUpperCase();
-}
 
 export function useAccountViewModel(): AccountViewModel {
   const user = useSessionStore((s) => s.user);
@@ -37,6 +34,7 @@ export function useAccountViewModel(): AccountViewModel {
     name,
     email: user?.email ?? '',
     initials: initialsOf(name),
+    avatarUri: user?.avatarUri,
     isDemoDrive: locationSource === 'demo',
     signingOut,
     open: (href) => router.push(href),

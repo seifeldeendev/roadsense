@@ -85,6 +85,7 @@ function ThemedChrome() {
             name="alert"
             options={{ presentation: 'transparentModal', headerShown: false, animation: 'fade' }}
           />
+          <Stack.Screen name="settings/profile" options={{ title: 'Profile' }} />
           <Stack.Screen name="settings/alerts" options={{ title: 'Alerts' }} />
           <Stack.Screen name="settings/map" options={{ title: 'Map & layers' }} />
           <Stack.Screen name="settings/sound" options={{ title: 'Sound & voice' }} />
