@@ -1,6 +1,7 @@
 import { Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { elevation, type HazardIconName } from '@/theme/tokens';
+import { GlassSurface } from '@/components/ui';
+import { elevation, touch, type HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 const ICON_SIZE = 22;
@@ -14,26 +15,28 @@ type MapFabProps = {
   primary?: boolean;
 };
 
-// Round floating control that sits over the map (DESIGN.md button-floating, as an icon).
+// Round floating control over the map (DESIGN.md button-floating, as an icon): glass,
+// except the primary action, which stays a solid black/white disc.
 export function MapFab({ icon, accessibilityLabel, onPress, primary = false }: MapFabProps) {
   const { colors } = useTheme();
+  if (primary) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        onPress={onPress}
+        className="h-touch-lg w-touch-lg items-center justify-center rounded-full bg-primary active:bg-primary-pressed"
+        style={elevation.level3}
+      >
+        <MaterialCommunityIcons name={icon} size={LARGE_ICON_SIZE} color={colors.onPrimary} />
+      </Pressable>
+    );
+  }
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
-      className={`items-center justify-center rounded-full ${
-        primary
-          ? 'h-touch-lg w-touch-lg bg-primary active:bg-primary-pressed'
-          : 'h-touch w-touch bg-canvas active:bg-surface-pressed'
-      }`}
-      style={elevation.level3}
-    >
-      <MaterialCommunityIcons
-        name={icon}
-        size={primary ? LARGE_ICON_SIZE : ICON_SIZE}
-        color={primary ? colors.onPrimary : colors.ink}
-      />
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} className="active:opacity-70">
+      <GlassSurface radius={touch.min / 2} interactive className="h-touch w-touch items-center justify-center">
+        <MaterialCommunityIcons name={icon} size={ICON_SIZE} color={colors.ink} />
+      </GlassSurface>
     </Pressable>
   );
 }

@@ -1,14 +1,14 @@
 import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppButton, AppText, EmptyState, IconButton } from '@/components/ui';
-import { alertIcon, elevation, spacing, type HazardIconName } from '@/theme/tokens';
+import { AppButton, AppText, EmptyState, GlassSurface, IconButton } from '@/components/ui';
+import { alertIcon, rounded, spacing, type HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { LimitBadge } from '../components/LimitBadge';
 import { StillThereSection } from '../components/StillThereSection';
 import { useAlertOverlayViewModel } from '../viewmodels/useAlertOverlayViewModel';
 
-const PANEL = 'gap-md rounded-xl bg-canvas p-lg';
+const PANEL = 'gap-md p-lg';
 
 export default function AlertOverlayScreen() {
   const vm = useAlertOverlayViewModel();
@@ -18,14 +18,14 @@ export default function AlertOverlayScreen() {
   if (vm.alert === null) {
     return (
       <View pointerEvents="box-none" className="flex-1 px-lg" style={{ paddingTop: insets.top + spacing.md }}>
-        <View className={PANEL} style={elevation.level2}>
+        <GlassSurface radius={rounded.xl} className={PANEL}>
           <EmptyState
             icon="traffic-light"
             title="No active alert"
             message="Alerts appear while a drive is running."
             action={<AppButton title="Back" variant="secondary" onPress={vm.onDismiss} accessibilityLabel="Back" />}
           />
-        </View>
+        </GlassSurface>
       </View>
     );
   }
@@ -37,7 +37,7 @@ export default function AlertOverlayScreen() {
   // Anchored to the top like a speed-camera app's alert banner; the map stays visible below.
   return (
     <View pointerEvents="box-none" className="flex-1 px-lg" style={{ paddingTop: insets.top + spacing.md }}>
-      <View className={PANEL} style={elevation.level2}>
+      <GlassSurface radius={rounded.xl} className={PANEL}>
         <View className="flex-row items-center gap-md">
           <View className="h-touch w-touch items-center justify-center rounded-full bg-canvas-soft">
             <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
@@ -80,7 +80,7 @@ export default function AlertOverlayScreen() {
         {vm.alertKind === 'hazard' && vm.hazard !== null && vm.reportedLine !== null && (
           <StillThereSection hasVoted={vm.hasVoted} reportedLine={vm.reportedLine} onVote={vm.onVote} />
         )}
-      </View>
+      </GlassSurface>
     </View>
   );
 }

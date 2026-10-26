@@ -26,8 +26,11 @@ export type ThemeColors = {
     near: string;
     over: string;
   };
-  // Translucent canvas behind the floating tab bar's frosted blur.
+  // Glass surfaces (GlassSurface): canvasGlass is the near-opaque fill where the
+  // platform cannot blur (Android); canvasFrost is the lighter fill on top of a
+  // real backdrop blur (web).
   canvasGlass: string;
+  canvasFrost: string;
 };
 
 export const lightColors: ThemeColors = {
@@ -53,6 +56,7 @@ export const lightColors: ThemeColors = {
     over: '#E11900',
   },
   canvasGlass: 'rgba(255, 255, 255, 0.9)',
+  canvasFrost: 'rgba(255, 255, 255, 0.72)',
 };
 
 export const darkColors: ThemeColors = {
@@ -78,6 +82,7 @@ export const darkColors: ThemeColors = {
     over: '#FF5A45',
   },
   canvasGlass: 'rgba(0, 0, 0, 0.88)',
+  canvasFrost: 'rgba(20, 20, 20, 0.62)',
 };
 
 // DESIGN.md scales live in scales.json so tailwind.config.js shares the exact values.

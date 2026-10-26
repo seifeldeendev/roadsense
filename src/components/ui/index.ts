@@ -14,3 +14,4 @@ export { TextField } from './TextField';
 export { ToggleRow } from './ToggleRow';
 export { BottomSheet } from './BottomSheet';
 export { RadioList, type RadioOption } from './RadioList';
+export { GlassSurface } from './GlassSurface';
