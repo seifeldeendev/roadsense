@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react-native';
 import { afterAll, beforeAll, expect, jest, test } from '@jest/globals';
 import { renderRouter, testRouter, type RenderRouterResult } from 'expo-router/testing-library';
 
+jest.mock('expo-router/native-tabs', () => require('../test-support/nativeTabsMock'));
 jest.mock(
   '@react-native-async-storage/async-storage',
   () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
