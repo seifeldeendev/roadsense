@@ -12,7 +12,7 @@ import { MockAuthRepository } from './mock/MockAuthRepository';
 import { MockHazardRepository, MockSettingsRepository, MockTripRepository } from './mock/repositories';
 import { MockRouteRepository } from './mock/routes';
 import { OsrmRouteRepository } from './osrm/OsrmRouteRepository';
-import { RadarCameraRepository } from './radars/RadarCameraRepository';
+import { RadarCameraRepository } from './radars';
 
 // Everything the stores and viewmodels need from the outside world, as interfaces.
 export type Dependencies = {
