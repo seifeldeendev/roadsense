@@ -51,7 +51,7 @@ export function useTripDetailsViewModel(id: string | undefined): TripDetailsView
 
   useEffect(() => {
     void loadUnless((state) => state.trips.length > 0 || state.isLoading);
-    void loadPinsUnless((state) => state.cameras.length > 0 || state.isLoading);
+    void loadPinsUnless((state) => state.hasLoaded || state.isLoading);
   }, [loadUnless, loadPinsUnless]);
 
   const trip = useMemo(
