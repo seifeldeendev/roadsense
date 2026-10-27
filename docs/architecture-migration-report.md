@@ -4,18 +4,18 @@ Branch `seif/radarbot-map`, 2026-10-27. All commits are local and unpushed. Ever
 
 | Item | Commit | AI log |
 |---|---|---|
-| 1. Dismantle the location singleton | `c86b34a` | AI-036 |
-| 2. Dependencies container and provider | `b4011cd` | AI-037 |
-| 3. Prebuilt SQLite radar database | `0f2c480` | AI-038 |
-| 3-index. lat/lng index and schema-aware seed version | `ad19423` | AI-039 |
-| 4. Duplicate map components (closed, false premise) | `ae69909` (docs only) | AI-040 |
-| 5. Layer boundaries enforced by lint | `f8de02b` | AI-041 |
-| A. Composition root, map primitives, splitRoute | `a57f015` | AI-042 |
-| B. Item 6 tests and "already loading" guards | `55ed37c` | AI-043 |
-| C. gps and geocoding behind Dependencies | `a5ec16e` | AI-044 |
-| D. Auth session gate | `c1e7095` | AI-045 |
-| E. 3c-1 one-off camera queries | `9bea966` | AI-046 |
-| F. 3c-2 working set, view queries, getAll() deleted | `078e0f4` | AI-047 |
+| 1. Dismantle the location singleton | `e69d388` | AI-036 |
+| 2. Dependencies container and provider | `52d8bd9` | AI-037 |
+| 3. Prebuilt SQLite radar database | `cba488b` | AI-038 |
+| 3-index. lat/lng index and schema-aware seed version | `ee8742a` | AI-039 |
+| 4. Duplicate map components (closed, false premise) | `750eccd` (docs only) | AI-040 |
+| 5. Layer boundaries enforced by lint | `77b6614` | AI-041 |
+| A. Composition root, map primitives, splitRoute | `54fcf74` | AI-042 |
+| B. Item 6 tests and "already loading" guards | `688dc82` | AI-043 |
+| C. gps and geocoding behind Dependencies | `07d6365` | AI-044 |
+| D. Auth session gate | `aeb3a34` | AI-045 |
+| E. 3c-1 one-off camera queries | `258be6c` | AI-046 |
+| F. 3c-2 working set, view queries, getAll() deleted | `432f882` | AI-047 |
 
 Final state: tsc clean, lint clean, jest 198/198 across 36 suites, web export OK.
 
@@ -79,7 +79,7 @@ The standing rule was "no behavior changes unless the item says so". These chang
 
 ## Corrections of stated claims
 
-1. **Item 3 size.** I first claimed the change made the app "~1 MB smaller". The measurement showed −160 KB in the bundle against +438 KB for the database. You then corrected the net install growth to ~390 KB once the 549 KB indexed `.db` landed. The correction is recorded in AI-039 (its text was edited in the AI-040 commit, `ae69909`) and in AI-038, whose ~280 KB figure is marked superseded. The commit message of `0f2c480` still says ~280 KB; it is superseded, not rewritten.
+1. **Item 3 size.** I first claimed the change made the app "~1 MB smaller". The measurement showed −160 KB in the bundle against +438 KB for the database. You then corrected the net install growth to ~390 KB once the 549 KB indexed `.db` landed. The correction is recorded in AI-039 (its text was edited in the AI-040 commit, `750eccd`) and in AI-038, whose ~280 KB figure is marked superseded. The commit message of `cba488b` still says ~280 KB; it is superseded, not rewritten.
 2. **Unguarded loads.** My item-3 list of unguarded loads missed a sixth one: the trip planner's destinations load. It was outside item 6's scope, so it was logged as debt (see below) and not folded into B.
 3. **Working-set geometry.** 5 km / 2 km was approved on my recommendation, but I had not checked the radii the consumers draw. Measured on the real database with the car 2 km off-centre, the Live Map's 10 km default view lost **53%** of its markers, and the 4 km driving map lost **9.3%**. Replaced by the 12 km derivation and its guard test. Of the three, this is the correction that affected users. It is recorded in AI-047 and in the F commit message.
 

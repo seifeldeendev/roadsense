@@ -1,6 +1,6 @@
 # Architecture migration audit
 
-Branch `seif/radarbot-map`, audited 2026-10-27 at `eb43f5c`. The one authorised fix (Section 7) is `68e2d2b`. Fix rounds 1–5 and the blocker follow-up came after, up to the commit that logs AI-059. Everything here is local and unpushed.
+Branch `seif/radarbot-map`, audited 2026-10-27 at `da7e9b3`. The one authorised fix (Section 7) is `f3ee1ed`. Fix rounds 1–5 and the blocker follow-up came after, up to the commit that logs AI-059. Everything here is local and unpushed.
 
 ## Status after the fix rounds (Round 5)
 
@@ -40,7 +40,7 @@ The blocking item from Round 5 was `useDriveStore`, a module singleton outside `
 | F16 | Low | Open | A demo drive played in the background stops following | No: demo only |
 | F17 | Medium | ✅ Fixed | The status test carries a valid body; deleting the check fails it (AI-052) | — |
 | F18 | Medium | ✅ Fixed | Timer cleanup in `afterEach` across four files; a broken warning fails in 13 s (AI-052) | — |
-| F19 | High | ✅ Fixed | AI-038 is marked superseded; the `0f2c480` message is noted as superseded, not rewritten (AI-054) | — |
+| F19 | High | ✅ Fixed | AI-038 is marked superseded; the `cba488b` message is noted as superseded, not rewritten (AI-054) | — |
 | F20 | Low | ✅ Fixed | The report cites the right entries (AI-054) | — |
 | F21 | High | ✅ Fixed | AI-046 relabelled as a behaviour change (AI-054) | — |
 | F22 | Low | Open | `docs/radar-visibility-findings.md` (dated 2026-10-26) still describes the full-list mechanism, with no "superseded" note | No: a dated investigation record |
@@ -56,7 +56,7 @@ The blocking item from Round 5 was `useDriveStore`, a module singleton outside `
 
 ---
 
-## Original audit (at `ee3ceca`)
+## Original audit (at `a25b736`)
 
 The rest of this document is the audit as first written. It is kept unchanged as the record the fix rounds worked from.
 
@@ -110,8 +110,8 @@ The migration report's statement that the stores-layer `react-native` import was
 | F16 | **Low** | `src/stores/useCameraStore.ts` (suspend), demo source | A demo drive keeps playing its timer in the background on some platforms. While suspended the set doesn't follow, so after 10 km the alerts go quiet, and the banner can't be seen. Demo only. | Pause demo playback on background (through `AppLifecycle`), or keep following during demo playback. |
 | F17 | **Medium** | `__tests__/osrmRouteRepository.test.ts:62` | The error-status test is not a distinct path. With `if (!response.ok) throw` deleted, all 8 OSRM tests still pass, because the empty `{}` body fails later as "no routes". | Give the error-status case a body holding a valid route, so only the status check can make it fall back. |
 | F18 | **Medium** | `__tests__/viewModels.test.tsx:341` | The driver-warning test calls `suspend()` only at its end. When the warning is broken, the test fails before the cleanup, the store's retry timers stay alive, and the full run hangs instead of reporting a failure. With a timeout and `--forceExit` it fails correctly ("Expected … Received: null"). | Use real cleanup: `afterEach` that suspends the store, or fake timers. |
-| F19 | **High** | `docs/ai-log.md:221` (AI-038); commit `0f2c480` | "install size grows ~280 KB" still stands in AI-038 and in the item-3 commit message. The net after the index is ~390 KB. AI-039 states ~390 KB, but AI-038 has no pointer to it, so a cold reader of AI-038 or of `git log` gets the superseded number. | Add a dated correction line to AI-038 pointing at AI-039. The commit message can only change by rewriting local history (`git rebase`) or by adding a `git notes` annotation; this needs your decision. |
-| F20 | **Low** | `docs/architecture-migration-report.md:82` | The report says the size correction "is recorded in AI-039 and AI-040". AI-040's entry doesn't mention it: the AI-040 commit (`ae69909`) edited AI-039's text. | Reword it to "AI-039 (edited in `ae69909`)". |
+| F19 | **High** | `docs/ai-log.md:221` (AI-038); commit `cba488b` | "install size grows ~280 KB" still stands in AI-038 and in the item-3 commit message. The net after the index is ~390 KB. AI-039 states ~390 KB, but AI-038 has no pointer to it, so a cold reader of AI-038 or of `git log` gets the superseded number. | Add a dated correction line to AI-038 pointing at AI-039. The commit message can only change by rewriting local history (`git rebase`) or by adding a `git notes` annotation; this needs your decision. |
+| F20 | **Low** | `docs/architecture-migration-report.md:82` | The report says the size correction "is recorded in AI-039 and AI-040". AI-040's entry doesn't mention it: the AI-040 commit (`750eccd`) edited AI-039's text. | Reword it to "AI-039 (edited in `750eccd`)". |
 | F21 | **High** | `docs/ai-log.md:275` (AI-046) | AI-046 heads the three-screen camera wait "UX kept the same, deliberately". The report (Behavior changes, #1) correctly calls it a behaviour change, so the two documents contradict each other. | Relabel AI-046's heading as a behaviour change and point to the report. |
 | F22 | **Low** | `docs/radar-visibility-findings.md:9-10,20` | This dated investigation (2026-10-26) cites line numbers and a mechanism (fixed 150/10 km over the full list) that F replaced. It has no "superseded" note. | Add a status line pointing to AI-047. |
 | F23 | **Medium** (unverifiable here) | `test-support/nodeRadarDatabase.js`, `src/data/radars/SqliteRadarCameraRepository.ts` | Equivalence is proved through `node:sqlite`, not `expo-sqlite`. The SQL, the shipped `.db` and the rows are identical, but the native driver's parameter binding and row mapping are never exercised. | Run the equivalence queries once in a dev build on a device, for example a debug screen or a Maestro flow. |
@@ -266,8 +266,8 @@ The OSRM suite does test network failure, malformed bodies (3 shapes plus non-JS
 | Claim | In docs | In commits |
 |---|---|---|
 | ~160 KB saving, not ~1 MB | ✅ The "~1 MB" figure appears nowhere in the repo or in commit messages (it was only said in conversation). The report and AI-038 carry −160 KB. | ✅ |
-| ~390 KB net, not ~280 KB | ❌ AI-038 (`docs/ai-log.md:221`) still says ~280 KB with no pointer (F19). AI-039 and the report say ~390 KB. | ❌ `0f2c480` says ~280 KB (F19) |
-| 5 km / 2 km set: 53% missing | ✅ AI-047 and the report state the correction with 53% / 9.3%. Every other "5 km" mention is the corrected claim or a test comment about distances. | ✅ `078e0f4` carries it |
+| ~390 KB net, not ~280 KB | ❌ AI-038 (`docs/ai-log.md:221`) still says ~280 KB with no pointer (F19). AI-039 and the report say ~390 KB. | ❌ `cba488b` says ~280 KB (F19) |
+| 5 km / 2 km set: 53% missing | ✅ AI-047 and the report state the correction with 53% / 9.3%. Every other "5 km" mention is the corrected claim or a test comment about distances. | ✅ `432f882` carries it |
 
 **Behaviour changes, for a cold reader:**
 - The three screens waiting on a camera query are in the report under "Behavior changes" (#1), but AI-046 calls the same thing "UX kept the same" (F21).
@@ -275,7 +275,7 @@ The OSRM suite does test network failure, malformed bodies (3 shapes plus non-JS
 
 ## Section 7: the authorised fix
 
-Done in `68e2d2b` (AI-049), 8 files:
+Done in `f3ee1ed` (AI-049), 8 files:
 - **Seam:** the domain gains `AppLifecycle`. `src/services/appLifecycle.ts` is the only reader of `AppState`, wired in as `Dependencies.lifecycle`, and `useFollowWorkingSet` subscribes through `useDependencies()`.
 - **Lint:** a `no-restricted-imports` rule bans `AppState` everywhere in `src` except that service, and is repeated in the stores block (flat config replaces options there). Planted `AppState` imports in stores, features and shared are all caught.
 - **Test:** `__tests__/appLifecycle.test.ts` drives the lifecycle through a fake, and removing the hook's `suspend()` fails it.
