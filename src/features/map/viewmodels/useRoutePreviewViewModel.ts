@@ -7,9 +7,7 @@ import { bearingDeg } from '@/domain/usecases/drive/geo';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { formatDistance, formatDuration } from '@/shared/format';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useNavigationStore } from '@/stores/useNavigationStore';
-import { useRouteStore } from '@/stores/useRouteStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
@@ -38,6 +36,7 @@ export type RoutePreviewViewModel = {
 };
 
 export function useRoutePreviewViewModel(): RoutePreviewViewModel {
+  const { useHazardStore, useNavigationStore, useRouteStore } = useStores();
   const destinations = useRouteStore((s) => s.destinations);
   const selected = useRouteStore((s) => s.selected);
   const currentLocation = useDriveStore((s) => s.currentLocation);
@@ -46,24 +45,20 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
   const isLoading = useRouteStore((s) => s.isLoading);
   const error = useRouteStore((s) => s.error);
   const loadDestinations = useRouteStore((s) => s.loadDestinations);
+  const loadDestinationsUnless = useRouteStore((s) => s.loadDestinationsUnless);
   const selectDestination = useRouteStore((s) => s.selectDestination);
   const resetSelection = useRouteStore((s) => s.resetSelection);
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
+  const loadHazardsUnless = useHazardStore((s) => s.loadUnless);
   const demoRoute = useNavigationStore((s) => s.demoRoute);
   const showPlannedRoute = useNavigationStore((s) => s.showPlannedRoute);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    const routeState = useRouteStore.getState();
-    if (routeState.destinations.length === 0 && !routeState.isLoading) {
-      void routeState.loadDestinations();
-    }
-    const hazardState = useHazardStore.getState();
-    if (hazardState.cameras.length === 0 && hazardState.hazards.length === 0) {
-      void hazardState.load();
-    }
-  }, [loadDestinations]);
+    void loadDestinationsUnless((state) => state.destinations.length > 0 || state.isLoading);
+    void loadHazardsUnless((state) => state.cameras.length > 0 || state.hazards.length > 0);
+  }, [loadDestinationsUnless, loadHazardsUnless]);
 
   const selectedDestination: Destination | null = selected;
   // Routes start from the real position when known, otherwise the demo start.
@@ -94,37 +89,36 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
   const onQueryChange = useCallback(
     (text: string) => {
       setQuery(text);
-      if (useRouteStore.getState().selected !== null) {
+      if (selected !== null) {
         resetSelection();
       }
     },
-    [resetSelection],
+    [selected, resetSelection],
   );
 
   const chooseDestination = useCallback(
     (id: string) => {
-      const destination = useRouteStore.getState().destinations.find((item) => item.id === id);
+      const destination = destinations.find((item) => item.id === id);
       if (destination === undefined) return;
       setQuery('');
       void selectDestination(destination, origin);
     },
-    [selectDestination, origin],
+    [destinations, selectDestination, origin],
   );
 
   const retry = useCallback(() => {
-    const state = useRouteStore.getState();
-    if (state.error !== null && state.selected !== null) {
-      void state.selectDestination(state.selected, origin);
+    if (error !== null && selected !== null) {
+      void selectDestination(selected, origin);
       return;
     }
-    void state.loadDestinations();
-  }, [origin]);
+    void loadDestinations();
+  }, [error, selected, selectDestination, loadDestinations, origin]);
 
   const startDrive = useCallback(() => {
     // Hand the chosen route to the Drive map before switching to it.
-    showPlannedRoute(useRouteStore.getState().route?.points ?? null);
+    showPlannedRoute(route?.points ?? null);
     router.navigate('/drive');
-  }, [showPlannedRoute]);
+  }, [route, showPlannedRoute]);
 
   const startHeading =
     route !== null && route.points.length >= START_MARKER_MIN_POINTS

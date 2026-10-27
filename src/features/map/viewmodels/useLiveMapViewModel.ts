@@ -6,8 +6,7 @@ import { alertTargetFor, isMinorRegionChange, nearestPoints, pointsInView } from
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import {
   hazardMeta,
@@ -70,11 +69,13 @@ function toKindKeys(kinds: ReadonlySet<MapFilterKey>): HazardKind[] {
 }
 
 export function useLiveMapViewModel(): LiveMapViewModel {
+  const { useHazardStore, useNavigationStore } = useStores();
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
   const isLoading = useHazardStore((s) => s.isLoading);
   const error = useHazardStore((s) => s.error);
   const load = useHazardStore((s) => s.load);
+  const loadUnless = useHazardStore((s) => s.loadUnless);
   const mapType = useSettingsStore((s) => s.mapType);
   const showTraffic = useSettingsStore((s) => s.showTraffic);
   const currentLocation = useDriveStore((s) => s.currentLocation);
@@ -99,11 +100,8 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   }, []);
 
   useEffect(() => {
-    const state = useHazardStore.getState();
-    if (state.cameras.length === 0 && state.hazards.length === 0 && !state.isLoading) {
-      void state.load();
-    }
-  }, [load]);
+    void loadUnless((state) => state.cameras.length > 0 || state.hazards.length > 0 || state.isLoading);
+  }, [loadUnless]);
 
   const toggleFilter = useCallback((key: MapFilterKey) => {
     setSelected((prev) => {

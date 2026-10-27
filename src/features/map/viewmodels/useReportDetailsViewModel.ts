@@ -5,7 +5,7 @@ import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { formatTimeAgo } from '@/shared/format';
-import { useHazardStore } from '@/stores/useHazardStore';
+import { useStores } from '@/stores/DependenciesProvider';
 
 const NEARBY_CAMERA_M = 300;
 
@@ -54,21 +54,21 @@ function locate(hazard: Hazard, cameras: Camera[]): string {
 }
 
 export function useReportDetailsViewModel(id: string): ReportDetailsViewModel {
+  const { useHazardStore } = useStores();
   const hazards = useHazardStore((s) => s.hazards);
   const cameras = useHazardStore((s) => s.cameras);
   const isLoading = useHazardStore((s) => s.isLoading);
   const error = useHazardStore((s) => s.error);
   const load = useHazardStore((s) => s.load);
+  const loadUnless = useHazardStore((s) => s.loadUnless);
+  const vote = useHazardStore((s) => s.vote);
 
   const [hasVoted, setHasVoted] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
 
   useEffect(() => {
-    const state = useHazardStore.getState();
-    if (state.hazards.length === 0 && !state.isLoading) {
-      void state.load();
-    }
-  }, [load]);
+    void loadUnless((state) => state.hazards.length > 0 || state.isLoading);
+  }, [loadUnless]);
 
   const hazard = useMemo<Hazard | null>(
     () => hazards.find((item) => item.id === id) ?? null,
@@ -82,13 +82,11 @@ export function useReportDetailsViewModel(id: string): ReportDetailsViewModel {
       if (hazard === null || hasVoted || isVoting) return;
       setIsVoting(true);
       setHasVoted(true);
-      useHazardStore
-        .getState()
-        .vote(hazard.id, stillThere)
+      vote(hazard.id, stillThere)
         .catch(() => setHasVoted(false))
         .finally(() => setIsVoting(false));
     },
-    [hazard, hasVoted, isVoting],
+    [hazard, hasVoted, isVoting, vote],
   );
 
   const goBack = useCallback(() => router.back(), []);
