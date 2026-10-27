@@ -4,3 +4,4 @@ export { HazardMarker } from './HazardMarker';
 export { UserMarker } from './UserMarker';
 export { RouteLine } from './RouteLine';
 export { PinMarker } from './PinMarker';
+export { SegmentedRouteLine, type RouteSegment } from './SegmentedRouteLine';
