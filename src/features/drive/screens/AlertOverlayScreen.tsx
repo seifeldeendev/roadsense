@@ -1,6 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AppButton, EmptyState } from '@/components/ui';
-import { colors, hazardMeta, spacing, typography } from '@/theme/tokens';
+import { StyleSheet, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  AppButton,
+  AppText,
+  EmptyState,
+  IconButton,
+} from '@/components/ui';
+import { colors, elevation, hazardMeta, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
 import { LimitBadge } from '../components/LimitBadge';
 import { StillThereSection } from '../components/StillThereSection';
 import { useAlertOverlayViewModel } from '../viewmodels/useAlertOverlayViewModel';
@@ -12,49 +18,58 @@ export default function AlertOverlayScreen() {
     return (
       <View style={styles.backdrop}>
         <EmptyState
-          icon="🚦"
+          icon="traffic-light"
           title="No active alert"
           message="Alerts appear while a drive is running."
-          action={<AppButton title="Back" onPress={vm.onDismiss} accessibilityLabel="Back" />}
+          action={
+            <AppButton
+              title="Back"
+              variant="secondary"
+              onPress={vm.onDismiss}
+              accessibilityLabel="Back"
+            />
+          }
         />
       </View>
     );
   }
 
-  const icon =
+  const icon: HazardIconName =
     vm.alertKind === 'camera'
       ? hazardMeta.camera.icon
       : vm.hazard !== null
         ? hazardMeta[vm.hazard.type].icon
-        : '⚠️';
+        : 'alert';
 
   return (
     <View style={styles.backdrop}>
       <View style={styles.spacer} />
-      <View style={styles.card}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss alert"
-          onPress={vm.onDismiss}
-          style={({ pressed }) => [styles.closeWrap, pressed && styles.pressed]}
-        >
-          <Text style={styles.closeIcon}>×</Text>
-        </Pressable>
-        <View style={styles.head}>
-          <Text style={styles.icon} accessibilityLabel={vm.title}>
-            {icon}
-          </Text>
-          <View style={styles.textBlock}>
-            <Text style={styles.title}>{vm.title}</Text>
-            <Text style={styles.detail}>
-              {vm.distanceLabel}
-              {vm.roadName !== null ? ` · ${vm.roadName}` : ''}
-            </Text>
+      <View style={styles.sheet}>
+        <View style={styles.topRow}>
+          <View style={styles.iconWrap}>
+            <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
           </View>
-          {vm.alertKind === 'camera' && (
+          <View style={styles.flex} />
+          <IconButton
+            icon="close"
+            accessibilityLabel="Dismiss alert"
+            onPress={vm.onDismiss}
+          />
+        </View>
+        <AppText variant="displayLg" numberOfLines={2}>
+          {vm.title}
+        </AppText>
+        <View style={styles.distanceRow}>
+          <AppText variant="displayXxl">{vm.distanceLabel}</AppText>
+          {vm.alertKind === 'camera' && vm.cameraLimitKmh !== null && (
             <LimitBadge limitKmh={vm.cameraLimitKmh} size="sm" />
           )}
         </View>
+        {vm.roadName !== null && (
+          <AppText variant="bodyMd" color="body">
+            {vm.roadName}
+          </AppText>
+        )}
         {vm.alertKind === 'hazard' && vm.hazard !== null && vm.reportedLine !== null && (
           <StillThereSection
             hasVoted={vm.hasVoted}
@@ -70,54 +85,38 @@ export default function AlertOverlayScreen() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: spacing.md,
+    backgroundColor: colors.backdrop,
+    padding: spacing.lg,
   },
   spacer: {
     flex: 1,
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: spacing.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.md,
+  sheet: {
+    backgroundColor: colors.canvas,
+    borderRadius: rounded.xl,
+    ...elevation.level2,
+    padding: spacing.xxl,
+    gap: spacing.lg,
   },
-  pressed: {
-    opacity: 0.7,
-  },
-  closeWrap: {
-    alignSelf: 'flex-end',
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeIcon: {
-    fontSize: typography.size.title,
-    color: colors.muted,
-    fontWeight: '700',
-  },
-  head: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
-  icon: {
-    fontSize: 40,
+  iconWrap: {
+    width: touch.min,
+    height: touch.min,
+    borderRadius: rounded.full,
+    backgroundColor: colors.canvasSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  textBlock: {
+  flex: {
     flex: 1,
-    gap: spacing.xs,
   },
-  title: {
-    fontSize: typography.size.title,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  detail: {
-    fontSize: typography.size.body,
-    color: colors.muted,
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
 });

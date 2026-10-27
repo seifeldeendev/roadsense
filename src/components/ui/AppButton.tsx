@@ -1,9 +1,58 @@
-import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, touch, typography } from '@/theme/tokens';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  colors,
+  elevation,
+  rounded,
+  spacing,
+  touch,
+  typography,
+  type HazardIconName,
+} from '@/theme/tokens';
 
-export type AppButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+export type AppButtonVariant = 'primary' | 'secondary' | 'subtle' | 'floating' | 'large';
 export type AppButtonSize = 'md' | 'lg';
+
+type VariantStyle = {
+  container: ViewStyle;
+  textColor: string;
+  pressedBackground: string;
+};
+
+const variants: Record<AppButtonVariant, VariantStyle> = {
+  primary: {
+    container: { backgroundColor: colors.primary },
+    textColor: colors.onPrimary,
+    pressedBackground: colors.blackElevated,
+  },
+  secondary: {
+    container: {
+      backgroundColor: colors.canvas,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.hairline,
+    },
+    textColor: colors.ink,
+    pressedBackground: colors.surfacePressed,
+  },
+  subtle: {
+    container: { backgroundColor: colors.canvasSoft },
+    textColor: colors.ink,
+    pressedBackground: colors.surfacePressed,
+  },
+  floating: {
+    container: {
+      backgroundColor: colors.canvas,
+      ...elevation.level3,
+    },
+    textColor: colors.ink,
+    pressedBackground: colors.surfacePressed,
+  },
+  large: {
+    container: { backgroundColor: colors.primary },
+    textColor: colors.onPrimary,
+    pressedBackground: colors.blackElevated,
+  },
+};
 
 type AppButtonProps = {
   title: string;
@@ -12,61 +61,24 @@ type AppButtonProps = {
   size?: AppButtonSize;
   disabled?: boolean;
   loading?: boolean;
-  icon?: ReactNode;
+  icon?: HazardIconName;
   accessibilityLabel?: string;
-};
-
-type VariantStyle = {
-  container: ViewStyleMap;
-  text: { color: string };
-  spinnerColor: string;
-};
-
-type ViewStyleMap = {
-  backgroundColor?: string;
-  borderWidth?: number;
-  borderColor?: string;
-};
-
-const variants: Record<AppButtonVariant, VariantStyle> = {
-  primary: {
-    container: { backgroundColor: colors.primary },
-    text: { color: colors.background },
-    spinnerColor: colors.background,
-  },
-  secondary: {
-    container: {
-      backgroundColor: colors.surfaceAlt,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-    },
-    text: { color: colors.primary },
-    spinnerColor: colors.primary,
-  },
-  danger: {
-    container: { backgroundColor: colors.danger },
-    text: { color: colors.background },
-    spinnerColor: colors.background,
-  },
-  ghost: {
-    container: { backgroundColor: 'transparent' },
-    text: { color: colors.primary },
-    spinnerColor: colors.primary,
-  },
 };
 
 export function AppButton({
   title,
   onPress,
   variant = 'primary',
-  size = 'md',
+  size,
   disabled = false,
   loading = false,
   icon,
   accessibilityLabel,
 }: AppButtonProps) {
+  const isLarge = variant === 'large' || size === 'lg';
   const style = variants[variant];
   const inactive = disabled || loading;
+  const labelTypography = isLarge ? typography.buttonLarge : typography.buttonMd;
 
   return (
     <Pressable
@@ -77,18 +89,24 @@ export function AppButton({
       disabled={inactive}
       style={({ pressed }) => [
         styles.base,
-        size === 'lg' ? styles.large : styles.medium,
+        isLarge ? styles.largeBase : styles.pillBase,
         style.container,
-        pressed && !inactive && styles.pressed,
+        pressed && !inactive && { backgroundColor: style.pressedBackground },
         inactive && styles.inactive,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={style.spinnerColor} />
+        <ActivityIndicator color={style.textColor} />
       ) : (
         <View style={styles.row}>
-          {icon}
-          <Text style={[styles.label, sizes[size], style.text]} numberOfLines={1}>
+          {icon !== undefined && (
+            <MaterialCommunityIcons
+              name={icon}
+              size={labelTypography.fontSize}
+              color={style.textColor}
+            />
+          )}
+          <Text style={[labelTypography, { color: style.textColor }]} numberOfLines={1}>
             {title}
           </Text>
         </View>
@@ -97,27 +115,21 @@ export function AppButton({
   );
 }
 
-const sizes = {
-  md: { fontSize: typography.size.body },
-  lg: { fontSize: typography.size.body + 2 },
-};
-
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.md,
   },
-  medium: {
+  pillBase: {
+    borderRadius: rounded.pill,
+    paddingHorizontal: spacing.xl,
     minHeight: touch.min,
   },
-  large: {
+  largeBase: {
+    borderRadius: rounded.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     minHeight: touch.large,
-    borderRadius: radius.lg,
-  },
-  pressed: {
-    opacity: 0.7,
   },
   inactive: {
     opacity: 0.4,
@@ -126,8 +138,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  label: {
-    fontWeight: '600',
   },
 });

@@ -4,7 +4,7 @@ export default function RoutePreviewScreen() {
   return (
     <Screen>
       <EmptyState
-        icon="🛣️"
+        icon="sign-direction"
         title="Route preview"
         message="Coming soon"
       />

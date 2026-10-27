@@ -4,7 +4,7 @@ export default function LiveMapScreen() {
   return (
     <Screen>
       <EmptyState
-        icon="🗺️"
+        icon="map-outline"
         title="Live map"
         message="Coming soon"
       />

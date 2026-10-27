@@ -1,9 +1,11 @@
-import { StyleSheet, Text, View } from 'react-native';
-import type { SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { StyleSheet, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Card, AppText } from '@/components/ui';
+import { colors, rounded, spacing, touch } from '@/theme/tokens';
 import { AlertStatusLine } from './AlertStatusLine';
 import { LimitBadge } from './LimitBadge';
 import { SpeedGauge } from './SpeedGauge';
+import type { SpeedStatus } from './speedStatusMeta';
 
 type DriveStatusPanelProps = {
   isDriving: boolean;
@@ -24,54 +26,52 @@ export function DriveStatusPanel({
 }: DriveStatusPanelProps) {
   if (!isDriving) {
     return (
-      <View style={styles.idleCard}>
-        <Text style={styles.idleIcon}>🚗</Text>
-        <Text style={styles.idleText}>
-          Start a drive to see live speed (demo route: Salah Salem)
-        </Text>
-      </View>
+      <Card variant="soft">
+        <View style={styles.idle}>
+          <View style={styles.idleIcon}>
+            <MaterialCommunityIcons name="steering" size={24} color={colors.ink} />
+          </View>
+          <AppText variant="displaySm" style={styles.centered}>
+            Ready when you are
+          </AppText>
+          <AppText variant="bodyMd" color="body" style={styles.centered}>
+            Start a drive to see live speed and nearby alerts.
+          </AppText>
+        </View>
+      </Card>
     );
   }
 
   return (
-    <View style={styles.driveRow}>
-      <SpeedGauge speedKmh={speedKmh} status={status} />
-      <View style={styles.driveSide}>
-        <LimitBadge limitKmh={hasLimit ? limitKmh : null} />
+    <Card variant="form">
+      <View style={styles.hero}>
+        <SpeedGauge speedKmh={speedKmh} status={status} />
+        <LimitBadge limitKmh={hasLimit ? limitKmh : null} over={status === 'over'} />
         <AlertStatusLine status={status} label={statusLabel} />
       </View>
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  driveRow: {
-    flexDirection: 'row',
+  hero: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.lg,
-  },
-  driveSide: {
     gap: spacing.md,
-    alignItems: 'flex-start',
   },
-  idleCard: {
-    minHeight: 168,
-    borderRadius: spacing.md,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+  idle: {
     alignItems: 'center',
-    justifyContent: 'center',
     gap: spacing.sm,
-    padding: spacing.lg,
+    paddingVertical: spacing.md,
   },
   idleIcon: {
-    fontSize: typography.size.heading,
+    width: touch.min,
+    height: touch.min,
+    borderRadius: rounded.full,
+    backgroundColor: colors.canvas,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  idleText: {
-    fontSize: typography.size.body,
-    color: colors.muted,
+  centered: {
     textAlign: 'center',
   },
 });

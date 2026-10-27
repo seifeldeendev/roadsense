@@ -1,29 +1,30 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { radius, spacing, typography } from '@/theme/tokens';
+import { colors, rounded, spacing, typography } from '@/theme/tokens';
+
+export type BadgeVariant = 'soft' | 'ink';
 
 type BadgeProps = {
-  color: string;
   text: string;
+  variant?: BadgeVariant;
+  color?: string;
 };
 
-export function Badge({ color, text }: BadgeProps) {
+export function Badge({ text, variant = 'soft', color }: BadgeProps) {
+  const background = color ?? (variant === 'ink' ? colors.ink : colors.canvasSoft);
+  const textColor = variant === 'ink' ? colors.onDark : colors.ink;
+
   return (
-    <View style={[styles.badge, { backgroundColor: color }]}>
-      <Text style={styles.label}>{text}</Text>
+    <View style={[styles.badge, { backgroundColor: background }]}>
+      <Text style={[typography.bodySmStrong, { color: textColor }]}>{text}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    borderRadius: rounded.pill,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
     alignSelf: 'flex-start',
-  },
-  label: {
-    fontSize: typography.size.caption,
-    fontWeight: '700',
-    color: '#0B1020',
   },
 });

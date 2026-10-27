@@ -1,5 +1,6 @@
-import { StyleSheet, Text } from 'react-native';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui';
+import { colors, elevation, rounded, spacing, touch } from '@/theme/tokens';
 
 type ReportBannerProps = {
   message: string | null;
@@ -8,25 +9,29 @@ type ReportBannerProps = {
 export function ReportBanner({ message }: ReportBannerProps) {
   if (message === null) return null;
   return (
-    <Text accessibilityLiveRegion="polite" style={styles.banner}>
-      {message}
-    </Text>
+    <View
+      accessibilityLiveRegion="polite"
+      style={styles.toast}
+    >
+      <AppText variant="bodyMdStrong" color="onDark" style={styles.text}>
+        {message}
+      </AppText>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  banner: {
-    minHeight: 32,
+  toast: {
+    minHeight: touch.min,
+    backgroundColor: colors.ink,
+    borderRadius: rounded.xl,
+    ...elevation.level3,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
     textAlign: 'center',
-    color: colors.primary,
-    fontWeight: '600',
-    fontSize: 14,
-    backgroundColor: colors.surface,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
   },
 });

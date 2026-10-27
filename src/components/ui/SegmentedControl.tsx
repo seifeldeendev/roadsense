@@ -1,5 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, touch, typography } from '@/theme/tokens';
+import {
+  colors,
+  elevation,
+  rounded,
+  spacing,
+  touch,
+  typography,
+} from '@/theme/tokens';
 
 type SegmentedOption<T> = {
   label: string;
@@ -31,7 +38,11 @@ export function SegmentedControl<T>({ options, value, onChange }: SegmentedContr
             ]}
           >
             <Text
-              style={[styles.label, { color: selected ? colors.background : colors.muted }]}
+              style={
+                selected
+                  ? [typography.bodyMdStrong, { color: colors.ink }]
+                  : [typography.bodyMd, { color: colors.body }]
+              }
               numberOfLines={1}
             >
               {option.label}
@@ -46,10 +57,8 @@ export function SegmentedControl<T>({ options, value, onChange }: SegmentedContr
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    backgroundColor: colors.canvasSoft,
+    borderRadius: rounded.pillTab,
     padding: spacing.xs,
     minHeight: touch.min,
   },
@@ -58,16 +67,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.sm,
-    borderRadius: radius.pill,
+    borderRadius: rounded.pillTab - spacing.xs,
   },
   selected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.canvas,
+    ...elevation.level3,
   },
   pressed: {
-    opacity: 0.7,
-  },
-  label: {
-    fontSize: typography.size.caption,
-    fontWeight: '700',
+    backgroundColor: colors.surfacePressed,
   },
 });
