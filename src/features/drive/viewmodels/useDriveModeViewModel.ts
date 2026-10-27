@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { HazardType, LocationSourceKind, UpcomingAlert } from '@/domain/entities';
+import type { HazardType, LatLng, LocationSourceKind, UpcomingAlert } from '@/domain/entities';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
 import { nearestSpeedLimit } from '@/domain/usecases/drive/nearestRoadName';
-import type { LocationSource } from '@/domain/repositories';
-import { GpsLocationSource, requestLocationPermission } from '@/services/gps';
-import { createDemoLocationSource, hasQueuedReplay } from '@/services/location';
+import type { Unsubscribe } from '@/domain/repositories';
+// TODO(item-2): inject via Dependencies
+import { createDemoLocationSource, ExpoLocationSource } from '@/data/location';
+import { requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { hazardMeta } from '@/theme/tokens';
 import { clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
@@ -40,15 +42,17 @@ export function useDriveModeViewModel(): DriveModeViewModel {
   const speedKmhRaw = useDriveStore((s) => s.speedKmh);
   const limitKmhRaw = useDriveStore((s) => s.limitKmh);
   const amberThresholdPct = useSettingsStore((s) => s.amberThresholdPct);
+  const hasQueuedReplay = useNavigationStore((s) => s.pendingRoutePoints !== null);
+  const takeDemoPlayback = useNavigationStore((s) => s.takeDemoPlayback);
   const [nextAlert, setNextAlert] = useState<UpcomingAlert | null>(null);
   const [feedback, showFeedback] = useTransientFeedback();
-  const sourceRef = useRef<LocationSource | null>(null);
+  const unwatchRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
     void load();
     return () => {
-      sourceRef.current?.stop();
-      sourceRef.current = null;
+      unwatchRef.current?.();
+      unwatchRef.current = null;
     };
   }, [load]);
 
@@ -59,24 +63,22 @@ export function useDriveModeViewModel(): DriveModeViewModel {
     void (async () => {
       const settings = useSettingsStore.getState();
       // A queued trip replay always plays through the demo source.
-      let kind: LocationSourceKind = settings.locationSource === 'gps' && !hasQueuedReplay() ? 'gps' : 'demo';
+      let kind: LocationSourceKind = settings.locationSource === 'gps' && !hasQueuedReplay ? 'gps' : 'demo';
       if (kind === 'gps' && !(await requestLocationPermission())) {
         kind = 'demo';
         showFeedback('Location is off — playing the demo drive instead');
       }
       useDriveStore.getState().startDrive(kind);
+      const limitFor = (position: LatLng) => nearestSpeedLimit(position, useHazardStore.getState().cameras);
       const source =
-        kind === 'gps'
-          ? new GpsLocationSource((position) => nearestSpeedLimit(position, useHazardStore.getState().cameras))
-          : createDemoLocationSource((position) => nearestSpeedLimit(position, useHazardStore.getState().cameras));
-      sourceRef.current = source;
-      source.start(createDrivePointHandler(setNextAlert));
+        kind === 'gps' ? new ExpoLocationSource(limitFor) : createDemoLocationSource(takeDemoPlayback(), limitFor);
+      unwatchRef.current = source.watch(createDrivePointHandler(setNextAlert));
     })();
-  }, [showFeedback]);
+  }, [showFeedback, hasQueuedReplay, takeDemoPlayback]);
 
   const stop = useCallback(() => {
-    sourceRef.current?.stop();
-    sourceRef.current = null;
+    unwatchRef.current?.();
+    unwatchRef.current = null;
     useDriveStore.getState().stopDrive();
     setNextAlert(null);
   }, []);

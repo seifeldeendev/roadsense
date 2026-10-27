@@ -1,34 +1,38 @@
-import { expect, jest, test } from '@jest/globals';
+import { beforeEach, expect, jest, test } from '@jest/globals';
+import type { LocationSource } from '@/domain/repositories';
+import { createDemoLocationSource, DEMO_ROUTE } from '@/data/location';
 import { MOCK_TRIPS } from '@/data/mock/trips';
-import {
-  createDemoLocationSource,
-  getDemoRoute,
-  getDriveRoute,
-  setDriveRoutePoints,
-  subscribeDriveRoute,
-} from '@/services/location';
+import { useNavigationStore } from '@/stores/useNavigationStore';
+
+const nav = () => useNavigationStore.getState();
+
+beforeEach(() => {
+  nav().reset();
+});
 
 test('a queued replay is published to the drive map and the demo returns afterwards', () => {
   const replayTrip = MOCK_TRIPS[1];
   const listener = jest.fn();
-  const unsubscribe = subscribeDriveRoute(listener);
+  const unsubscribe = useNavigationStore.subscribe((state, previous) => {
+    if (state.driveRoute !== previous.driveRoute) listener();
+  });
 
-  expect(getDriveRoute()).toBe(getDemoRoute());
+  expect(nav().driveRoute).toBe(DEMO_ROUTE);
 
-  setDriveRoutePoints(replayTrip.points);
+  nav().setDriveRoutePoints(replayTrip.points);
   expect(listener).toHaveBeenCalledTimes(1);
-  const queued = getDriveRoute();
+  const queued = nav().driveRoute;
   expect(queued).toHaveLength(replayTrip.points.length);
   expect(queued[0]).toEqual({ lat: replayTrip.points[0].lat, lng: replayTrip.points[0].lng });
 
   // Starting the replay keeps the same snapshot (no extra re-render).
-  createDemoLocationSource().stop();
-  expect(getDriveRoute()).toBe(queued);
+  expect(nav().takeDemoPlayback()).toEqual({ kind: 'replay', points: replayTrip.points });
+  expect(nav().driveRoute).toBe(queued);
   expect(listener).toHaveBeenCalledTimes(1);
 
   // The next drive falls back to the demo route.
-  createDemoLocationSource().stop();
-  expect(getDriveRoute()).toBe(getDemoRoute());
+  expect(nav().takeDemoPlayback()).toEqual({ kind: 'demo' });
+  expect(nav().driveRoute).toBe(DEMO_ROUTE);
   expect(listener).toHaveBeenCalledTimes(2);
 
   unsubscribe();
@@ -36,27 +40,38 @@ test('a queued replay is published to the drive map and the demo returns afterwa
 
 test('a demo drive follows the planned route, and a replay replaces the plan', () => {
   jest.useFakeTimers();
-  const { showPlannedRoute } = require('@/services/location');
   const planned = [
     { lat: 30.2, lng: 31.5 },
     { lat: 30.21, lng: 31.5 },
   ];
-  showPlannedRoute(planned);
-  const firstPoint = (source: { start: (cb: (p: { lat: number }) => void) => void; stop: () => void }) => {
+  nav().showPlannedRoute(planned);
+  expect(nav().driveRoute).toBe(planned);
+  const firstPoint = (source: LocationSource) => {
     let seen: { lat: number } | null = null;
-    source.start((p) => {
+    const unwatch = source.watch((p) => {
       seen ??= p;
     });
     jest.advanceTimersByTime(1000);
-    source.stop();
+    unwatch();
     return seen;
   };
-  expect(firstPoint(createDemoLocationSource(() => 60))).toMatchObject({ lat: 30.2 });
+  expect(firstPoint(createDemoLocationSource(nav().takeDemoPlayback(), () => 60))).toMatchObject({ lat: 30.2 });
 
-  setDriveRoutePoints(MOCK_TRIPS[1].points);
-  expect(firstPoint(createDemoLocationSource())).toMatchObject({ lat: MOCK_TRIPS[1].points[0].lat });
-  showPlannedRoute(null);
+  nav().setDriveRoutePoints(MOCK_TRIPS[1].points);
+  expect(nav().plannedRoute).toBeNull();
+  expect(firstPoint(createDemoLocationSource(nav().takeDemoPlayback()))).toMatchObject({
+    lat: MOCK_TRIPS[1].points[0].lat,
+  });
   jest.useRealTimers();
+});
+
+test('reset clears queued and planned routes', () => {
+  nav().showPlannedRoute([{ lat: 1, lng: 2 }]);
+  nav().setDriveRoutePoints(MOCK_TRIPS[1].points);
+  nav().reset();
+  expect(nav().driveRoute).toBe(DEMO_ROUTE);
+  expect(nav().plannedRoute).toBeNull();
+  expect(nav().pendingRoutePoints).toBeNull();
 });
 
 test('routes from the fallback are marked as estimates when road routing is unreachable', async () => {

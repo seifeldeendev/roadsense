@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/usecases/drive/fixedPoints';
@@ -6,9 +6,9 @@ import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
-import { getDemoRoute, getDriveRoute, subscribeDriveRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 // The road database covers all of Egypt; the map draws only nearby points.
@@ -66,9 +66,10 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   }, [locationSource]);
 
   // The demo route, a trip queued from Stats & Replay, or a route from the planner.
-  const driveRoute = useSyncExternalStore(subscribeDriveRoute, getDriveRoute);
+  const driveRoute = useNavigationStore((s) => s.driveRoute);
+  const demoRoute = useNavigationStore((s) => s.demoRoute);
   const showsRoute =
-    locationSource === 'demo' || driveRoute !== getDemoRoute() || (isDriving && driveSource === 'demo');
+    locationSource === 'demo' || driveRoute !== demoRoute || (isDriving && driveSource === 'demo');
   const routePoints = useMemo(() => (showsRoute ? driveRoute : []), [showsRoute, driveRoute]);
 
   const idleFitCoords = useMemo(() => {
