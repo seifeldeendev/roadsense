@@ -14,8 +14,10 @@ const featureSlices = fs
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);
 
-// Shared presentation: the UI kit and the map and navigation primitives.
+// Shared presentation: the UI kit and the map and navigation primitives. The
+// map and navigation primitives build on the UI kit; never the other way round.
 const sharedPresentation = ['ui', 'map', 'navigation'];
+const usesUiKit = (dir) => (dir === 'ui' ? [] : ['./components/ui']);
 
 // Fire-and-forget UI affordances features may call directly; services that
 // return data the app branches on go through Dependencies instead.
@@ -33,13 +35,19 @@ const routeZone = zone(
 // Reading state to decide what to render is logic and stays out of them.
 const layoutZone = zone(
   './src/app',
-  ['./app', './features', './domain', './theme', './stores/DependenciesProvider.tsx', './stores/useThemeStore.ts'],
+  ['./app', './features', './domain', './theme', './composition/AppDependenciesProvider.tsx', './stores/useThemeStore.ts'],
   'Layout files may wire providers, theme and fonts; state that decides what to render belongs in a feature.',
 );
 
 const layerZones = [
   zone('./src/domain', ['./domain'], 'src/domain imports nothing outside src/domain.'),
   zone('./src/data', ['./data', './domain', './shared', './services'], 'src/data may import only domain, shared and services.'),
+  // Composition root: builds the production dependencies and stores.
+  zone(
+    './src/composition',
+    ['./composition', './stores', './domain', './data/dependencies.ts'],
+    'src/composition may import only stores, domain and data/dependencies.',
+  ),
   zone(
     './src/stores',
     ['./stores', './domain', './shared', './data/dependencies.ts'],
@@ -69,8 +77,8 @@ const layerZones = [
   ...sharedPresentation.map((dir) =>
     zone(
       `./src/components/${dir}`,
-      [`./components/${dir}`, './theme', './shared', './domain'],
-      `src/components/${dir} may import only theme, shared and domain types.`,
+      [`./components/${dir}`, ...usesUiKit(dir), './theme', './shared', './domain'],
+      `src/components/${dir} may import only ${dir === 'ui' ? '' : 'components/ui, '}theme, shared and domain types.`,
     ),
   ),
   zone('./src/theme', ['./theme', './shared', './domain'], 'src/theme may import only shared (and domain types).'),

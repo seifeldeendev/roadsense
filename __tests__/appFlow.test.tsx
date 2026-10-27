@@ -96,7 +96,7 @@ async function advanceVirtualTime(count = 24, stepMs = 250): Promise<void> {
 let renderResult: RenderRouterResult;
 
 beforeAll(async () => {
-  require('../src/stores/useSessionStore').useSessionStore.setState({
+  require('../src/composition/stores').useSessionStore.setState({
     user: null,
     hasCompletedOnboarding: false,
     hasHydrated: true,

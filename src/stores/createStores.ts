@@ -1,17 +1,17 @@
 import type { Dependencies } from '../data/dependencies';
-import { createHazardStore, useHazardStore } from './useHazardStore';
-import { createNavigationStore, useNavigationStore } from './useNavigationStore';
-import { createRouteStore, useRouteStore } from './useRouteStore';
-import { createSessionStore, useSessionStore } from './useSessionStore';
-import { createTripStore, useTripStore } from './useTripStore';
+import { createHazardStore } from './useHazardStore';
+import { createNavigationStore } from './useNavigationStore';
+import { createRouteStore } from './useRouteStore';
+import { createSessionStore } from './useSessionStore';
+import { createTripStore } from './useTripStore';
 
 // The stores that depend on the outside world, built from one set of dependencies.
 export type AppStores = {
-  useHazardStore: typeof useHazardStore;
-  useNavigationStore: typeof useNavigationStore;
-  useRouteStore: typeof useRouteStore;
-  useSessionStore: typeof useSessionStore;
-  useTripStore: typeof useTripStore;
+  useHazardStore: ReturnType<typeof createHazardStore>;
+  useNavigationStore: ReturnType<typeof createNavigationStore>;
+  useRouteStore: ReturnType<typeof createRouteStore>;
+  useSessionStore: ReturnType<typeof createSessionStore>;
+  useTripStore: ReturnType<typeof createTripStore>;
 };
 
 export function createStores(deps: Dependencies): AppStores {
@@ -23,12 +23,3 @@ export function createStores(deps: Dependencies): AppStores {
     useTripStore: createTripStore(deps),
   };
 }
-
-// The app-wide instances, shared with code that still imports the stores directly.
-export const defaultStores: AppStores = {
-  useHazardStore,
-  useNavigationStore,
-  useRouteStore,
-  useSessionStore,
-  useTripStore,
-};

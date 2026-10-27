@@ -2,24 +2,23 @@ import { useMemo } from 'react';
 import { Polyline } from 'react-native-maps';
 import type { LatLng as RouteLatLng } from 'react-native-maps';
 import type { LatLng } from '@/domain/entities';
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- TODO(map-boundaries): splitRoute is domain logic in a map primitive; pass split segments in
-import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 import { useTheme } from '@/theme/useTheme';
 
 const LINE_WIDTH = 5;
 
 type RouteLineProps = {
-  coordinates: LatLng[];
-  progressIndex?: number;
+  // The part already driven (drawn muted) and the part still ahead; they share
+  // the split point so the two lines join.
+  driven?: LatLng[];
+  remaining: LatLng[];
 };
 
-export function RouteLine({ coordinates, progressIndex }: RouteLineProps) {
+const NONE: LatLng[] = [];
+
+export function RouteLine({ driven = NONE, remaining }: RouteLineProps) {
   const { colors } = useTheme();
-  const native = useMemo(() => coordinates.map(toNativeCoord), [coordinates]);
-
-  if (native.length < 2) return null;
-
-  const { travelled, ahead } = splitRoute(native, progressIndex);
+  const travelled = useMemo(() => driven.map(toNativeCoord), [driven]);
+  const ahead = useMemo(() => remaining.map(toNativeCoord), [remaining]);
 
   return (
     <>

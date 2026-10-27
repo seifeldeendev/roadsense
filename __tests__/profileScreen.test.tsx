@@ -108,7 +108,7 @@ async function advanceVirtualTime(count = 24, stepMs = 250): Promise<void> {
 }
 
 beforeAll(async () => {
-  require('../src/stores/useSessionStore').useSessionStore.setState({
+  require('../src/composition/stores').useSessionStore.setState({
     user: { id: 'user-demo', name: 'Demo Driver', email: 'demo@roadsense.app' },
     hasCompletedOnboarding: true,
     hasHydrated: true,
@@ -146,7 +146,7 @@ test('a new photo and name are saved and shown on the account tab', async () => 
   await fireEvent.changeText(screen.getByDisplayValue('Demo Driver'), 'Seif Saleem');
   await fireEvent.press(screen.getByLabelText('Save changes'));
   await advanceVirtualTime();
-  const { useSessionStore } = require('../src/stores/useSessionStore');
+  const { useSessionStore } = require('../src/composition/stores');
   expect(useSessionStore.getState().user).toMatchObject({ name: 'Seif Saleem', avatarUri: 'file:///picked.jpg' });
   expect(screen.getByLabelText('Edit profile, Seif Saleem')).toBeTruthy();
 });

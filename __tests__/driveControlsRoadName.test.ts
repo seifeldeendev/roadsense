@@ -2,8 +2,8 @@ import { act, renderHook } from '@testing-library/react-native';
 import { beforeEach, expect, jest, test } from '@jest/globals';
 import type { Camera } from '@/domain/entities';
 import { useDriveControlsViewModel } from '@/features/drive/viewmodels/useDriveControlsViewModel';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useNavigationStore } from '@/stores/useNavigationStore';
+import { AppDependenciesProvider } from '@/composition/AppDependenciesProvider';
+import { useHazardStore, useNavigationStore } from '@/composition/stores';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 jest.mock(
@@ -31,7 +31,7 @@ test('before a drive, the road name follows the route shown on the drive map', a
   useHazardStore.setState({
     cameras: [camera('a', demoStart.lat, demoStart.lng, 'Salah Salem'), camera('b', 30.2, 31.5, 'Planned Road')],
   });
-  const { result } = await renderHook(() => useDriveControlsViewModel());
+  const { result } = await renderHook(() => useDriveControlsViewModel(), { wrapper: AppDependenciesProvider });
   expect(result.current.roadName).toBe('Salah Salem');
 
   await act(() => {

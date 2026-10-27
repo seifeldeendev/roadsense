@@ -2,7 +2,7 @@ import { beforeEach, expect, jest, test } from '@jest/globals';
 import type { LocationSource } from '@/domain/repositories';
 import { createDemoLocationSource, DEMO_ROUTE } from '@/data/location';
 import { MOCK_TRIPS } from '@/data/mock/trips';
-import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useNavigationStore } from '@/composition/stores';
 
 jest.mock(
   '@react-native-async-storage/async-storage',
