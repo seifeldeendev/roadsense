@@ -34,7 +34,7 @@ export function useTripHistoryViewModel(): TripHistoryViewModel {
   const [today] = useState(() => new Date());
 
   useEffect(() => {
-    void loadUnless((state) => state.trips.length > 0);
+    void loadUnless((state) => state.trips.length > 0 || state.isLoading);
   }, [loadUnless]);
 
   const refresh = useCallback(async () => {

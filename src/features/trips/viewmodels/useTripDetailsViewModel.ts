@@ -49,8 +49,8 @@ export function useTripDetailsViewModel(id: string | undefined): TripDetailsView
   const amberThresholdPct = useSettingsStore((state) => state.amberThresholdPct);
 
   useEffect(() => {
-    void loadUnless((state) => state.trips.length > 0);
-    void loadPinsUnless((state) => state.cameras.length > 0);
+    void loadUnless((state) => state.trips.length > 0 || state.isLoading);
+    void loadPinsUnless((state) => state.cameras.length > 0 || state.isLoading);
   }, [loadUnless, loadPinsUnless]);
 
   const trip = useMemo(
