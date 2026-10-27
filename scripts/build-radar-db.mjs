@@ -1,11 +1,11 @@
 // Builds the bundled radar database (assets/data/radars_eg.db) from the Egypt
 // road database export, and records its seed version for the app.
-// Run after updating assets/data/radars_eg.json:  npm run build:radars
-import { createHash } from 'node:crypto';
+// Run after updating assets/data/radars_eg.json or scripts/radarSchema.cjs:  npm run build:radars
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { parseRadarFeed } from '../src/data/radars/parseRadarFeed.ts';
+import schema from './radarSchema.cjs';
 
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const SOURCE = root('assets/data/radars_eg.json');
@@ -13,24 +13,14 @@ const TARGET = root('assets/data/radars_eg.db');
 const VERSION_FILE = root('src/data/radars/radarSeedVersion.ts');
 
 const raw = readFileSync(SOURCE);
-// The version follows the content, so installed copies are replaced whenever the data changes.
-const seedVersion = createHash('sha256').update(raw).digest('hex').slice(0, 16);
+// Installed copies are replaced whenever the data or the schema changes.
+const seedVersion = schema.radarSeedVersion(raw);
 const cameras = parseRadarFeed(JSON.parse(raw.toString('utf8')));
 
 rmSync(TARGET, { force: true });
 const db = new DatabaseSync(TARGET);
-db.exec(`
-  PRAGMA journal_mode = DELETE;
-  CREATE TABLE meta (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);
-  CREATE TABLE cameras (
-    id TEXT PRIMARY KEY NOT NULL,
-    lat REAL NOT NULL,
-    lng REAL NOT NULL,
-    speed_limit_kmh INTEGER NOT NULL,
-    road_name TEXT NOT NULL,
-    type TEXT NOT NULL
-  );
-`);
+db.exec('PRAGMA journal_mode = DELETE');
+db.exec(schema.RADAR_SCHEMA_SQL);
 const insert = db.prepare(
   'INSERT INTO cameras (id, lat, lng, speed_limit_kmh, road_name, type) VALUES (?, ?, ?, ?, ?, ?)',
 );

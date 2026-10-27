@@ -1,11 +1,10 @@
-// The seed version the build script derives from the current JSON export.
-const { createHash } = require('crypto');
+// The seed version the build script derives from the current export and schema.
 const { readFileSync } = require('fs');
 const path = require('path');
+const { radarSeedVersion } = require('../scripts/radarSchema.cjs');
 
 function currentRadarSeedVersion() {
-  const raw = readFileSync(path.join(__dirname, '..', 'assets', 'data', 'radars_eg.json'));
-  return createHash('sha256').update(raw).digest('hex').slice(0, 16);
+  return radarSeedVersion(readFileSync(path.join(__dirname, '..', 'assets', 'data', 'radars_eg.json')));
 }
 
 module.exports = { currentRadarSeedVersion };
