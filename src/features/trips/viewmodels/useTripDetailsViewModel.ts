@@ -14,6 +14,7 @@ import { buildSpeedSegments, type SpeedSegment } from '@/domain/usecases/trips/b
 import { summarizeTripEvents, type TripEvent } from '@/domain/usecases/trips/summarizeTripEvents';
 import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useAsyncResult } from '@/shared/useAsyncResult';
 import { hhmm } from './tripFormat';
 
 export type TripTile = { label: string; value: string };
@@ -37,13 +38,13 @@ export type TripDetailsViewModel = {
 };
 
 export function useTripDetailsViewModel(id: string | undefined): TripDetailsViewModel {
-  const { useHazardStore, useTripStore } = useStores();
+  const { useCameraStore, useHazardStore, useTripStore } = useStores();
   const trips = useTripStore((state) => state.trips);
   const isLoading = useTripStore((state) => state.isLoading);
   const error = useTripStore((state) => state.error);
   const load = useTripStore((state) => state.load);
   const loadUnless = useTripStore((state) => state.loadUnless);
-  const cameras = useHazardStore((state) => state.cameras);
+  const findByIds = useCameraStore((state) => state.findByIds);
   const hazards = useHazardStore((state) => state.hazards);
   const loadPinsUnless = useHazardStore((state) => state.loadUnless);
   const amberThresholdPct = useSettingsStore((state) => state.amberThresholdPct);
@@ -65,12 +66,17 @@ export function useTripDetailsViewModel(id: string | undefined): TripDetailsView
     [trip, amberThresholdPct],
   );
 
+  const tripCameras = useAsyncResult(trip, (current) =>
+    findByIds(current.alerts.filter((alert) => alert.kind === 'camera').map((alert) => alert.refId)).catch(() => []),
+  );
+
   const alertMarkers = useMemo<AlertMarkerModel[]>(() => {
     if (trip === null) return [];
+    const cameras = tripCameras.value ?? [];
     return trip.alerts
       .map((alert) => resolveAlert(alert, cameras, hazards))
       .filter((marker): marker is AlertMarkerModel => marker !== null);
-  }, [trip, cameras, hazards]);
+  }, [trip, tripCameras.value, hazards]);
 
   const tiles = useMemo<TripTile[]>(() => {
     if (trip === null) return [];
