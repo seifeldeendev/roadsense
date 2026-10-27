@@ -1,7 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 import type { Camera } from '../src/domain/entities';
 import { parseRadarFeed, type RadarFeed } from '../src/data/radars/parseRadarFeed';
-import { RadarCameraRepository } from '../src/data/radars/RadarCameraRepository';
+import { RadarCameraRepository } from '../src/data/radars';
+import { JsonRadarCameraRepository } from '../src/data/radars/JsonRadarCameraRepository';
+import { RADAR_SEED_VERSION } from '../src/data/radars/radarSeedVersion';
 import { findUpcomingAlerts } from '../src/domain/usecases/drive/findUpcomingAlerts';
 import { alertTargetFor, fixedPointTitle, isSpeedCamera, nearestPoints } from '../src/domain/usecases/drive/fixedPoints';
 import { nearestSpeedLimit } from '../src/domain/usecases/drive/nearestRoadName';
@@ -30,7 +32,18 @@ describe('parseRadarFeed', () => {
   it('loads the bundled Egypt database', async () => {
     const all = await new RadarCameraRepository().getAll();
     expect(all.length).toBeGreaterThan(4000);
-    expect(all.every((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng))).toBe(true);
+    expect(all.every((c: Camera) => Number.isFinite(c.lat) && Number.isFinite(c.lng))).toBe(true);
+  });
+
+  it('seeds SQLite with exactly what the JSON export parses to, on every platform', async () => {
+    const fromSqlite = await new RadarCameraRepository().getAll();
+    const fromJson = await new JsonRadarCameraRepository().getAll();
+    expect(fromSqlite).toEqual(fromJson);
+  });
+
+  it('carries the seed version of the current export (run npm run build:radars after updating it)', () => {
+    const { currentRadarSeedVersion } = require('../test-support/radarSeed') as { currentRadarSeedVersion: () => string };
+    expect(RADAR_SEED_VERSION).toBe(currentRadarSeedVersion());
   });
 });
 

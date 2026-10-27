@@ -2,7 +2,7 @@
 
 Investigated 2026-10-26 by OpenCode (glm-5.3-flash-free, read-only); every claim below was re-checked against the code and data.
 
-`src/data/radars/radars_eg.json` holds 4,255 points. At most **150** are drawn at once.
+`assets/data/radars_eg.json` holds 4,255 points (on native the app reads them from `assets/data/radars_eg.db`, built from that file). At most **150** are drawn at once.
 
 | # | Where | What drops points | Points affected | Intended? |
 |---|-------|-------------------|-----------------|-----------|
