@@ -15,7 +15,6 @@ import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { useLatest } from '@/shared/useLatest';
 import { useCamerasAround } from '@/stores/cameraHooks';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
 import {
   hazardMeta,
@@ -77,7 +76,7 @@ function toKindKeys(kinds: ReadonlySet<MapFilterKey>): HazardKind[] {
 }
 
 export function useLiveMapViewModel(): LiveMapViewModel {
-  const { useHazardStore, useNavigationStore, useSettingsStore } = useStores();
+  const { useDriveStore, useHazardStore, useNavigationStore, useSettingsStore } = useStores();
   const hazards = useHazardStore((s) => s.hazards);
   const hazardsLoading = useHazardStore((s) => s.isLoading);
   const error = useHazardStore((s) => s.error);
