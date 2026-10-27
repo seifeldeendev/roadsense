@@ -7,7 +7,6 @@ import { nearestRoadName, ROAD_MATCH_RADIUS_M } from '@/domain/usecases/drive/ne
 import { useCamerasAround } from '@/stores/cameraHooks';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export type DriveSheet = 'sound' | 'options' | 'report' | 'alerts';
 
@@ -36,7 +35,7 @@ export type DriveControlsViewModel = {
 };
 
 export function useDriveControlsViewModel(): DriveControlsViewModel {
-  const { useCameraStore, useHazardStore, useNavigationStore } = useStores();
+  const { useCameraStore, useHazardStore, useNavigationStore, useSettingsStore } = useStores();
   const [sheet, setSheet] = useState<DriveSheet | null>(null);
   const [recentreSignal, setRecentreSignal] = useState(0);
   const position = useDriveStore((s) => s.position);

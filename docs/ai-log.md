@@ -425,3 +425,18 @@ With the original plants put back, both tests fail and name the files. The route
 
 **Grep for survivors:** every remaining "~280 KB" is either marked superseded (AI-038, the migration report) or is the audit's own description of F19, which Round 5 updates. "~1 MB" and "5 km / 2 km" appear only inside the corrections that overturned them.
 **Verification:** tsc and lint; the only code change is a comment. _Seif: fill in your notes._
+
+### AI-055 · 2026-10-27 · Seif · fix round 3, part 2a: settings and theme stores built by createStores (audit F9) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim):** "Option A. Fold F9 into Round 3 and finish F4/F5 properly." The round was split in two commits by Seif's choice, because it measured ~34 files against a ~30 cap. This is the first.
+**Output:**
+- **Factories.** `useSettingsStore` and `useThemeStore` became `createSettingsStore()` / `createThemeStore()`, built in `createStores` and read through `useStores()`, like the other six. Persistence is unchanged in this commit.
+- **Compatibility exports.** `composition/stores.ts` exports the production instances under the old names, for code outside a feature (the full-app screen test reads them there).
+- **View models.** 13 feature view models now take `useSettingsStore` (and `useThemeStore`) from `useStores()`. The drive's point handler is handed the injected settings store. `drivePointHandler.ts` only imports the type, so it needed no edit.
+
+**Theme initialisation, checked before converting (the named stop risk).**
+- **Before.** Persisted state starts loading when a store is created. The root layout imported `useThemeStore` (line 17) before `AppDependenciesProvider` (line 18), so the theme's read was issued before the session's. The session read is the one the splash waits for.
+- **After.** `createStores` builds the theme first, then settings, then the rest, all while line 18 is evaluated. The theme read is still issued first, so the order is reproduced.
+- **Layout.** The root layout used to read the preference above the provider. It now reads it in a `ThemedRoot` child inside the provider and `SessionGate`, through the feature hook `useThemePreference`. `ThemeProvider` mounts at the same point as before; nothing painted there.
+
+**Tests.** Five tests set the old singleton and then rendered with provider-built stores, so they now set the provider's own store. Each first awaits `persist.rehydrate()`, so loading saved state can't overwrite the setting under test. The full-app screen test reads the composition export.
+**Verification:** tsc, lint, jest 213/213 (39 suites, exits without `--forceExit`), web export. 24 files including this log. The dev timing log in `useDriveMapViewModel.ts` was kept out: that file was staged as HEAD plus only this change. _Seif: fill in your notes._

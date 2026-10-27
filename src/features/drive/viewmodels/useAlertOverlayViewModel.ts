@@ -6,7 +6,6 @@ import { formatDistance, formatTimeAgo } from '@/shared/format';
 import { stopSpeaking } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 
 const AUTO_DISMISS_MS = 8000;
 const BEHIND_THRESHOLD_DEG = 90;
@@ -29,7 +28,7 @@ export type AlertOverlayViewModel = {
 };
 
 export function useAlertOverlayViewModel(): AlertOverlayViewModel {
-  const { useHazardStore } = useStores();
+  const { useHazardStore, useSettingsStore } = useStores();
   const activeAlert = useDriveStore((s) => s.activeAlert);
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);

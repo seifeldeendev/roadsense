@@ -8,7 +8,6 @@ import { driveLocationStatus, type LocationStatus } from '@/domain/usecases/driv
 import type { Unsubscribe } from '@/domain/repositories';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { hazardMeta } from '@/theme/tokens';
 import { announce, clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
 import {
@@ -58,7 +57,7 @@ export type DriveModeViewModel = {
 };
 
 export function useDriveModeViewModel(): DriveModeViewModel {
-  const { useCameraStore, useHazardStore, useNavigationStore } = useStores();
+  const { useCameraStore, useHazardStore, useNavigationStore, useSettingsStore } = useStores();
   const { location } = useDependencies();
   const hazardsLoading = useHazardStore((s) => s.isLoading);
   const prepareDrive = useCameraStore((s) => s.prepareDrive);
@@ -170,7 +169,7 @@ export function useDriveModeViewModel(): DriveModeViewModel {
     })().finally(() => {
       startingRef.current = false;
     });
-  }, [showFeedback, locationSource, hasQueuedReplay, startDrive, location, takeDemoPlayback, useHazardStore, useCameraStore, prepareDrive, findInBounds, currentLocation, setLocationError]);
+  }, [showFeedback, locationSource, hasQueuedReplay, startDrive, location, takeDemoPlayback, useHazardStore, useCameraStore, useSettingsStore, prepareDrive, findInBounds, currentLocation, setLocationError]);
 
   const stop = useCallback(() => {
     unwatchRef.current?.();

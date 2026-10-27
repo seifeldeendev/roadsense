@@ -10,7 +10,6 @@ import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 import { useCamerasAround } from '@/stores/cameraHooks';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useLatest } from '@/shared/useLatest';
 
 // The road database covers all of Egypt; the map draws only nearby points.
@@ -42,7 +41,7 @@ export type DriveMapViewModel = {
 };
 
 export function useDriveMapViewModel(): DriveMapViewModel {
-  const { useHazardStore, useNavigationStore } = useStores();
+  const { useHazardStore, useNavigationStore, useSettingsStore } = useStores();
   const { location } = useDependencies();
   const isDriving = useDriveStore((s) => s.isDriving);
   const position = useDriveStore((s) => s.position);

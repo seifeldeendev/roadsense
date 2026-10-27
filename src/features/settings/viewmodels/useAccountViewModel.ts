@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { initialsOf } from './initials';
 
 export type AccountViewModel = {
@@ -17,7 +16,7 @@ export type AccountViewModel = {
 };
 
 export function useAccountViewModel(): AccountViewModel {
-  const { useSessionStore } = useStores();
+  const { useSessionStore, useSettingsStore } = useStores();
   const user = useSessionStore((s) => s.user);
   const locationSource = useSettingsStore((s) => s.locationSource);
   const setLocationSource = useSettingsStore((s) => s.setLocationSource);

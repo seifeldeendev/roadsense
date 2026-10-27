@@ -17,7 +17,6 @@ import { useTripHistoryViewModel } from '@/features/trips/viewmodels/useTripHist
 import { createStores } from '@/stores/createStores';
 import { DependenciesProvider, useStores } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 
 const mockSpeak = jest.fn();
@@ -289,7 +288,6 @@ describe('cameras around the driver (working set) and around a panned view (quer
 
   beforeEach(() => {
     useDriveStore.setState({ isDriving: false, position: null, currentLocation: null, driveSource: null });
-    useSettingsStore.setState({ locationSource: 'demo' });
   });
 
   it('a pan away from the working set queries the view and keeps the old markers until it answers', async () => {
