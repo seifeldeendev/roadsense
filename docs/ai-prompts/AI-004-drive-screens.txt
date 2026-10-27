@@ -1,0 +1,54 @@
+<task>
+Project: RoadSense, React Native + Expo SDK 58 + TypeScript strict + Expo Router, warns Cairo drivers about speed cameras and hazards. `@/*` maps to `./src/*`. Read these existing layers first and REUSE them; do not modify them:
+  src/domain (entities, repository interfaces, use cases: getSpeedStatus, findUpcomingAlerts, isHazardExpired, applyVote, geo utils)
+  src/data/di.ts + src/data/mock (Cairo fixtures, DEMO_TRIP along Salah Salem with an amber + red stretch, and a camera + hazard that trigger alerts)
+  src/services (createDemoLocationSource / MockLocationSource, speak / stopSpeaking)
+  src/stores (useDriveStore, useHazardStore, useSettingsStore)
+  src/shared (constants incl. ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS; format helpers)
+  src/theme/tokens.ts (colors, spacing, radius, typography, touch, hazardMeta) and src/components/ui (Screen, AppButton, Card, Chip, Badge, SectionHeader, ToggleRow, SegmentedControl, EmptyState, ErrorState, LoadingState)
+  src/app routes already point at the three placeholder screens you will replace.
+
+Architecture rule (MVVM): screens (Views) ONLY render what a ViewModel hook returns and call its callbacks. Screens must not import from src/stores, src/services, src/data or src/domain/usecases; ViewModels may. Feature components get data via props only.
+
+Implement the three Drive feature screens, replacing the placeholders, in:
+  src/features/drive/screens/   DriveModeScreen.tsx, AlertOverlayScreen.tsx, AlertSettingsScreen.tsx
+  src/features/drive/viewmodels/ useDriveModeViewModel.ts, useAlertOverlayViewModel.ts, useAlertSettingsViewModel.ts
+  src/features/drive/components/ SpeedGauge.tsx, LimitBadge.tsx, NextAlertCard.tsx, ReportButton.tsx, (others if needed)
+
+1. Drive Mode (tab "drive"). FR1 speed vs limit, FR3 one-tap report.
+   UI: header row with title "Drive" and a settings button (⚙, accessibilityLabel "Alert settings") that navigates to /settings/alerts. Large circular SpeedGauge (current km/h big in the centre, "km/h" caption, ring/border colour from status: ok -> colors.ok, near -> colors.near, over -> colors.over; draw the ring with a thick borderWidth View, no new deps). Round road-sign style LimitBadge (white fill, red border, limit number). A status line ("Within limit" / "Near limit" / "Over limit by N km/h"). NextAlertCard showing the nearest upcoming alert (icon from hazardMeta, title, formatted distance, road name, camera limit) or "No alerts ahead". A 2x2 grid of large ReportButtons (Accident, Pothole, Checkpoint, Flooding; min height touch.large; hazardMeta colour/icon). A full-width Start drive / Stop drive AppButton. Before start: an idle state message "Start a drive to see live speed (demo route: Salah Salem)".
+   ViewModel: on mount call useHazardStore.load(). start(): useDriveStore.startDrive(), create the demo location source and, for each point, pushPoint(p) and recompute findUpcomingAlerts(position, heading, cameras, hazards, settings). nextAlert = first result. If the first result's refId is not the current activeAlert and not in dismissedAlertIds: setActiveAlert, speak("<title> in <rounded distance> metres") if voiceEnabled, and router.push('/alert'). stop(): stop the source, stopDrive(). Stop the source on unmount. Expose status via getSpeedStatus(speed, limit, amberThresholdPct from settings). onReport(type): requires an active drive with a position; otherwise show the feedback message "Start a drive to report hazards". When driving, call useHazardStore.report(type, lat, lng, heading) and show a transient confirmation banner "<Type> reported at HH:MM" for ~3 s (own small component, no toast library); on failure show "Couldn't send report — try again". Expose isLoading/error from the hazard store; show LoadingState while first load runs and ErrorState with retry on error.
+
+2. Alert Overlay (route "alert", already a transparentModal). FR2 alert, FR4 "Still there?".
+   UI: dimmed backdrop (rgba black ~0.6) with a bottom/centre card: large icon, title (e.g. "Speed camera ahead"), live distance (formatDistance), road name; for cameras a LimitBadge with the camera limit; for hazards a "Still there?" section with big Yes / No buttons and a line "Reported 25 min ago · 4 confirmations · 1 denial". A close (×) button with accessibilityLabel "Dismiss alert". After voting show "Thanks — vote recorded" and disable the buttons. If there is no activeAlert render an EmptyState with a "Back" button.
+   ViewModel: reads activeAlert and current position from useDriveStore; liveDistance = haversine(position, alert target) when position exists, else alert.distanceM. hazard data comes from useHazardStore.getById so vote counts are current. onVote(stillThere) -> useHazardStore.vote. onDismiss() -> dismissAlert(refId), stopSpeaking(), router.back(). Auto-dismiss 8 s after the alert opened, or as soon as the target is behind the driver (angleDiffDeg(heading, bearing) > 90) — both via onDismiss. Clear timers on unmount.
+
+3. Alert Settings (route "settings/alerts"). FR2 configuration.
+   UI (scrollable): SectionHeader "Alert distance" + SegmentedControl over ALERT_DISTANCE_OPTIONS (labels "200 m" etc). SectionHeader "Alert types" + ToggleRow per type (Speed cameras, Accidents, Potholes, Checkpoints, Flooding) with hazardMeta icons. SectionHeader "Sound & voice" + ToggleRow "Voice alerts" and "Alert sound". SectionHeader "Amber warning" + SegmentedControl over AMBER_OPTIONS ("85%" ...) with helper text "Speed turns amber at N% of the limit". Buttons: "Test voice" (speaks "Speed camera in 300 metres"; disabled with helper text when voice is off), "Preview alert" (sets a sample camera alert from the loaded cameras as activeAlert and router.push('/alert')), and "Reset to defaults" (variant ghost/danger). Validation: if the user tries to disable the last enabled alert type, keep it enabled and show inline message "Keep at least one alert type on".
+   ViewModel: binds to useSettingsStore (persisted via AsyncStorage already).
+
+General: StyleSheet + tokens only; no new npm dependencies; touch targets >= touch.min (Drive Mode buttons >= touch.large); accessibilityRole/labels on all pressables; every file under ~150 lines (split components if needed); typed route usage via expo-router `router`/`Link`; no `any`/`as any`. Must look right on a 360 dp wide phone (use flex/percentages, no fixed widths wider than 320).
+
+Leave untouched: everything outside src/features/drive/ (except you may NOT change routes, stores, services, domain, data, theme or ui). If you believe a change outside src/features/drive is required, don't make it — describe it in the report.
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+Then `git status --porcelain` must show changes only under src/features/drive/.
+</verification_loop>
+
+<action_safety>
+Scoped to this task. Do NOT git add or git commit; the orchestrator commits after review. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. What you built per screen (UI + ViewModel behaviour)
+  2. Files created/modified
+  3. Gate outcomes (tsc, jest counts, lint, export)
+  4. Deviations, assumptions, anything you'd want changed outside src/features/drive
+</structured_output_contract>
