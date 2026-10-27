@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+// eslint-disable-next-line no-restricted-imports -- TODO(composition-root): default instance built from production dependencies
 import { productionDependencies, type Dependencies } from '../data/dependencies';
 import { createStores, defaultStores, type AppStores } from './createStores';
 

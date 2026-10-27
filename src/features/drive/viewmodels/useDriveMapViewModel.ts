@@ -5,6 +5,7 @@ import { isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/useca
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
+// eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';

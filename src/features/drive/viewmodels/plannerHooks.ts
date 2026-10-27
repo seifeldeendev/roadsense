@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Destination, LatLng } from '@/domain/entities';
+// eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
 import { describePlace, searchPlaces } from '@/services/geocoding';
 
 const SEARCH_DEBOUNCE_MS = 400;

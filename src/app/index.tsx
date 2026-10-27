@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-// TODO(item-5): routing reads the session store; move into an auth-gate component in a feature slice
+// eslint-disable-next-line import/no-restricted-paths -- TODO(auth-gate): move session-driven rendering into an auth-gate component in a feature slice
 import { useSessionStore } from '@/stores/useSessionStore';
 
 export default function SessionRedirect() {

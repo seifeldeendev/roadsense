@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+// eslint-disable-next-line no-restricted-imports -- TODO(composition-root): default instance built from production dependencies
 import { productionDependencies, type Dependencies } from '../data/dependencies';
 import type { Camera, Hazard, HazardType } from '../domain/entities';
 

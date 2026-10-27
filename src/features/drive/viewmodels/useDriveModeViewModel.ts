@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HazardType, LocationSourceKind, UpcomingAlert } from '@/domain/entities';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
 import type { Unsubscribe } from '@/domain/repositories';
+// eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
 import { requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';

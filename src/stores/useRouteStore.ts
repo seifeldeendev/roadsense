@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+// eslint-disable-next-line no-restricted-imports -- TODO(composition-root): default instance built from production dependencies
 import { productionDependencies, type Dependencies } from '../data/dependencies';
 import type { Destination, LatLng, PlannedRoute } from '../domain/entities';
 import { persistStorage } from './persistStorage';

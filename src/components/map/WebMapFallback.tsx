@@ -1,6 +1,7 @@
 import { useImperativeHandle, type Ref } from 'react';
 import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+// eslint-disable-next-line import/no-restricted-paths -- TODO(map-boundaries): decide whether shared presentation may use the UI kit
 import { AppText } from '@/components/ui';
 import { useTheme } from '@/theme/useTheme';
 import type { RoadMapHandle } from './RoadMap';
