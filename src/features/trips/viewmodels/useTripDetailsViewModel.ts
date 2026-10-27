@@ -13,7 +13,6 @@ import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion
 import { buildSpeedSegments, type SpeedSegment } from '@/domain/usecases/trips/buildSpeedSegments';
 import { summarizeTripEvents, type TripEvent } from '@/domain/usecases/trips/summarizeTripEvents';
 import { useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAsyncResult } from '@/shared/useAsyncResult';
 import { hhmm } from './tripFormat';
 
@@ -38,7 +37,7 @@ export type TripDetailsViewModel = {
 };
 
 export function useTripDetailsViewModel(id: string | undefined): TripDetailsViewModel {
-  const { useCameraStore, useHazardStore, useTripStore } = useStores();
+  const { useCameraStore, useHazardStore, useSettingsStore, useTripStore } = useStores();
   const trips = useTripStore((state) => state.trips);
   const isLoading = useTripStore((state) => state.isLoading);
   const error = useTripStore((state) => state.error);

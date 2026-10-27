@@ -10,7 +10,6 @@ import {
 } from '@/domain/usecases/trips/weeklyStats';
 import { formatDayTitle } from '@/domain/usecases/trips/groupTripsByDay';
 import { useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { ReplayRate } from '@/stores/useTripStore';
 import { mmss } from './tripFormat';
 import {
@@ -59,7 +58,7 @@ export type StatsReplayViewModel = {
 };
 
 export function useStatsReplayViewModel(initialTripId: string | undefined): StatsReplayViewModel {
-  const { useNavigationStore, useTripStore } = useStores();
+  const { useNavigationStore, useSettingsStore, useTripStore } = useStores();
   const trips = useTripStore((state) => state.trips);
   const isLoading = useTripStore((state) => state.isLoading);
   const error = useTripStore((state) => state.error);
