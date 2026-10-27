@@ -292,3 +292,14 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 - Store tests cover: refetch only past 2 km; the set kept through failures; backoff timing; reuse of a fresh idle set at drive start; a refetch for a set that is present but stale; a reported pre-drive failure; suspend and resume.
 - View-model tests cover: a pan outside the set queries the view and keeps the old markers until the answer arrives, while the default view makes one fetch and no query; a drive whose camera fetch fails starts and shows and speaks the warning.
 - The dev-only time-to-first-cameras log on the Drive tab was left in the working tree for device timing and is not in this commit. _Seif: fill in your notes._
+
+### AI-048 · 2026-10-27 · Seif · architecture migration final report (queue item G) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, item heading):** "### G. Final report"
+**Output:** `docs/architecture-migration-report.md`. It covers:
+- every item's change, measurements and corrections;
+- the behavior changes under their own heading, including the three screens that now wait on a camera query (AI-046);
+- the three corrected claims (install size, the missed sixth unguarded load, and the 5 km / 2 km working set);
+- the layer table against the lint config against the code, including where they don't line up exactly (React hooks in the stores layer);
+- the remaining debt, including the trip planner's unguarded destinations load.
+
+Lint is clean, and `grep -rn "eslint-disable" src` returns nothing. _Seif: fill in your notes._
