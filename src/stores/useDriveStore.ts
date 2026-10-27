@@ -30,57 +30,59 @@ export interface DriveState {
   dismissAlert(id: string): void;
 }
 
-export const useDriveStore = create<DriveState>()((set) => ({
-  isDriving: false,
-  position: null,
-  speedKmh: 0,
-  limitKmh: 0,
-  heading: 0,
-  activeAlert: null,
-  dismissedAlertIds: [],
-  overLimitCount: 0,
-  currentLocation: null,
-  driveSource: null,
-  drivingSince: null,
-  lastReadingAt: null,
-  drivingFrom: null,
-  locationError: null,
-  setLocationError: (locationError) => set({ locationError }),
-  setCurrentLocation: (currentLocation) => set({ currentLocation }),
-  startDrive: (source = 'demo', from = null) =>
-    set({
-      isDriving: true,
-      driveSource: source,
-      drivingSince: Date.now(),
-      lastReadingAt: null,
-      drivingFrom: from,
-      locationError: null,
-      position: null,
-      speedKmh: 0,
-      limitKmh: 0,
-      heading: 0,
-      activeAlert: null,
-      dismissedAlertIds: [],
-      overLimitCount: 0,
-    }),
-  stopDrive: () => set({ isDriving: false, activeAlert: null, drivingSince: null, lastReadingAt: null, locationError: null }),
-  pushPoint: (p) =>
-    set((state) => ({
-      position: { lat: p.lat, lng: p.lng },
-      lastReadingAt: Date.now(),
-      currentLocation: state.driveSource === 'gps' ? { lat: p.lat, lng: p.lng } : state.currentLocation,
-      speedKmh: p.speedKmh,
-      limitKmh: p.limitKmh,
-      heading: p.heading,
-      overLimitCount:
-        p.limitKmh > 0 && p.speedKmh > p.limitKmh ? state.overLimitCount + 1 : state.overLimitCount,
-    })),
-  setActiveAlert: (activeAlert) => set({ activeAlert }),
-  dismissAlert: (id) =>
-    set((state) => ({
-      activeAlert: state.activeAlert?.refId === id ? null : state.activeAlert,
-      dismissedAlertIds: state.dismissedAlertIds.includes(id)
-        ? state.dismissedAlertIds
-        : [...state.dismissedAlertIds, id],
-    })),
-}));
+export function createDriveStore() {
+  return create<DriveState>()((set) => ({
+    isDriving: false,
+    position: null,
+    speedKmh: 0,
+    limitKmh: 0,
+    heading: 0,
+    activeAlert: null,
+    dismissedAlertIds: [],
+    overLimitCount: 0,
+    currentLocation: null,
+    driveSource: null,
+    drivingSince: null,
+    lastReadingAt: null,
+    drivingFrom: null,
+    locationError: null,
+    setLocationError: (locationError) => set({ locationError }),
+    setCurrentLocation: (currentLocation) => set({ currentLocation }),
+    startDrive: (source = 'demo', from = null) =>
+      set({
+        isDriving: true,
+        driveSource: source,
+        drivingSince: Date.now(),
+        lastReadingAt: null,
+        drivingFrom: from,
+        locationError: null,
+        position: null,
+        speedKmh: 0,
+        limitKmh: 0,
+        heading: 0,
+        activeAlert: null,
+        dismissedAlertIds: [],
+        overLimitCount: 0,
+      }),
+    stopDrive: () => set({ isDriving: false, activeAlert: null, drivingSince: null, lastReadingAt: null, locationError: null }),
+    pushPoint: (p) =>
+      set((state) => ({
+        position: { lat: p.lat, lng: p.lng },
+        lastReadingAt: Date.now(),
+        currentLocation: state.driveSource === 'gps' ? { lat: p.lat, lng: p.lng } : state.currentLocation,
+        speedKmh: p.speedKmh,
+        limitKmh: p.limitKmh,
+        heading: p.heading,
+        overLimitCount:
+          p.limitKmh > 0 && p.speedKmh > p.limitKmh ? state.overLimitCount + 1 : state.overLimitCount,
+      })),
+    setActiveAlert: (activeAlert) => set({ activeAlert }),
+    dismissAlert: (id) =>
+      set((state) => ({
+        activeAlert: state.activeAlert?.refId === id ? null : state.activeAlert,
+        dismissedAlertIds: state.dismissedAlertIds.includes(id)
+          ? state.dismissedAlertIds
+          : [...state.dismissedAlertIds, id],
+      })),
+  }));
+}

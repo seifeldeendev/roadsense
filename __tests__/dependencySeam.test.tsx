@@ -7,8 +7,9 @@ import { createDependencies } from '@/data/dependencies';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 import { useDriveModeViewModel } from '@/features/drive/viewmodels/useDriveModeViewModel';
 import { createStores } from '@/stores/createStores';
-import { DependenciesProvider } from '@/stores/DependenciesProvider';
-import { useDriveStore } from '@/stores/useDriveStore';
+import { AppDependenciesProvider } from '@/composition/AppDependenciesProvider';
+import { useDriveStore as productionDriveStore } from '@/composition/stores';
+import { DependenciesProvider, useStores } from '@/stores/DependenciesProvider';
 import { createCameraStore } from '@/stores/useCameraStore';
 import { createHazardStore } from '@/stores/useHazardStore';
 
@@ -86,11 +87,34 @@ test('Drive Mode plays the location source it is given', async () => {
   await act(async () => {
     emit?.({ lat: 31.2, lng: 29.9, ts: 0, speedKmh: 42, heading: 0, limitKmh: 60 });
   });
-  expect(useDriveStore.getState().speedKmh).toBe(42);
+  expect(stores.useDriveStore.getState().speedKmh).toBe(42);
   expect(result.current.speedKmh).toBe(42);
 
   await act(async () => {
     result.current.stop();
   });
   expect(unwatch).toHaveBeenCalledTimes(1);
+});
+
+// A drive outlives every render, so the store it runs on must be the same object
+// for the provider's lifetime, as the module singleton was.
+test('the provider builds its stores once: a drive keeps one drive store across re-renders', async () => {
+  const dependencies = createDependencies({ cameras: fakeCameras, hazards: fakeHazards });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <DependenciesProvider dependencies={dependencies}>{children}</DependenciesProvider>
+  );
+  const { result, rerender } = await renderHook(() => useStores(), { wrapper });
+  const first = result.current;
+  await act(async () => first.useDriveStore.getState().startDrive('demo'));
+  await rerender({});
+  await rerender({});
+  expect(result.current).toBe(first);
+  expect(result.current.useDriveStore).toBe(first.useDriveStore);
+  expect(result.current.useDriveStore.getState().isDriving).toBe(true);
+  await act(async () => first.useDriveStore.getState().stopDrive());
+});
+
+test('the app provider hands out the composition root instances', async () => {
+  const { result } = await renderHook(() => useStores(), { wrapper: AppDependenciesProvider });
+  expect(result.current.useDriveStore).toBe(productionDriveStore);
 });

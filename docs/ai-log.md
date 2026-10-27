@@ -473,3 +473,21 @@ With the original plants put back, both tests fail and name the files. The route
 
 The migration report's layer section also gets the F5 correction: the `AppState` import was not the only mismatch.
 **Verification:** documentation only; the suite and lint are as in AI-056. _Seif: fill in your notes._
+
+### AI-058 · 2026-10-27 · Seif · drive store built by createStores, the last store outside DI (audit F9 remainder, F7) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim):** "Close the blocker, then stop. Convert useDriveStore to createStores/useStores, same as settings and theme."
+**Output:**
+- **Conversion.** `useDriveStore` became `createDriveStore()`, built in `createStores` and read through `useStores()`. `composition/stores.ts` exports the production instance under the old name. The 8 feature view models and `cameraHooks` take it from the provider. `drivePointHandler.ts` imports only the `DriveState` type, so it needed no edit.
+- **F7 closed.** The lifecycle callback in `cameraHooks.ts` no longer calls `useDriveStore.getState()`. It reads `isDriving` and `currentLocation` from selectors, mirrored into a ref in an effect after each render. On resume it acts on values that are at most one commit behind the store, which is immaterial for a foreground event. With the ref never refreshed, both lifecycle tests fail.
+- **`getState()` left in `src`.** Only the approved `drivePointHandler`, and `useSessionStore`'s rehydration reading its own handle.
+
+**The two cautions, checked:**
+- **Identity.** One correction to the premise: the drive working set lives in `useCameraStore`, which has been DI-built since AI-047; the drive store holds drive state. For both, identity holds. `DependenciesProvider` builds its container once, in a lazy `useState`, and never on a later render. Production passes `productionStores`, built once when the module loads. New tests pin this down:
+  - across re-renders the provider hands out the same stores, and a started drive is still running;
+  - the app provider hands out the composition root's instance.
+
+  With the provider rebuilding on each render, the first test fails.
+- **The `drivePointHandler` exception.** The reason is unchanged: a drive outlives any render. `start()` passes the handler the provider's single drive store (`useDriveModeViewModel.ts:163`). Each reading writes through `pushPoint`, then reads the store it was handed (`drivePointHandler.ts:60`, `:77`), so it sees its own write without waiting for a render.
+
+**Tests.** Five tests now set or read their own store instead of the old singleton, and the full-app screen test reads the composition export. The timing log was kept out with `git stash`, not by rebuilding a file, as Seif instructed.
+**Verification:** tsc, lint, jest 217/217 (39 suites, exits without `--forceExit`). _Seif: fill in your notes._

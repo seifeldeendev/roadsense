@@ -5,7 +5,6 @@ import { ACTIVE_ALERTS_LOOKAHEAD_M } from '@/domain/usecases/cameras/cameraRadii
 import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
 import { nearestRoadName, ROAD_MATCH_RADIUS_M } from '@/domain/usecases/drive/nearestRoadName';
 import { useCamerasAround } from '@/stores/cameraHooks';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
 
 export type DriveSheet = 'sound' | 'options' | 'report' | 'alerts';
@@ -35,7 +34,7 @@ export type DriveControlsViewModel = {
 };
 
 export function useDriveControlsViewModel(): DriveControlsViewModel {
-  const { useCameraStore, useHazardStore, useNavigationStore, useSettingsStore } = useStores();
+  const { useCameraStore, useDriveStore, useHazardStore, useNavigationStore, useSettingsStore } = useStores();
   const [sheet, setSheet] = useState<DriveSheet | null>(null);
   const [recentreSignal, setRecentreSignal] = useState(0);
   const position = useDriveStore((s) => s.position);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Camera, LatLng } from '../domain/entities';
 import {
   coversArea,
@@ -11,14 +11,13 @@ import {
 import { boundsAround } from '../domain/usecases/geo/bounds';
 import { useAsyncResult } from '../shared/useAsyncResult';
 import { useDependencies, useStores } from './DependenciesProvider';
-import { useDriveStore } from './useDriveStore';
 
 // Keeps the camera working set centred on the car while driving, else the
 // phone's last fix, else the demo drive's start, while anything reads it.
 // In the background it stops; on return it follows again from the next
 // position reported (the car's next reading, or the idle position right away).
 function useFollowTarget(): LatLng | null {
-  const { useNavigationStore } = useStores();
+  const { useDriveStore, useNavigationStore } = useStores();
   const isDriving = useDriveStore((s) => s.isDriving);
   const position = useDriveStore((s) => s.position);
   const currentLocation = useDriveStore((s) => s.currentLocation);
@@ -27,13 +26,21 @@ function useFollowTarget(): LatLng | null {
 }
 
 function useFollowWorkingSet(): void {
-  const { useCameraStore, useNavigationStore } = useStores();
+  const { useCameraStore, useDriveStore, useNavigationStore } = useStores();
   const { lifecycle } = useDependencies();
   const follow = useCameraStore((s) => s.follow);
   const suspend = useCameraStore((s) => s.suspend);
   const resume = useCameraStore((s) => s.resume);
   const demoStart = useNavigationStore((s) => s.demoRoute[0]);
   const followed = useFollowTarget();
+  // What the lifecycle callback needs at the moment the app comes back, kept
+  // current after each render rather than read imperatively from the store.
+  const isDriving = useDriveStore((s) => s.isDriving);
+  const currentLocation = useDriveStore((s) => s.currentLocation);
+  const latest = useRef({ isDriving, currentLocation });
+  useEffect(() => {
+    latest.current = { isDriving, currentLocation };
+  });
   const lat = followed?.lat;
   const lng = followed?.lng;
 
@@ -48,7 +55,7 @@ function useFollowWorkingSet(): void {
       } else if (state === 'active') {
         resume();
         // A drive's last position is an hour old; wait for its next reading.
-        const drive = useDriveStore.getState();
+        const drive = latest.current;
         if (!drive.isDriving) {
           const idle = followedPosition(null, drive.currentLocation, demoStart);
           if (idle !== null) follow(idle);

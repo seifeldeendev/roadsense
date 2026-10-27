@@ -15,7 +15,6 @@ import {
 import { CAMERA_QUERY_TIMEOUT_MS } from '@/stores/useCameraStore';
 import { createStores } from '@/stores/createStores';
 import { DependenciesProvider } from '@/stores/DependenciesProvider';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 
 const mockSpeak = jest.fn();
@@ -110,7 +109,6 @@ async function driveTo(location: ReturnType<typeof locationSource>, where: LatLn
 beforeEach(() => {
   jest.useFakeTimers();
   mockSpeak.mockClear();
-  useDriveStore.setState({ isDriving: false, position: null, currentLocation: null, driveSource: null });
 });
 
 // Retry and staleness timers must never outlive a test, failed or not.

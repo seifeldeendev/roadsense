@@ -208,7 +208,7 @@ test('the Account tab opens settings pages that hide map layers and screen parts
 });
 
 test('the alert panel shows the countdown distance and warning progress', async () => {
-  const { useDriveStore } = require('../src/stores/useDriveStore');
+  const { useDriveStore } = require('../src/composition/stores');
   useDriveStore.setState({
     activeAlert: {
       kind: 'camera',
