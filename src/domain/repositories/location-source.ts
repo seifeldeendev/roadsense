@@ -5,8 +5,11 @@ export type Unsubscribe = () => void;
 export interface LocationSource {
   // One fix right now; null when unavailable or not permitted.
   getCurrent(): Promise<LatLng | null>;
-  // Streams trip points until the returned function is called.
-  watch(onPoint: (p: TripPoint) => void): Unsubscribe;
+  // Streams trip points until the returned function is called. onError is told
+  // when the stream fails to start or the platform reports it broken (location
+  // turned off, permission revoked); a stream that just goes quiet is not
+  // reported, so callers watch for stale readings themselves.
+  watch(onPoint: (p: TripPoint) => void, onError?: (reason: string) => void): Unsubscribe;
 }
 
 // What the next demo drive plays, in order of preference: a queued trip replay,

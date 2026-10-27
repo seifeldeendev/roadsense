@@ -39,17 +39,19 @@ export function followedPosition(
   return drivingAt ?? currentLocation ?? demoStart ?? null;
 }
 
-// What a drive can rely on: "covered" when the set holds every camera the
-// drive's alert lookups can reach; otherwise loading, or unavailable after a
-// failed fetch (retrying).
-export type DriveCoverage = 'covered' | 'loading' | 'unavailable';
+// What a drive can rely on at the car's position: "covered" when the set holds
+// every camera the drive's alert lookups can reach. Otherwise the alerts may be
+// missing right now: "refreshing" while a request for the car's area is
+// outstanding (bounded by the query timeout), "unavailable" once it failed or
+// timed out (retrying).
+export type DriveCoverage = 'covered' | 'refreshing' | 'unavailable';
 
 export function driveCoverage(
   set: WorkingSet | null,
-  followed: LatLng | null,
+  carPosition: LatLng,
   fetchFailed: boolean,
   lookupRadiusM: number,
 ): DriveCoverage {
-  if (followed !== null && set !== null && coversArea(workingSetArea(set), followed, lookupRadiusM)) return 'covered';
-  return fetchFailed ? 'unavailable' : 'loading';
+  if (set !== null && coversArea(workingSetArea(set), carPosition, lookupRadiusM)) return 'covered';
+  return fetchFailed ? 'unavailable' : 'refreshing';
 }

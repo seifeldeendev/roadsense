@@ -20,7 +20,7 @@ export class ExpoLocationSource implements LocationSource {
   }
 
   // One stream per source: a new watch ends the previous one.
-  watch(onPoint: (p: TripPoint) => void): Unsubscribe {
+  watch(onPoint: (p: TripPoint) => void, onError?: (reason: string) => void): Unsubscribe {
     this.cancel?.();
     this.previous = null;
     let stopped = false;
@@ -33,13 +33,18 @@ export class ExpoLocationSource implements LocationSource {
         this.previous = point;
         onPoint(point);
       },
+      (reason) => {
+        if (!stopped) onError?.(reason);
+      },
     )
       .then((started) => {
         // The watch may have been cancelled while it was still starting.
         if (stopped) started.remove();
         else subscription = started;
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => {
+        if (!stopped) onError?.(error instanceof Error ? error.message : 'Location updates could not start');
+      });
     const cancel = () => {
       stopped = true;
       subscription?.remove();

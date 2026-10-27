@@ -4,6 +4,14 @@ import type { Dependencies } from '../data/dependencies';
 import { haversineDistanceM } from '../domain/usecases/drive/geo';
 import { boundsAround } from '../domain/usecases/geo/bounds';
 import { isFreshFor, WORKING_SET_RADIUS_M, type WorkingSet } from '../domain/usecases/cameras/workingSet';
+import { withTimeout } from '../shared/withTimeout';
+
+// Every camera query fails after this long rather than hanging. Measured on the
+// shipped database (node:sqlite, desktop): the slowest query, a 52 km panned
+// view of 2,400 rows, takes 5.6 ms; a 12 km working set at most 1.4 ms. Device
+// latency is not yet measured, and the first query of a fresh install also
+// copies the 549 KB database, so the limit leaves ~900x headroom.
+export const CAMERA_QUERY_TIMEOUT_MS = 5_000;
 
 // Retry delays after a failed working-set fetch: doubling from 1 s, capped at 30 s.
 const FIRST_RETRY_MS = 1_000;
@@ -26,13 +34,14 @@ export interface CameraState {
   // a new position is reported, so an old one is never trusted.
   followed: LatLng | null;
   isFetching: boolean;
-  // The latest fetch failed; a retry is scheduled.
+  // The latest fetch failed or timed out; a retry is scheduled.
   fetchFailed: boolean;
   // Reports where the set should be centred; fetches in the background once
   // the set is more than the refetch distance away.
   follow(position: LatLng): void;
   // Before a drive: true once a set fresh for `start` is held, reusing the
-  // current one when it is already fresh; false when the fetch for it fails
+  // current one when it is already fresh; false when the fetch for it fails or
+  // does not finish within the query timeout. It never waits longer than that
   // (retries carry on in the background).
   prepareDrive(start: LatLng): Promise<boolean>;
   // The app went to the background: stop following and retrying.
@@ -42,9 +51,13 @@ export interface CameraState {
 }
 
 export function createCameraStore(deps: Pick<Dependencies, 'cameras'>) {
+  // A hung request is a failure, never a load still running.
+  const query = <T>(request: Promise<T>): Promise<T> => withTimeout(request, CAMERA_QUERY_TIMEOUT_MS);
   return create<CameraState>()((set, get) => {
     // At most one fetch at a time; when it lands the followed position is checked again.
     let inFlight: Promise<void> | null = null;
+    // Where the fetch in flight is centred.
+    let inFlightCentre: LatLng | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let failures = 0;
     let suspended = false;
@@ -61,8 +74,7 @@ export function createCameraStore(deps: Pick<Dependencies, 'cameras'>) {
 
     const fetchAround = (centre: LatLng): Promise<void> => {
       set({ isFetching: true });
-      const request = deps.cameras
-        .getInBounds(boundsAround([centre], WORKING_SET_RADIUS_M))
+      const request = query(deps.cameras.getInBounds(boundsAround([centre], WORKING_SET_RADIUS_M)))
         .then(
           (cameras) => {
             failures = 0;
@@ -84,10 +96,12 @@ export function createCameraStore(deps: Pick<Dependencies, 'cameras'>) {
         )
         .then(() => {
           inFlight = null;
+          inFlightCentre = null;
           // The position may have moved on while this fetch ran.
           if (retryTimer === null) fetchIfDue();
         });
       inFlight = request;
+      inFlightCentre = centre;
       return request;
     };
 
@@ -104,9 +118,9 @@ export function createCameraStore(deps: Pick<Dependencies, 'cameras'>) {
     };
 
     return {
-      findInBounds: (bounds) => deps.cameras.getInBounds(bounds),
-      findByIds: (ids) => deps.cameras.getByIds(ids),
-      findFirstSpeedCamera: () => deps.cameras.getFirstSpeedCamera(),
+      findInBounds: (bounds) => query(deps.cameras.getInBounds(bounds)),
+      findByIds: (ids) => query(deps.cameras.getByIds(ids)),
+      findFirstSpeedCamera: () => query(deps.cameras.getFirstSpeedCamera()),
 
       workingSet: null,
       followed: null,
@@ -123,17 +137,24 @@ export function createCameraStore(deps: Pick<Dependencies, 'cameras'>) {
       prepareDrive: async (start) => {
         get().follow(start);
         // At most: wait out a fetch for an older position, then fetch for this one.
-        for (let attempt = 0; attempt < 3; attempt += 1) {
-          if (!needsFetch(start)) return true;
-          if (inFlight === null) {
-            // The drive cannot wait for a backoff: try now.
-            clearRetry();
-            void fetchAround(start);
+        const attempt = async (): Promise<boolean> => {
+          for (let round = 0; round < 3; round += 1) {
+            if (!needsFetch(start)) return true;
+            if (inFlight === null) {
+              // The drive cannot wait for a backoff: try now.
+              clearRetry();
+              void fetchAround(start);
+            }
+            const forStart = inFlightCentre?.lat === start.lat && inFlightCentre.lng === start.lng;
+            await inFlight;
+            // Only a failure of the fetch for this start ends the wait; one for
+            // somewhere else is followed by a fetch for here.
+            if (forStart && get().fetchFailed && needsFetch(start)) return false;
           }
-          await inFlight;
-          if (get().fetchFailed && needsFetch(start)) return false;
-        }
-        return !needsFetch(start);
+          return !needsFetch(start);
+        };
+        // One deadline for the whole wait, so a drive start never waits on two timeouts.
+        return withTimeout(attempt(), CAMERA_QUERY_TIMEOUT_MS).catch(() => false);
       },
       suspend: () => {
         suspended = true;

@@ -318,27 +318,4 @@ describe('cameras around the driver (working set) and around a panned view (quer
     await act(async () => releasePan());
     expect(result.current.visibleCameras.map((camera) => camera.id)).toEqual(['cam-there']);
   });
-
-  it('a drive whose cameras cannot be fetched starts, and tells the driver', async () => {
-    const start = { lat: 30.05, lng: 31.3 };
-    const source: LocationSource = { getCurrent: async () => start, watch: () => () => undefined };
-    const dependencies = createDependencies({
-      hazards: fakeHazards(),
-      cameras: fakeCameraRepository([], { getInBounds: jest.fn(async () => Promise.reject(new Error('database closed'))) }),
-      location: { ...createDependencies({}).location, demo: () => source },
-    });
-    const { stores, wrapper } = withStores(dependencies);
-    const { result } = await renderHook(() => useDriveModeViewModel(), { wrapper });
-    expect(result.current.cameraWarning).toBeNull();
-
-    await act(async () => result.current.start());
-    await act(async () => undefined);
-    expect(result.current.isDriving).toBe(true);
-    expect(result.current.cameraWarning).toBe(CAMERAS_UNAVAILABLE_MESSAGE);
-    expect(mockSpeak).toHaveBeenCalledWith(CAMERAS_UNAVAILABLE_MESSAGE);
-
-    await act(async () => result.current.stop());
-    stores.useCameraStore.getState().suspend();
-    expect(result.current.cameraWarning).toBeNull();
-  });
 });

@@ -4,6 +4,7 @@ import { DRIVE_LOOKUP_RADIUS_M } from '@/domain/usecases/cameras/cameraRadii';
 import { driveCoverage } from '@/domain/usecases/cameras/workingSet';
 import { alertFeedback } from '@/domain/usecases/drive/alertFeedback';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
+import { driveLocationStatus, type LocationStatus } from '@/domain/usecases/drive/locationStatus';
 import type { Unsubscribe } from '@/domain/repositories';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
@@ -19,15 +20,28 @@ import {
 
 const REPORT_TYPES: HazardType[] = ['accident', 'pothole', 'checkpoint', 'flooding'];
 
-// Shown and spoken while driving without the cameras around the car.
+// The one driver-facing warning banner, shown (and, except while cameras are
+// being fetched, spoken) whenever a drive could be missing alerts. Location
+// problems come first: without a live position no alert can fire at all.
+export const LOCATION_FAILED_MESSAGE = 'Location unavailable — no alerts';
+export const WAITING_FOR_GPS_MESSAGE = 'Waiting for GPS — no alerts yet';
+export const GPS_LOST_MESSAGE = 'GPS signal lost — alerts paused';
 export const CAMERAS_UNAVAILABLE_MESSAGE = 'Camera alerts unavailable — retrying';
+export const CAMERAS_LOADING_MESSAGE = 'Loading cameras near you…';
+
+const LOCATION_WARNINGS: Record<Exclude<LocationStatus, 'live'>, string> = {
+  failed: LOCATION_FAILED_MESSAGE,
+  waiting: WAITING_FOR_GPS_MESSAGE,
+  lost: GPS_LOST_MESSAGE,
+};
 
 export type DriveModeViewModel = {
   isLoading: boolean;
   error: string | null;
   retry: () => void;
   isDriving: boolean;
-  speedKmh: number;
+  // null while the position is not live, so a frozen reading is never shown as current.
+  speedKmh: number | null;
   hasLimit: boolean;
   limitKmh: number;
   status: SpeedStatus;
@@ -35,8 +49,9 @@ export type DriveModeViewModel = {
   nextAlert: UpcomingAlert | null;
   reportTypes: HazardType[];
   feedback: string | null;
-  // Set while a drive has no cameras to alert on because they could not be loaded.
-  cameraWarning: string | null;
+  // Set while a drive could be missing alerts: no live position, or no cameras
+  // around the car (failed, timed out, or still being fetched).
+  driverWarning: string | null;
   start: () => void;
   stop: () => void;
   onReport: (type: HazardType) => void;
@@ -50,11 +65,19 @@ export function useDriveModeViewModel(): DriveModeViewModel {
   const findInBounds = useCameraStore((s) => s.findInBounds);
   // The Drive tab waits for the first working set, as it waited for every camera.
   const awaitingCameras = useCameraStore((s) => s.workingSet === null && !s.fetchFailed);
-  const coverage = useCameraStore((s) => driveCoverage(s.workingSet, s.followed, s.fetchFailed, DRIVE_LOOKUP_RADIUS_M));
   const error = useHazardStore((s) => s.error);
   const load = useHazardStore((s) => s.load);
   const report = useHazardStore((s) => s.report);
   const isDriving = useDriveStore((s) => s.isDriving);
+  // The car's last reading, or before it the drive's start.
+  const carPosition = useDriveStore((s) => s.position ?? s.drivingFrom);
+  const drivingSince = useDriveStore((s) => s.drivingSince);
+  const lastReadingAt = useDriveStore((s) => s.lastReadingAt);
+  const locationFailed = useDriveStore((s) => s.locationError !== null);
+  const setLocationError = useDriveStore((s) => s.setLocationError);
+  const coverage = useCameraStore((s) =>
+    carPosition === null ? 'covered' : driveCoverage(s.workingSet, carPosition, s.fetchFailed, DRIVE_LOOKUP_RADIUS_M),
+  );
   const speedKmhRaw = useDriveStore((s) => s.speedKmh);
   const limitKmhRaw = useDriveStore((s) => s.limitKmh);
   const startDrive = useDriveStore((s) => s.startDrive);
@@ -80,14 +103,36 @@ export function useDriveModeViewModel(): DriveModeViewModel {
     };
   }, [load]);
 
-  // Silent no-alerts is never an option: the driver is told when it happens.
-  const cameraWarning = isDriving && coverage === 'unavailable' ? CAMERAS_UNAVAILABLE_MESSAGE : null;
+  // A feed that stops sends nothing, so staleness is checked on a clock while driving.
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (cameraWarning !== null) announce(alertFeedback(soundMode, voiceEnabled, 'camera'), cameraWarning);
-  }, [cameraWarning, soundMode, voiceEnabled]);
+    if (!isDriving) return;
+    const tick = setInterval(() => setNow(Date.now()), 1_000);
+    return () => clearInterval(tick);
+  }, [isDriving]);
+  const locationStatus: LocationStatus = isDriving
+    ? driveLocationStatus(now, drivingSince ?? now, lastReadingAt, locationFailed)
+    : 'live';
+  const isLive = locationStatus === 'live';
+
+  // Silent no-alerts is never an option: the driver is told when it happens.
+  const driverWarning = !isDriving
+    ? null
+    : !isLive
+      ? LOCATION_WARNINGS[locationStatus]
+      : coverage === 'unavailable'
+        ? CAMERAS_UNAVAILABLE_MESSAGE
+        : coverage === 'refreshing'
+          ? CAMERAS_LOADING_MESSAGE
+          : null;
+  const spokenWarning = driverWarning === CAMERAS_LOADING_MESSAGE ? null : driverWarning;
+  useEffect(() => {
+    if (spokenWarning !== null) announce(alertFeedback(soundMode, voiceEnabled, 'camera'), spokenWarning);
+  }, [spokenWarning, soundMode, voiceEnabled]);
 
   const speedKmh = Math.round(speedKmhRaw);
-  const status = getSpeedStatus(speedKmh, limitKmhRaw, amberThresholdPct);
+  // Not live: no speed, limit or over-limit colour from a reading that may be minutes old.
+  const status = isLive ? getSpeedStatus(speedKmh, limitKmhRaw, amberThresholdPct) : 'ok';
 
   const start = useCallback(() => {
     if (startingRef.current) return;
@@ -108,22 +153,24 @@ export function useDriveModeViewModel(): DriveModeViewModel {
       const source = playback === null ? location.device(limitFor) : location.demo(playback, limitFor);
       // The cameras around the start are fetched before the drive starts (an idle
       // set centred within the refetch distance is reused). A GPS drive with no fix
-      // yet starts from its first reading. On failure the drive still starts and
-      // the driver sees cameraWarning while retries continue.
+      // yet starts from its first reading. prepareDrive never waits past the query
+      // timeout: on failure or timeout the drive still starts and the driver sees
+      // driverWarning while retries continue.
       const startAt: LatLng | null =
         kind === 'gps' ? currentLocation : await source.getCurrent();
       if (startAt !== null) await prepareDrive(startAt);
-      startDrive(kind);
+      startDrive(kind, startAt);
       unwatchRef.current = source.watch(
         createDrivePointHandler(
           { drive: useDriveStore, settings: useSettingsStore, hazards: useHazardStore, cameras: useCameraStore },
           setNextAlert,
         ),
+        setLocationError,
       );
     })().finally(() => {
       startingRef.current = false;
     });
-  }, [showFeedback, locationSource, hasQueuedReplay, startDrive, location, takeDemoPlayback, useHazardStore, useCameraStore, prepareDrive, findInBounds, currentLocation]);
+  }, [showFeedback, locationSource, hasQueuedReplay, startDrive, location, takeDemoPlayback, useHazardStore, useCameraStore, prepareDrive, findInBounds, currentLocation, setLocationError]);
 
   const stop = useCallback(() => {
     unwatchRef.current?.();
@@ -155,15 +202,15 @@ export function useDriveModeViewModel(): DriveModeViewModel {
     error,
     retry: load,
     isDriving,
-    speedKmh,
-    hasLimit: isDriving && limitKmhRaw > 0,
+    speedKmh: isLive ? speedKmh : null,
+    hasLimit: isDriving && isLive && limitKmhRaw > 0,
     limitKmh: limitKmhRaw,
     status,
-    statusLabel: statusMessage(status, speedKmh, limitKmhRaw),
+    statusLabel: isLive ? statusMessage(status, speedKmh, limitKmhRaw) : 'Speed unknown',
     nextAlert,
     reportTypes: REPORT_TYPES,
     feedback,
-    cameraWarning,
+    driverWarning,
     start,
     stop,
     onReport,
