@@ -4,7 +4,6 @@ import type { Hazard, UpcomingAlert } from '@/domain/entities';
 import { angleDiffDeg, bearingDeg, haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { formatDistance, formatTimeAgo } from '@/shared/format';
 import { stopSpeaking } from '@/services/speech';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
 
 const AUTO_DISMISS_MS = 8000;
@@ -28,7 +27,7 @@ export type AlertOverlayViewModel = {
 };
 
 export function useAlertOverlayViewModel(): AlertOverlayViewModel {
-  const { useHazardStore, useSettingsStore } = useStores();
+  const { useDriveStore, useHazardStore, useSettingsStore } = useStores();
   const activeAlert = useDriveStore((s) => s.activeAlert);
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);

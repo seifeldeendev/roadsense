@@ -1,12 +1,11 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { beforeEach, expect, jest, test } from '@jest/globals';
+import { expect, jest, test } from '@jest/globals';
 import { createElement, type ReactNode } from 'react';
 import type { AppActivity, AppLifecycle } from '@/domain/repositories';
 import { createDependencies } from '@/data/dependencies';
 import { useCamerasAround } from '@/stores/cameraHooks';
 import { createStores } from '@/stores/createStores';
 import { DependenciesProvider } from '@/stores/DependenciesProvider';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 
 jest.mock(
@@ -40,10 +39,6 @@ function setup() {
   return { ...fake, cameras, stores, wrapper, demoStart: dependencies.location.demoRoute[0] };
 }
 
-beforeEach(() => {
-  useDriveStore.setState({ isDriving: false, position: null, currentLocation: null, driveSource: null });
-});
-
 test('the working set stops following in the background and refetches for where the phone is on return', async () => {
   const { emit, listening, cameras, stores, wrapper, demoStart } = setup();
   const { unmount } = await renderHook(() => useCamerasAround(demoStart, 1_000), { wrapper });
@@ -54,7 +49,7 @@ test('the working set stops following in the background and refetches for where 
 
   // In the background a new fix arrives: nothing is fetched for it.
   await act(async () => emit('background'));
-  await act(async () => useDriveStore.setState({ currentLocation: AWAY(demoStart) }));
+  await act(async () => stores.useDriveStore.setState({ currentLocation: AWAY(demoStart) }));
   expect(cameras.getInBounds).toHaveBeenCalledTimes(1);
 
   // Back in the foreground the old position is dropped and the current one is followed.
@@ -71,7 +66,7 @@ test('a drive resumed from the background trusts no position until its next read
   const { emit, stores, wrapper, demoStart } = setup();
   await renderHook(() => useCamerasAround(demoStart, 1_000), { wrapper });
   await act(async () => undefined);
-  await act(async () => useDriveStore.setState({ isDriving: true, position: demoStart }));
+  await act(async () => stores.useDriveStore.setState({ isDriving: true, position: demoStart }));
   expect(stores.useCameraStore.getState().followed).toEqual(demoStart);
 
   await act(async () => emit('background'));
@@ -79,7 +74,7 @@ test('a drive resumed from the background trusts no position until its next read
   expect(stores.useCameraStore.getState().followed).toBeNull();
 
   // The next reading is judged by the 2 km rule like any other.
-  await act(async () => useDriveStore.setState({ position: AWAY(demoStart) }));
+  await act(async () => stores.useDriveStore.setState({ position: AWAY(demoStart) }));
   await act(async () => undefined);
   expect(stores.useCameraStore.getState().followed).toEqual(AWAY(demoStart));
   expect(stores.useCameraStore.getState().workingSet?.centre).toEqual(AWAY(demoStart));

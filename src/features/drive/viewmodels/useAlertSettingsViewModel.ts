@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import { router } from 'expo-router';
 import type { AlertTarget, Camera, Settings, UpcomingAlert } from '@/domain/entities';
 import { useAsyncResult } from '@/shared/useAsyncResult';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
 
 export type AlertSettingsViewModel = {
@@ -20,7 +19,7 @@ export type AlertSettingsViewModel = {
 const SAMPLE_CAMERA = 'first-speed-camera';
 
 export function useAlertSettingsViewModel(): AlertSettingsViewModel {
-  const { useCameraStore, useSettingsStore } = useStores();
+  const { useCameraStore, useDriveStore, useSettingsStore } = useStores();
   const settings = useSettingsStore();
   const findFirstSpeedCamera = useCameraStore((s) => s.findFirstSpeedCamera);
   const setActiveAlert = useDriveStore((s) => s.setActiveAlert);

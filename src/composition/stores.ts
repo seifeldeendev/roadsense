@@ -8,6 +8,7 @@ export const productionStores: AppStores = createStores(productionDependencies);
 // that read a store without useStores().
 export const {
   useCameraStore,
+  useDriveStore,
   useHazardStore,
   useNavigationStore,
   useRouteStore,

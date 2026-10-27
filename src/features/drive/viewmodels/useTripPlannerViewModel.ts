@@ -9,7 +9,6 @@ import {
 } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance, formatDuration } from '@/shared/format';
 import { useAsyncResult } from '@/shared/useAsyncResult';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { usePlaceSearch, usePinLabel } from './plannerHooks';
 
@@ -46,7 +45,7 @@ const SUGGESTION_COUNT = 6;
 const QUICK_PLACE_COUNT = 3;
 
 export function useTripPlannerViewModel(): TripPlannerViewModel {
-  const { useCameraStore, useHazardStore, useNavigationStore, useRouteStore, useSettingsStore } = useStores();
+  const { useCameraStore, useDriveStore, useHazardStore, useNavigationStore, useRouteStore, useSettingsStore } = useStores();
   const { location } = useDependencies();
   const [mode, setMode] = useState<PlannerMode>('idle');
   const [query, setQuery] = useState('');

@@ -1,5 +1,6 @@
 import type { Dependencies } from '../data/dependencies';
 import { createCameraStore } from './useCameraStore';
+import { createDriveStore } from './useDriveStore';
 import { createHazardStore } from './useHazardStore';
 import { createNavigationStore } from './useNavigationStore';
 import { createRouteStore } from './useRouteStore';
@@ -11,6 +12,7 @@ import { createTripStore } from './useTripStore';
 // The app's stores, built from one set of dependencies.
 export type AppStores = {
   useCameraStore: ReturnType<typeof createCameraStore>;
+  useDriveStore: ReturnType<typeof createDriveStore>;
   useHazardStore: ReturnType<typeof createHazardStore>;
   useNavigationStore: ReturnType<typeof createNavigationStore>;
   useRouteStore: ReturnType<typeof createRouteStore>;
@@ -31,6 +33,7 @@ export function createStores(deps: Dependencies): AppStores {
     useThemeStore,
     useSettingsStore,
     useCameraStore: createCameraStore(deps),
+    useDriveStore: createDriveStore(),
     useHazardStore: createHazardStore(deps),
     useNavigationStore: createNavigationStore(deps.location.demoRoute),
     useRouteStore: createRouteStore(deps),

@@ -8,7 +8,6 @@ import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 import { useCamerasAround } from '@/stores/cameraHooks';
-import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { useLatest } from '@/shared/useLatest';
 
@@ -41,7 +40,7 @@ export type DriveMapViewModel = {
 };
 
 export function useDriveMapViewModel(): DriveMapViewModel {
-  const { useHazardStore, useNavigationStore, useSettingsStore } = useStores();
+  const { useDriveStore, useHazardStore, useNavigationStore, useSettingsStore } = useStores();
   const { location } = useDependencies();
   const isDriving = useDriveStore((s) => s.isDriving);
   const position = useDriveStore((s) => s.position);
