@@ -3,9 +3,9 @@ import { router } from 'expo-router';
 import type { SoundMode, UpcomingAlert } from '@/domain/entities';
 import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
 import { nearestRoadName } from '@/domain/usecases/drive/nearestRoadName';
-import { getDriveRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 // How far ahead the "Active alerts" list looks; the spoken alert distance stays a setting.
@@ -47,6 +47,7 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
   const settings = useSettingsStore();
+  const driveRoute = useNavigationStore((s) => s.driveRoute);
 
   const activeAlerts = useMemo(
     () =>
@@ -60,10 +61,10 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
   const roadName = useMemo(
     () => {
       if (!settings.showRoadName) return null;
-      const where = position ?? currentLocation ?? (settings.locationSource === 'demo' ? getDriveRoute()[0] : null);
+      const where = position ?? currentLocation ?? (settings.locationSource === 'demo' ? driveRoute[0] : null);
       return where === null ? null : nearestRoadName(where, cameras);
     },
-    [settings.showRoadName, settings.locationSource, position, currentLocation, cameras],
+    [settings.showRoadName, settings.locationSource, position, currentLocation, driveRoute, cameras],
   );
 
   const closeSheet = useCallback(() => setSheet(null), []);

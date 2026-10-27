@@ -4,9 +4,9 @@ import { haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { describeRouteAlerts, getAlertsAlongRoute, type RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance, formatDuration } from '@/shared/format';
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
-import { getDemoRoute, showPlannedRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useRouteStore } from '@/stores/useRouteStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { usePlaceSearch, usePinLabel } from './plannerHooks';
@@ -51,10 +51,12 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
   const locationSource = useSettingsStore((s) => s.locationSource);
   const { destinations, recent, selected, route, isLoading, error } = useRouteStore();
   const cameras = useHazardStore((s) => s.cameras);
+  const demoRoute = useNavigationStore((s) => s.demoRoute);
+  const showPlannedRoute = useNavigationStore((s) => s.showPlannedRoute);
   const hazards = useHazardStore((s) => s.hazards);
 
   // Real position when known; the demo start otherwise (demo mode or no fix yet).
-  const origin: LatLng = locationSource === 'gps' && currentLocation !== null ? currentLocation : getDemoRoute()[0];
+  const origin: LatLng = locationSource === 'gps' && currentLocation !== null ? currentLocation : demoRoute[0];
   const originLabel = locationSource === 'gps' && currentLocation !== null ? 'Current location' : 'Demo start · Salah Salem';
   const geoResults = usePlaceSearch(query);
   const pinLabel = usePinLabel(mode === 'pin' ? pinCenter : null);
@@ -71,7 +73,7 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     if (own === shownRoute.current) return;
     shownRoute.current = own;
     showPlannedRoute(own?.points ?? null);
-  }, [mode, route]);
+  }, [mode, route, showPlannedRoute]);
 
   const sections = useMemo<PlaceSection[]>(() => {
     const withDistance = (place: Destination): PlaceItem => ({
