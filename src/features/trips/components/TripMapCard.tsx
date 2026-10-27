@@ -6,6 +6,7 @@ import {
 import {
   CameraMarker,
   HazardMarker,
+  PinMarker,
   RoadMap,
   SegmentedRouteLine,
   UserMarker,
@@ -53,7 +54,7 @@ export function TripMapCard({ trip, segments, alertMarkers, frame }: TripMapCard
           <UserMarker lat={firstPoint.lat} lng={firstPoint.lng} heading={firstPoint.heading} />
         )}
         {lastPoint !== undefined && lastPoint !== firstPoint && (
-          <UserMarker lat={lastPoint.lat} lng={lastPoint.lng} heading={lastPoint.heading} />
+          <PinMarker lat={lastPoint.lat} lng={lastPoint.lng} accessibilityLabel="Trip end" />
         )}
         {alertMarkers.map((marker) =>
           marker.kind === 'camera' ? (

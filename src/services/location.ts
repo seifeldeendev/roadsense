@@ -76,13 +76,38 @@ export function setRate(rate: number): void {
 // passing null (or consuming a queued route) restores the demo.
 let pendingRoutePoints: TripPoint[] | null = null;
 
+// The route Drive Mode is about to play or is playing, published so the map
+// can redraw it (subscribe with useSyncExternalStore). Snapshots are stable
+// arrays that only change when the route does.
+let driveRoute: LatLng[] | null = null;
+const driveRouteListeners = new Set<() => void>();
+
+function publishDriveRoute(points: readonly TripPoint[] | null): void {
+  driveRoute = points === null ? getDemoRoute() : points.map(({ lat, lng }) => ({ lat, lng }));
+  driveRouteListeners.forEach((listener) => listener());
+}
+
+export function getDriveRoute(): LatLng[] {
+  return driveRoute ?? getDemoRoute();
+}
+
+export function subscribeDriveRoute(listener: () => void): () => void {
+  driveRouteListeners.add(listener);
+  return () => {
+    driveRouteListeners.delete(listener);
+  };
+}
+
 export function setDriveRoutePoints(points: TripPoint[] | null): void {
   pendingRoutePoints = points;
+  publishDriveRoute(points);
 }
 
 export function createDemoLocationSource(): LocationSource {
-  const points = pendingRoutePoints ?? DEMO_TRIP.points;
+  const queued = pendingRoutePoints;
   pendingRoutePoints = null;
-  demoSource = new MockLocationSource(points, 1000, currentRate);
+  // A queued replay is already published; otherwise make sure the demo route shows.
+  if (queued === null && getDriveRoute() !== getDemoRoute()) publishDriveRoute(null);
+  demoSource = new MockLocationSource(queued ?? DEMO_TRIP.points, 1000, currentRate);
   return demoSource;
 }
