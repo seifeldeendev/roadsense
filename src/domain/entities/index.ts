@@ -8,3 +8,4 @@ export type { Trip } from './trip';
 export type { TripPoint } from './trip-point';
 export type { AlertEvent } from './alert-event';
 export type { UpcomingAlert } from './upcoming-alert';
+export type { Destination, PlannedRoute } from './destination';
