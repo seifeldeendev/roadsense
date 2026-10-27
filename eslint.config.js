@@ -144,16 +144,21 @@ module.exports = defineConfig([
     },
   },
   {
-    // The domain is framework-free.
-    files: ['src/domain/**/*.ts'],
+    // The domain is pure TypeScript: it imports nothing but itself. An allowlist,
+    // because a list of banned packages cannot anticipate the next one (scoped
+    // packages slipped past the old one). Relative imports that leave src/domain
+    // are the layer zone's job above. No .tsx here: see __tests__/layerShape.test.ts.
+    files: ['src/domain/**/*.{ts,tsx}'],
+    // Colocated unit tests import the test framework; they are not domain code.
+    ignores: ['src/domain/**/*.test.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['react', 'react-*', 'react-native', 'react-native-*', 'expo', 'expo-*', '@expo/*', 'zustand', 'zustand/*'],
-              message: 'src/domain is pure TypeScript: no React, React Native, Expo or Zustand.',
+              regex: '^(?!\.\.?/|@/domain(/|$))',
+              message: 'src/domain imports nothing but src/domain: no packages, no Node built-ins, no other layer.',
             },
           ],
         },
