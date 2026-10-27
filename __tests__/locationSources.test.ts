@@ -1,4 +1,4 @@
-import { expect, jest, test } from '@jest/globals';
+import { afterEach, expect, jest, test } from '@jest/globals';
 import * as Location from 'expo-location';
 import { ExpoLocationSource, MockLocationSource } from '@/data/location';
 import { MOCK_TRIPS } from '@/data/mock/trips';
@@ -9,6 +9,12 @@ jest.mock('expo-location', () => ({
 }));
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+// A test that fails on fake timers must not leave them to the tests after it.
+afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
+});
 
 test('a second GPS watch removes the first subscription', async () => {
   const removes = [jest.fn(), jest.fn()];
@@ -47,7 +53,6 @@ test('a demo source plays only its newest watch, and a stale unsubscribe leaves 
   jest.advanceTimersByTime(3000);
   expect(first).not.toHaveBeenCalled();
   expect(second).toHaveBeenCalledTimes(3);
-  jest.useRealTimers();
 });
 
 test('a GPS watch that fails to start, or that the platform reports broken, is reported', async () => {

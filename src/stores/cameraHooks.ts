@@ -4,7 +4,6 @@ import {
   coversArea,
   followedPosition,
   isFreshFor,
-  workingSetArea,
   WORKING_SET_RADIUS_M,
   REFETCH_DISTANCE_M,
   type CameraArea,
@@ -78,7 +77,8 @@ export function useCamerasAround(centre: LatLng | null, radiusM: number): Camera
   const target = useFollowTarget();
   const findInBounds = useCameraStore((s) => s.findInBounds);
 
-  const fromSet = centre !== null && workingSet !== null && coversArea(workingSetArea(workingSet), centre, radiusM);
+  const setCameras = centre === null || workingSet === null ? null : workingSet.inArea(centre, radiusM);
+  const fromSet = setCameras !== null;
   // A set for the followed position is due or on its way and will cover this
   // area: wait for it rather than query twice.
   const awaitingSet =
@@ -102,7 +102,7 @@ export function useCamerasAround(centre: LatLng | null, radiusM: number): Camera
   );
 
   if (centre === null) return { cameras: null, failed: false };
-  if (fromSet) return { cameras: workingSet.cameras, failed: false };
+  if (setCameras !== null) return { cameras: setCameras, failed: false };
   const queryCovers = area !== null && coversArea(area, centre, radiusM) && !queried.pending;
   if (needsQuery && queryCovers) {
     return queried.value === null ? { cameras: null, failed: true } : { cameras: queried.value, failed: false };

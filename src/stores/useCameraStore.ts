@@ -3,7 +3,7 @@ import type { Camera, GeoBounds, LatLng } from '../domain/entities';
 import type { Dependencies } from '../data/dependencies';
 import { haversineDistanceM } from '../domain/usecases/drive/geo';
 import { boundsAround } from '../domain/usecases/geo/bounds';
-import { isFreshFor, WORKING_SET_RADIUS_M, type WorkingSet } from '../domain/usecases/cameras/workingSet';
+import { isFreshFor, WORKING_SET_RADIUS_M, WorkingSet } from '../domain/usecases/cameras/workingSet';
 import { withTimeout } from '../shared/withTimeout';
 
 // Every camera query fails after this long rather than hanging. Measured on the
@@ -79,10 +79,10 @@ export function createCameraStore(deps: Pick<Dependencies, 'cameras'>) {
           (cameras) => {
             failures = 0;
             set({
-              workingSet: {
+              workingSet: new WorkingSet(
                 centre,
-                cameras: cameras.filter((camera) => haversineDistanceM(centre, camera) <= WORKING_SET_RADIUS_M),
-              },
+                cameras.filter((camera) => haversineDistanceM(centre, camera) <= WORKING_SET_RADIUS_M),
+              ),
               isFetching: false,
               fetchFailed: false,
             });

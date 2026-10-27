@@ -9,11 +9,46 @@ export const MAX_CONSUMER_RADIUS_M = Math.max(...Object.values(WORKING_SET_CONSU
 // The set must cover every consumer at maximum drift (the refetch distance).
 export const WORKING_SET_RADIUS_M = REFETCH_DISTANCE_M + MAX_CONSUMER_RADIUS_M;
 
-// The cameras within WORKING_SET_RADIUS_M of `centre`.
-export type WorkingSet = { centre: LatLng; cameras: Camera[] };
+// A reader of the set, by its name in WORKING_SET_CONSUMER_RADII_M.
+export type WorkingSetConsumer = keyof typeof WORKING_SET_CONSUMER_RADII_M;
 
 // A circle of the map whose cameras are all known.
 export type CameraArea = { centre: LatLng; radiusM: number };
+
+// The cameras within WORKING_SET_RADIUS_M of `centre`. The list itself is
+// private, so the set cannot be read with a radius it was never sized for:
+// - forConsumer: a registered consumer gets the cameras within its own radius;
+//   an unregistered one does not compile.
+// - inArea: any circle, but null unless the set covers all of it (the maps then
+//   query the area instead).
+export class WorkingSet {
+  constructor(
+    readonly centre: LatLng,
+    private readonly cameras: Camera[],
+  ) {}
+
+  get size(): number {
+    return this.cameras.length;
+  }
+
+  // The cameras within the consumer's registered radius of `at`, in database
+  // order. Away from the centre they are the ones the set holds; whether that
+  // is all of them is driveCoverage's question.
+  forConsumer(consumer: WorkingSetConsumer, at: LatLng): Camera[] {
+    // The type already rules out an unknown name; a cast past it fails loudly
+    // instead of quietly reading nothing.
+    const radii: Readonly<Record<string, number | undefined>> = WORKING_SET_CONSUMER_RADII_M;
+    const radiusM = radii[consumer];
+    if (radiusM === undefined) throw new Error(`"${consumer}" is not a registered working-set consumer`);
+    return this.cameras.filter((camera) => haversineDistanceM(at, camera) <= radiusM);
+  }
+
+  // Every camera within radiusM of centre (and the rest of the set around it,
+  // the same list each time) when the set covers that circle; otherwise null.
+  inArea(centre: LatLng, radiusM: number): Camera[] | null {
+    return coversArea(workingSetArea(this), centre, radiusM) ? this.cameras : null;
+  }
+}
 
 // True when every camera within radiusM of centre lies inside the area.
 export function coversArea(area: CameraArea, centre: LatLng, radiusM: number): boolean {

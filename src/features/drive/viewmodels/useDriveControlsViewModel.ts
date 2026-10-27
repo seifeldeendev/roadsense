@@ -51,7 +51,7 @@ export function useDriveControlsViewModel(): DriveControlsViewModel {
   const activeAlerts = useMemo(
     () =>
       isDriving && position !== null
-        ? findUpcomingAlerts(position, heading, workingSet?.cameras ?? [], hazards, settings, ACTIVE_ALERTS_LOOKAHEAD_M)
+        ? findUpcomingAlerts(position, heading, workingSet?.forConsumer('activeAlerts', position) ?? [], hazards, settings, ACTIVE_ALERTS_LOOKAHEAD_M)
         : [],
     [isDriving, position, heading, workingSet, hazards, settings],
   );

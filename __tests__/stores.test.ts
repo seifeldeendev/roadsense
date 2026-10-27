@@ -235,6 +235,8 @@ describe('camera working set', () => {
     jest.useFakeTimers();
   });
   afterEach(() => {
+    // Pending retries must never outlive a test, failed or not.
+    jest.clearAllTimers();
     jest.useRealTimers();
   });
 
