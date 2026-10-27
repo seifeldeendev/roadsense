@@ -57,7 +57,7 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
 
   useEffect(() => {
     void loadDestinationsUnless((state) => state.destinations.length > 0 || state.isLoading);
-    void loadHazardsUnless((state) => state.cameras.length > 0 || state.hazards.length > 0);
+    void loadHazardsUnless((state) => state.cameras.length > 0 || state.hazards.length > 0 || state.isLoading);
   }, [loadDestinationsUnless, loadHazardsUnless]);
 
   const selectedDestination: Destination | null = selected;
