@@ -10,7 +10,7 @@ import type {
   RouteRepository,
   TripRepository,
 } from '@/domain/repositories';
-import { createCameraStore, retryDelayMs } from '@/stores/useCameraStore';
+import { CAMERA_QUERY_TIMEOUT_MS, createCameraStore, retryDelayMs } from '@/stores/useCameraStore';
 import { createHazardStore } from '@/stores/useHazardStore';
 import { createRouteStore } from '@/stores/useRouteStore';
 import { createSessionStore } from '@/stores/useSessionStore';
@@ -302,10 +302,32 @@ describe('camera working set', () => {
     await settle();
     await expect(drive).resolves.toBe(false);
     expect(store.getState().workingSet?.centre).toEqual(FAR);
-    expect(driveCoverage(store.getState().workingSet, store.getState().followed, store.getState().fetchFailed, 2_000)).toBe(
-      'covered',
-    );
+    // The old set (3.3 km away) still covers a 2 km lookup at HOME; with no set, a failure is unavailable.
+    expect(driveCoverage(store.getState().workingSet, HOME, store.getState().fetchFailed, 2_000)).toBe('covered');
     expect(driveCoverage(null, HOME, true, 2_000)).toBe('unavailable');
+    expect(driveCoverage(null, HOME, false, 2_000)).toBe('refreshing');
+  });
+
+  it('a drive start waits at most one query timeout, even behind a hung fetch for elsewhere', async () => {
+    let hang = true;
+    const cameras: CameraRepository = fakeCameraRepository([], {
+      getInBounds: jest.fn((bounds: GeoBounds) =>
+        hang
+          ? new Promise<Camera[]>(() => undefined)
+          : Promise.resolve(camerasAt({ lat: (bounds.minLat + bounds.maxLat) / 2, lng: (bounds.minLng + bounds.maxLng) / 2 })),
+      ),
+    });
+    const store = createCameraStore({ cameras });
+    store.getState().follow(HOME);
+    // 4 s into a hung idle fetch, the driver presses Start somewhere else.
+    await jest.advanceTimersByTimeAsync(CAMERA_QUERY_TIMEOUT_MS - 1_000);
+    let ready: boolean | null = null;
+    void store.getState().prepareDrive(FAR).then((value) => (ready = value));
+    await jest.advanceTimersByTimeAsync(CAMERA_QUERY_TIMEOUT_MS - 1);
+    expect(ready).toBeNull();
+    await jest.advanceTimersByTimeAsync(1);
+    expect(ready).toBe(false);
+    hang = false;
   });
 
   it('stops in the background and trusts no position from before it on return', async () => {
@@ -324,7 +346,6 @@ describe('camera working set', () => {
 
     store.getState().resume();
     expect(store.getState().followed).toBeNull();
-    expect(driveCoverage(store.getState().workingSet, store.getState().followed, false, 2_000)).toBe('loading');
     store.getState().follow(FAR);
     await settle();
     expect(store.getState().workingSet?.centre).toEqual(FAR);

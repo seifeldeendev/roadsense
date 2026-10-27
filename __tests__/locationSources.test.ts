@@ -49,3 +49,28 @@ test('a demo source plays only its newest watch, and a stale unsubscribe leaves 
   expect(second).toHaveBeenCalledTimes(3);
   jest.useRealTimers();
 });
+
+test('a GPS watch that fails to start, or that the platform reports broken, is reported', async () => {
+  const watchMock = jest.mocked(Location.watchPositionAsync);
+  watchMock.mockRejectedValueOnce(new Error('Location services are disabled'));
+  const failedToStart = jest.fn();
+  new ExpoLocationSource(() => 0).watch(() => undefined, failedToStart);
+  await flush();
+  expect(failedToStart).toHaveBeenCalledWith('Location services are disabled');
+
+  let reportBroken: (reason: string) => void = () => undefined;
+  watchMock.mockImplementationOnce(async (_options, _callback, errorHandler) => {
+    reportBroken = (reason) => errorHandler?.(reason);
+    return { remove: jest.fn() } as Location.LocationSubscription;
+  });
+  const broken = jest.fn();
+  const unwatch = new ExpoLocationSource(() => 0).watch(() => undefined, broken);
+  await flush();
+  reportBroken('Permission revoked');
+  expect(broken).toHaveBeenCalledWith('Permission revoked');
+
+  // Once the drive stopped watching, a late error is not news.
+  unwatch();
+  reportBroken('Permission revoked');
+  expect(broken).toHaveBeenCalledTimes(1);
+});

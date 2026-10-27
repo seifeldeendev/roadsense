@@ -79,7 +79,7 @@ export default function DriveModeScreen() {
               {/* Black only while driving, so the idle screen keeps a single black CTA. */}
               <MapFab icon="plus" accessibilityLabel="New alert" primary={vm.isDriving} onPress={() => controls.openSheet('report')} />
             </View>
-            <ReportBanner message={vm.cameraWarning} />
+            <ReportBanner message={vm.driverWarning} />
             <ReportBanner message={vm.feedback} />
             {showsRouteCard && planner.destination !== null ? (
               <RouteSummaryCard

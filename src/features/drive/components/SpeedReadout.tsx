@@ -11,7 +11,8 @@ const statusText: Record<SpeedStatus, string> = {
 };
 
 type SpeedReadoutProps = {
-  speedKmh: number;
+  // null while the position is not live: shown as a dash, never a frozen number.
+  speedKmh: number | null;
   status: SpeedStatus;
 };
 
@@ -20,12 +21,12 @@ export function SpeedReadout({ speedKmh, status }: SpeedReadoutProps) {
   return (
     <GlassSurface
       accessibilityRole="text"
-      accessibilityLabel={`Speed ${speedKmh} kilometres per hour`}
+      accessibilityLabel={speedKmh === null ? 'Speed unknown' : `Speed ${speedKmh} kilometres per hour`}
       radius={READOUT_SIZE / 2}
       className="h-[88px] w-[88px] items-center justify-center"
     >
       <AppText variant="displayLg" className={`${statusText[status]} tabular-nums`}>
-        {speedKmh}
+        {speedKmh ?? '–'}
       </AppText>
       <AppText variant="caption" color="body">
         km/h

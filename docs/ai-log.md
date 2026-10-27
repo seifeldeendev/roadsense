@@ -331,3 +331,33 @@ With the hook's `suspend()` call removed, the first test fails.
 - greps for the superseded numbers in docs and commit messages.
 
 **Correction to my own process:** I cleaned up the first batch of plants with `rm -f $(…)` before you asked for literal paths only. `git status` afterwards showed nothing else removed. The second batch was deleted one literal path at a time. _Seif: fill in your notes._
+
+### AI-051 · 2026-10-27 · Seif · fix round 1: hung camera queries and a dead location feed are failures the driver hears about (audit F12, F13) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, round heading):** "## Round 1 — the two criticals (do these first, alone)"
+**F12 — a camera query that hangs is a failure.**
+- **Timeout.** Every camera query goes through `withTimeout` in `useCameraStore`: the working-set fetch, `findInBounds`, `findByIds` and `findFirstSpeedCamera`. A request that passes `CAMERA_QUERY_TIMEOUT_MS` (5 s) is rejected, and takes the same path as a failed fetch (`fetchFailed`, backoff, set kept).
+- **Why 5 s.** It is based on measurement. `scratchpad/latency.cjs` runs node:sqlite against the shipped `.db` on desktop: the 12 km working set has a median of 0.16 ms and a max of 1.4 ms; the worst query, a 52 km panned view of 2,400 rows, has a max of 5.6 ms. Device latency is not measured. The first query of a fresh install also copies the 549 KB database, hence ~900× headroom over the desktop worst case.
+- **State model.** `driveCoverage` is judged at the car's position, or at the drive's start before the first reading (`drivingFrom`). `followed` is no longer used, because it can point at the phone (F14). The states are `covered`, `refreshing` (the car is outside the set and a request is outstanding, which the timeout now bounds) and `unavailable` (the request failed or timed out). Leaving the set is never quiet: `refreshing` shows "Loading cameras near you…", and `unavailable` shows and speaks "Camera alerts unavailable — retrying". In normal driving neither state appears, because the refetch starts at 2 km and the set covers the car's lookups until 10 km.
+- **Drive start.** `prepareDrive` has one deadline: it never waits longer than the timeout, even behind an older fetch that is hanging. It then starts the drive warned.
+- **Bug found and fixed.** `prepareDrive` used to give up as soon as an older fetch, centred somewhere else, timed out, without ever trying the drive's own start. Now only a failure of the fetch for the start ends the wait.
+
+**F13 — location that fails or stops is detected.**
+- **Watch start failure.** `LocationSource.watch` takes an `onError`. `ExpoLocationSource` passes `watchPositionAsync`'s `errorHandler` (SDK 58 signature, checked in `node_modules/expo-location`) and its start rejection through to it, and stays silent after unwatch.
+- **Staleness.** The drive store records `drivingSince`, `lastReadingAt` and `locationError`. `driveLocationStatus` turns these into `live`, `waiting` (no first reading after 5 s), `lost` (no reading for 5 s, i.e. 5 missed 1 Hz readings) or `failed`. The view model ticks a clock once a second while driving, because a stopped feed sends nothing.
+- **One banner.** There is still only one banner mechanism, now called `driverWarning` (it was `cameraWarning`). Location problems come first, because without a live position no alert can fire. Every message except "Loading cameras…" is spoken or vibrated per the sound mode.
+- **Frozen speed.** While the feed is not live, `speedKmh` is null, and the readout shows "–" with the accessibility label "Speed unknown". The limit sign and the over-limit colour are hidden.
+
+**Behaviour changes, deliberate and required by the round:**
+- three new banner texts: location failed, waiting for GPS, GPS lost;
+- "Loading cameras near you…" whenever the car is outside its set while a request is outstanding;
+- the speed dash while the feed is not live.
+
+**Not done, filed:** permission recovery flows (re-requesting permission, opening settings) and platform-specific restarts of a broken watch. The driver is warned; recovery still means stopping and restarting the drive.
+
+**Tests:**
+- **`__tests__/driverWarnings.test.tsx`** uses fake timers, and its `afterEach` clears timers so a failure can't hang the suite. It covers: a hang at drive start (the drive starts at exactly the timeout, warned and spoken); a hang mid-drive (quiet while covered, warned once the car is 11 km on); the car leaving the set while a request is outstanding (warned at once, then told it failed); an outright pre-drive failure; a watch that fails to start; readings that stop (dash, no limit, then live again); and no first reading.
+- **`locationSources.test.ts`:** Expo start rejection and `errorHandler` are reported, and silent after unwatch.
+- **`stores.test.ts`:** the single `prepareDrive` deadline, behind a hung fetch for elsewhere.
+- **Break-and-revert, all caught:** no query timeout (3 failures); pending counted as covered (1); readings never stale (1); frozen speed shown (3); Expo `errorHandler` dropped (1, after the new test; it survived before it); Expo start failure dropped (1); no overall `prepareDrive` deadline (1).
+
+**Verification:** tsc, lint, jest 208/208 (38 suites, exits without `--forceExit`). _Seif: fill in your notes._
