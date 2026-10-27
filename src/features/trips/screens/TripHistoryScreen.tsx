@@ -1,4 +1,5 @@
-import { RefreshControl, SectionList, StyleSheet, View } from 'react-native';
+import { useTabBarSpace } from '@/components/navigation';
+import { RefreshControl, SectionList, View } from 'react-native';
 import { useTheme } from '@/theme/useTheme';
 import {
   AppText,
@@ -19,6 +20,7 @@ const FILTER_OPTIONS = [
 
 export default function TripHistoryScreen() {
   const vm = useTripHistoryViewModel();
+  const tabBarSpace = useTabBarSpace();
   const { colors } = useTheme();
 
   if (vm.isLoading) {
@@ -39,7 +41,7 @@ export default function TripHistoryScreen() {
 
   return (
     <Screen>
-      <View style={styles.container}>
+      <View className="flex-1 gap-md pb-sm pt-md">
         <AppText variant="displayXl">Trips</AppText>
         <AppText variant="bodyMd" color="body">
           {`${vm.totalCount} drives in the last 14 days`}
@@ -58,11 +60,11 @@ export default function TripHistoryScreen() {
           />
         ) : (
           <SectionList
-            style={styles.list}
+            className="flex-1"
             sections={vm.sections}
             keyExtractor={(item) => item.id}
             renderSectionHeader={({ section }) => (
-              <View style={styles.dayHeader}>
+              <View className="bg-canvas pb-xxs pt-sm">
                 <AppText variant="bodySmStrong" color="body">
                   {section.title}
                 </AppText>
@@ -78,7 +80,7 @@ export default function TripHistoryScreen() {
                 colors={[colors.ink]}
               />
             }
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={{ paddingBottom: tabBarSpace + spacing.md }}
           />
         )}
       </View>
@@ -87,28 +89,5 @@ export default function TripHistoryScreen() {
 }
 
 function Separator() {
-  return <View style={separatorStyles.gap} />;
+  return <View className="h-md" />;
 }
-
-const separatorStyles = StyleSheet.create({
-  gap: { height: spacing.md },
-});
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    gap: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: spacing.md,
-  },
-  dayHeader: {
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xxs,
-  },
-});

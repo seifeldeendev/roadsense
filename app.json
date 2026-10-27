@@ -36,7 +36,20 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "RoadSense uses your location to show your speed and warn you about speed cameras and hazards ahead."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "RoadSense uses your photos to set your profile picture.",
+          "cameraPermission": "RoadSense uses the camera to take your profile picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

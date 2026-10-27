@@ -12,3 +12,8 @@ export { SectionHeader } from './SectionHeader';
 export { SegmentedControl } from './SegmentedControl';
 export { TextField } from './TextField';
 export { ToggleRow } from './ToggleRow';
+export { BottomSheet } from './BottomSheet';
+export { RadioList, type RadioOption } from './RadioList';
+export { GlassSurface } from './GlassSurface';
+export { Avatar } from './Avatar';
+export { FormErrorNote } from './FormErrorNote';

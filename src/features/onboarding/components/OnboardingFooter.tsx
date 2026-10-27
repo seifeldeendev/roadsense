@@ -1,7 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppButton } from '@/components/ui';
-import { rounded, spacing } from '@/theme/tokens';
-import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 type OnboardingFooterProps = {
   count: number;
@@ -20,24 +18,17 @@ export function OnboardingFooter({
   onNext,
   onSkip,
 }: OnboardingFooterProps) {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(footerStyles, undefined);
-
   return (
-    <View style={styles.root}>
-      <View style={styles.dots}>
+    <View className="gap-xl px-lg pb-lg">
+      <View className="flex-row items-center justify-center gap-sm">
         {Array.from({ length: count }, (_, i) => (
           <View
             key={i}
-            style={[
-              styles.dot,
-              { backgroundColor: colors.mute },
-              i === activeIndex && [styles.dotActive, { backgroundColor: colors.ink }],
-            ]}
+            className={`h-sm rounded-pill ${i === activeIndex ? 'w-xxl bg-ink' : 'w-sm bg-mute'}`}
           />
         ))}
       </View>
-      <View style={styles.actions}>
+      <View className="flex-row items-center gap-md">
         {canSkip && (
           <AppButton
             title="Skip"
@@ -46,7 +37,7 @@ export function OnboardingFooter({
             accessibilityLabel="Skip onboarding"
           />
         )}
-        <View style={styles.grow}>
+        <View className="flex-1">
           <AppButton
             title={isLast ? 'Get started' : 'Next'}
             variant={isLast ? 'large' : 'primary'}
@@ -57,36 +48,4 @@ export function OnboardingFooter({
       </View>
     </View>
   );
-}
-
-function footerStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    root: {
-      gap: spacing.xl,
-      paddingHorizontal: spacing.lg,
-      paddingBottom: spacing.lg,
-    },
-    dots: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.sm,
-    },
-    dot: {
-      height: spacing.sm,
-      width: spacing.sm,
-      borderRadius: rounded.pill,
-    },
-    dotActive: {
-      width: spacing.xxl,
-    },
-    actions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    grow: {
-      flex: 1,
-    },
-  });
 }

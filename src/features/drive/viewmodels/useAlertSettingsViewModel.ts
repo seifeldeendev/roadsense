@@ -1,122 +1,78 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { router } from 'expo-router';
-import type { AlertTarget, Camera, Settings, UpcomingAlert, User } from '@/domain/entities';
-import { speak } from '@/services/speech';
-import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useSessionStore } from '@/stores/useSessionStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
-import { useThemeStore, type ThemePreference } from '@/stores/useThemeStore';
+import type { AlertTarget, Camera, Settings, UpcomingAlert } from '@/domain/entities';
+import { useAsyncResult } from '@/shared/useAsyncResult';
+import { useStores } from '@/stores/DependenciesProvider';
 
 export type AlertSettingsViewModel = {
   alertDistanceM: Settings['alertDistanceM'];
   enabledTypes: AlertTarget[];
-  voiceEnabled: boolean;
-  soundEnabled: boolean;
   amberThresholdPct: Settings['amberThresholdPct'];
-  themePreference: ThemePreference;
   message: string | null;
-  canTestVoice: boolean;
-  user: User | null;
-  signingOut: boolean;
   toggleType: (type: AlertTarget) => void;
   setAlertDistance: (value: Settings['alertDistanceM']) => void;
   setAmberThreshold: (value: Settings['amberThresholdPct']) => void;
-  setThemePreference: (value: ThemePreference) => void;
-  setVoiceEnabled: (value: boolean) => void;
-  setSoundEnabled: (value: boolean) => void;
-  testVoice: () => void;
   previewAlert: () => void;
   reset: () => void;
-  signOut: () => void;
 };
 
+const SAMPLE_CAMERA = 'first-speed-camera';
+
 export function useAlertSettingsViewModel(): AlertSettingsViewModel {
+  const { useCameraStore, useDriveStore, useSettingsStore } = useStores();
   const settings = useSettingsStore();
-  const themePreference = useThemeStore((s) => s.preference);
-  const setThemePreference = useThemeStore((s) => s.setPreference);
-  const user = useSessionStore((s) => s.user);
-  const [signingOut, setSigningOut] = useState(false);
-  const cameras = useHazardStore((s) => s.cameras);
-  const load = useHazardStore((s) => s.load);
+  const findFirstSpeedCamera = useCameraStore((s) => s.findFirstSpeedCamera);
+  const setActiveAlert = useDriveStore((s) => s.setActiveAlert);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (cameras.length === 0) {
-      void load();
-    }
-  }, [cameras.length, load]);
+  // Looked up once on mount, so the preview opens at once when tapped.
+  const sample = useAsyncResult(SAMPLE_CAMERA, () => findFirstSpeedCamera().catch(() => null));
 
   const toggleType = useCallback((type: AlertTarget) => {
-    const current = useSettingsStore.getState().enabledTypes;
+    const current = settings.enabledTypes;
     if (current.includes(type) && current.length === 1) {
       setMessage('Keep at least one alert type on');
       return;
     }
     setMessage(null);
-    useSettingsStore.getState().toggleType(type);
-  }, []);
+    settings.toggleType(type);
+  }, [settings]);
 
   const sampleCameraAlert = useCallback((): UpcomingAlert | null => {
-    const camera: Camera | undefined = useHazardStore.getState().cameras[0];
-    if (camera === undefined) return null;
+    // The road database also lists police and bumps; the preview uses a speed camera.
+    const camera: Camera | null = sample.value;
+    if (camera === null) return null;
     return {
       kind: 'camera',
       refId: camera.id,
       title: 'Speed camera ahead',
       roadName: camera.roadName,
       distanceM: 300,
-      speedLimitKmh: camera.speedLimitKmh,
+      speedLimitKmh: camera.speedLimitKmh > 0 ? camera.speedLimitKmh : undefined,
       camera,
     };
-  }, []);
-
-  const testVoice = useCallback(() => {
-    if (!useSettingsStore.getState().voiceEnabled) return;
-    speak('Speed camera in 300 metres');
-  }, []);
+  }, [sample.value]);
 
   const previewAlert = useCallback(() => {
     const alert = sampleCameraAlert();
     if (alert === null) {
-      setMessage('Demo cameras are still loading — try again');
+      setMessage('Cameras are still loading — try again');
       return;
     }
     setMessage(null);
-    useDriveStore.getState().setActiveAlert(alert);
+    setActiveAlert(alert);
     router.push('/alert');
-  }, [sampleCameraAlert]);
-
-  const signOut = useCallback(() => {
-    setSigningOut(true);
-    useSessionStore
-      .getState()
-      .signOut()
-      .catch(() => {
-        setSigningOut(false);
-      });
-  }, []);
+  }, [sampleCameraAlert, setActiveAlert]);
 
   return {
     alertDistanceM: settings.alertDistanceM,
     enabledTypes: settings.enabledTypes,
-    voiceEnabled: settings.voiceEnabled,
-    soundEnabled: settings.soundEnabled,
     amberThresholdPct: settings.amberThresholdPct,
-    themePreference,
     message,
-    canTestVoice: settings.voiceEnabled,
     toggleType,
     setAlertDistance: settings.setAlertDistance,
     setAmberThreshold: settings.setAmberThreshold,
-    setThemePreference,
-    setVoiceEnabled: settings.setVoiceEnabled,
-    setSoundEnabled: settings.setSoundEnabled,
-    testVoice,
     previewAlert,
     reset: settings.reset,
-    user,
-    signingOut,
-    signOut,
   };
 }

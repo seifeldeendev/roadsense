@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type ScreenProps = {
@@ -12,37 +11,22 @@ type ScreenProps = {
 
 export function Screen({ children, scroll = false, padded = true }: ScreenProps) {
   const { colors } = useTheme();
-  const fill: ViewStyle = { flex: 1, backgroundColor: colors.canvas };
-  const gutter = padded ? styles.gutter : styles.noGutter;
+  const gutter = padded ? 'px-lg' : 'px-0';
+  // SafeAreaView is a third-party view, so its fill stays a style.
+  const fill = { flex: 1, backgroundColor: colors.canvas };
   if (!scroll) {
     return (
       <SafeAreaView style={fill}>
-        <View style={[fill, gutter]}>{children}</View>
+        <View className={`flex-1 bg-canvas ${gutter}`}>{children}</View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={fill}>
-      <ScrollView
-        style={fill}
-        contentContainerStyle={[gutter, styles.scrollContent]}
-        alwaysBounceVertical
-      >
+      <ScrollView className="flex-1 bg-canvas" contentContainerClassName={`pb-xl ${gutter}`} alwaysBounceVertical>
         {children}
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  gutter: {
-    paddingHorizontal: spacing.lg,
-  },
-  noGutter: {
-    paddingHorizontal: 0,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-});

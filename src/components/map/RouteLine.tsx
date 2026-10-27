@@ -7,18 +7,18 @@ import { useTheme } from '@/theme/useTheme';
 const LINE_WIDTH = 5;
 
 type RouteLineProps = {
-  coordinates: LatLng[];
-  progressIndex?: number;
+  // The part already driven (drawn muted) and the part still ahead; they share
+  // the split point so the two lines join.
+  driven?: LatLng[];
+  remaining: LatLng[];
 };
 
-export function RouteLine({ coordinates, progressIndex }: RouteLineProps) {
+const NONE: LatLng[] = [];
+
+export function RouteLine({ driven = NONE, remaining }: RouteLineProps) {
   const { colors } = useTheme();
-  const native = useMemo(() => coordinates.map(toNativeCoord), [coordinates]);
-
-  if (native.length < 2) return null;
-
-  const travelled = progressIndex === undefined ? [] : native.slice(0, progressIndex + 1);
-  const ahead = progressIndex === undefined ? native : native.slice(progressIndex);
+  const travelled = useMemo(() => driven.map(toNativeCoord), [driven]);
+  const ahead = useMemo(() => remaining.map(toNativeCoord), [remaining]);
 
   return (
     <>

@@ -1,0 +1,97 @@
+{
+  "spacing": {
+    "xxs": 4,
+    "xs": 6,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 20,
+    "xxl": 24,
+    "xxxl": 32
+  },
+  "rounded": {
+    "none": 0,
+    "md": 8,
+    "lg": 12,
+    "xl": 16,
+    "pill": 999,
+    "pillTab": 36,
+    "full": 9999
+  },
+  "fontFamily": {
+    "regular": "Inter_400Regular",
+    "medium": "Inter_500Medium",
+    "bold": "Inter_700Bold"
+  },
+  "typography": {
+    "displayXxl": {
+      "weight": "bold",
+      "fontSize": 52,
+      "lineHeight": 64
+    },
+    "displayXl": {
+      "weight": "bold",
+      "fontSize": 36,
+      "lineHeight": 44
+    },
+    "displayLg": {
+      "weight": "bold",
+      "fontSize": 32,
+      "lineHeight": 40
+    },
+    "displayMd": {
+      "weight": "bold",
+      "fontSize": 24,
+      "lineHeight": 32
+    },
+    "displaySm": {
+      "weight": "bold",
+      "fontSize": 20,
+      "lineHeight": 28
+    },
+    "bodyLg": {
+      "weight": "medium",
+      "fontSize": 18,
+      "lineHeight": 24
+    },
+    "bodyMd": {
+      "weight": "regular",
+      "fontSize": 16,
+      "lineHeight": 24
+    },
+    "bodyMdStrong": {
+      "weight": "medium",
+      "fontSize": 16,
+      "lineHeight": 20
+    },
+    "bodySm": {
+      "weight": "regular",
+      "fontSize": 14,
+      "lineHeight": 20
+    },
+    "bodySmStrong": {
+      "weight": "medium",
+      "fontSize": 14,
+      "lineHeight": 16
+    },
+    "caption": {
+      "weight": "regular",
+      "fontSize": 12,
+      "lineHeight": 20
+    },
+    "buttonLarge": {
+      "weight": "medium",
+      "fontSize": 18,
+      "lineHeight": 24
+    },
+    "buttonMd": {
+      "weight": "medium",
+      "fontSize": 16,
+      "lineHeight": 20
+    }
+  },
+  "touch": {
+    "min": 44,
+    "large": 56
+  }
+}

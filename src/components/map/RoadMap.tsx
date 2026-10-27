@@ -31,24 +31,32 @@ type RoadMapProps = {
   scrollEnabled?: boolean;
   zoomEnabled?: boolean;
   rotateEnabled?: boolean;
+  mapType?: 'standard' | 'satellite';
+  showsTraffic?: boolean;
+  // Keeps north at the top instead of rotating the map with the heading.
+  northUp?: boolean;
+  // Called with the map centre whenever the user finishes panning or zooming.
+  onCenterChange?: (center: { lat: number; lng: number }) => void;
+  // Called with the visible region (centre and span) whenever a pan or zoom ends.
+  onRegionChange?: (region: MapFrame) => void;
   style?: StyleProp<ViewStyle>;
   ref?: Ref<RoadMapHandle>;
 };
 
 type MapViewInstance = InstanceType<typeof MapView>;
 
-const mapProvider: Provider = Platform.select({
-  android: PROVIDER_GOOGLE,
-  ios: undefined,
-});
+// Each phone's own map: Apple Maps on iPhone (works in Expo Go, no SDK or key),
+// Google Maps on Android (the only map react-native-maps has there).
+const mapProvider: Provider = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
 
 const DRIVE_PITCH = 45;
+const STREET_LEVEL_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-function followCamera(point: FollowPoint): Partial<Camera> {
+function followCamera(point: FollowPoint, northUp: boolean): Partial<Camera> {
   const center = { latitude: point.lat, longitude: point.lng };
   return {
     center,
-    heading: point.heading,
+    heading: northUp ? 0 : point.heading,
     pitch: DRIVE_PITCH,
     // Google honours zoom, Apple Maps reads the altitude equivalent.
     zoom: 16,
@@ -64,6 +72,11 @@ export function RoadMap({
   scrollEnabled = true,
   zoomEnabled = true,
   rotateEnabled = true,
+  mapType = 'standard',
+  showsTraffic = false,
+  northUp = false,
+  onCenterChange,
+  onRegionChange,
   style,
   ref,
 }: RoadMapProps) {
@@ -75,6 +88,14 @@ export function RoadMap({
     ref,
     () => ({
       fit: (coordinates) => {
+        // A single point (the driver) gets a street-level view instead of maximum zoom.
+        if (coordinates.length === 1) {
+          mapRef.current?.animateToRegion(
+            { latitude: coordinates[0].lat, longitude: coordinates[0].lng, ...STREET_LEVEL_DELTA },
+            500,
+          );
+          return;
+        }
         mapRef.current?.fitToCoordinates(
           coordinates.map((c) => ({ latitude: c.lat, longitude: c.lng })),
           { edgePadding: styles.edgePadding, animated: true },
@@ -90,8 +111,8 @@ export function RoadMap({
 
   useEffect(() => {
     if (lat === null || lng === null || heading === null) return;
-    mapRef.current?.animateCamera(followCamera({ lat, lng, heading }), { duration: 500 });
-  }, [lat, lng, heading]);
+    mapRef.current?.animateCamera(followCamera({ lat, lng, heading }, northUp), { duration: 500 });
+  }, [lat, lng, heading, northUp]);
 
   return (
     <MapView
@@ -100,7 +121,19 @@ export function RoadMap({
       provider={mapProvider}
       initialRegion={initialRegion}
       region={region}
-      customMapStyle={scheme === 'dark' ? darkMapStyle : lightMapStyle}
+      mapType={mapType}
+      showsTraffic={showsTraffic}
+      onRegionChangeComplete={
+        onCenterChange === undefined && onRegionChange === undefined
+          ? undefined
+          : (region) => {
+              if (onCenterChange !== undefined) onCenterChange({ lat: region.latitude, lng: region.longitude });
+              if (onRegionChange !== undefined) onRegionChange(region);
+            }
+      }
+      // The grayscale style only applies to the drawn map, not satellite imagery.
+      customMapStyle={mapType === 'standard' ? (scheme === 'dark' ? darkMapStyle : lightMapStyle) : undefined}
+      // Apple Maps ignores customMapStyle; this keeps it in the app's light/dark scheme.
       userInterfaceStyle={scheme}
       showsCompass={false}
       showsMyLocationButton={false}

@@ -1,6 +1,9 @@
 import type { Camera, Hazard, HazardType, Settings, UpcomingAlert } from '../../entities';
-import { HEADING_CONE_DEG } from '../../../shared/constants';
+import { alertTargetFor, fixedPointTitle, isSpeedCamera } from './fixedPoints';
 import { angleDiffDeg, bearingDeg, haversineDistanceM } from './geo';
+
+// Points more than this far off the heading are not ahead of the driver.
+const HEADING_CONE_DEG = 45;
 
 const HAZARD_TITLES: Record<HazardType, string> = {
   accident: 'Accident',
@@ -15,23 +18,27 @@ export function findUpcomingAlerts(
   cameras: Camera[],
   hazards: Hazard[],
   settings: Settings,
+  // Wider look-ahead for lists of what is coming; alerts themselves use the setting.
+  maxDistanceM: number = settings.alertDistanceM,
 ): UpcomingAlert[] {
   const results: UpcomingAlert[] = [];
 
-  if (settings.enabledTypes.includes('camera')) {
+  {
     for (const camera of cameras) {
+      if (!settings.enabledTypes.includes(alertTargetFor(camera.type))) continue;
       const distanceM = haversineDistanceM(position, camera);
-      if (distanceM > settings.alertDistanceM) continue;
+      if (distanceM > maxDistanceM) continue;
       if (angleDiffDeg(headingDeg, bearingDeg(position, camera)) > HEADING_CONE_DEG) {
         continue;
       }
       results.push({
         kind: 'camera',
         refId: camera.id,
-        title: 'Speed camera ahead',
+        title: fixedPointTitle(camera.type),
         roadName: camera.roadName,
         distanceM,
-        speedLimitKmh: camera.speedLimitKmh,
+        // Only speed cameras enforce a limit; police posts and bumps just warn.
+        speedLimitKmh: isSpeedCamera(camera) && camera.speedLimitKmh > 0 ? camera.speedLimitKmh : undefined,
         camera,
       });
     }
@@ -41,7 +48,7 @@ export function findUpcomingAlerts(
     if (hazard.status !== 'active') continue;
     if (!settings.enabledTypes.includes(hazard.type)) continue;
     const distanceM = haversineDistanceM(position, hazard);
-    if (distanceM > settings.alertDistanceM) continue;
+    if (distanceM > maxDistanceM) continue;
     if (angleDiffDeg(headingDeg, bearingDeg(position, hazard)) > HEADING_CONE_DEG) {
       continue;
     }

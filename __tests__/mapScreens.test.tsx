@@ -6,6 +6,7 @@ import { afterAll, beforeAll, expect, jest, test } from '@jest/globals';
 import { renderRouter, testRouter } from 'expo-router/testing-library';
 import type React from 'react';
 
+jest.mock('expo-router/native-tabs', () => require('../test-support/nativeTabsMock'));
 jest.mock(
   '@react-native-async-storage/async-storage',
   () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -66,7 +67,6 @@ jest.mock('react-native-maps', () => {
     Marker: make('map-marker'),
     Polyline: make('map-polyline'),
     PROVIDER_GOOGLE: 'google',
-    PROVIDER_DEFAULT: undefined,
   };
 });
 jest.mock('react-native-safe-area-context', () => {
@@ -104,7 +104,9 @@ async function advanceVirtualTime(count = 24, stepMs = 250): Promise<void> {
 let renderResult: { getPathname: () => string };
 
 beforeAll(async () => {
-  require('../src/stores/useSessionStore').useSessionStore.setState({
+  // Routing falls back to the mock routes, so tests never call the live routing service.
+  globalThis.fetch = jest.fn(() => Promise.reject(new Error('offline in tests'))) as unknown as typeof fetch;
+  require('../src/composition/stores').useSessionStore.setState({
     user: { id: 'driver-demo', name: 'Demo driver', email: 'demo@roadsense.app' },
     hasCompletedOnboarding: true,
     hasHydrated: true,
@@ -136,9 +138,9 @@ test('live map shows the filter chips and the plan-a-route action', () => {
 
 test('a single-kind filter hides cameras and All restores them', async () => {
   await fireEvent.press(screen.getByText('Potholes'));
-  expect(screen.getByText(/^0 cameras · \d+ hazards? nearby$/)).toBeTruthy();
+  expect(screen.getByText(/^0 road alerts · \d+ hazards? nearby$/)).toBeTruthy();
   await fireEvent.press(screen.getByText('All'));
-  expect(screen.getByText(/^[1-9]\d* cameras? · \d+ hazards? nearby$/)).toBeTruthy();
+  expect(screen.getByText(/^[1-9]\d* road alerts? · \d+ hazards? nearby$/)).toBeTruthy();
 });
 
 test('report details shows the hazard type and voting updates the count', async () => {

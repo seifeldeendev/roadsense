@@ -1,6 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppText, IconButton } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
 
 type WeekSelectorProps = {
   label: string;
@@ -11,9 +10,9 @@ type WeekSelectorProps = {
 
 export function WeekSelector({ label, canGoNext, onPrev, onNext }: WeekSelectorProps) {
   return (
-    <View style={styles.row}>
+    <View className="flex-row items-center gap-sm">
       <IconButton icon="chevron-left" accessibilityLabel="Previous week" onPress={onPrev} />
-      <View style={styles.label}>
+      <View className="flex-1 items-center">
         <AppText variant="bodyMdStrong">{label}</AppText>
       </View>
       <IconButton
@@ -25,15 +24,3 @@ export function WeekSelector({ label, canGoNext, onPrev, onNext }: WeekSelectorP
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  label: {
-    flex: 1,
-    alignItems: 'center',
-  },
-});

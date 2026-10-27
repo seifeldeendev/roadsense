@@ -7,6 +7,8 @@ import { useTheme } from '@/theme/useTheme';
 
 const TYPE_ROWS: { type: AlertTarget; label: string }[] = [
   { type: 'camera', label: 'Speed cameras' },
+  { type: 'police', label: 'Police' },
+  { type: 'bump', label: 'Speed bumps' },
   { type: 'accident', label: 'Accidents' },
   { type: 'pothole', label: 'Potholes' },
   { type: 'checkpoint', label: 'Checkpoints' },

@@ -1,12 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
-  Camera,
   Hazard,
   Settings,
   Trip,
 } from '../../domain/entities';
 import type {
-  CameraRepository,
   HazardRepository,
   ReportHazardInput,
   SettingsRepository,
@@ -14,7 +12,6 @@ import type {
 } from '../../domain/repositories';
 import { applyVote } from '../../domain/usecases/hazards/applyVote';
 import { DEFAULT_SETTINGS, HAZARD_TTL_MS } from '../../shared/constants';
-import { MOCK_CAMERAS } from './cameras';
 import { MOCK_HAZARDS } from './hazards';
 import { MOCK_TRIPS } from './trips';
 
@@ -23,13 +20,6 @@ const SETTINGS_KEY = 'roadsense.settings';
 
 const delay = (): Promise<void> =>
   new Promise<void>((resolve) => setTimeout(resolve, REPO_DELAY_MS));
-
-export class MockCameraRepository implements CameraRepository {
-  async getAll(): Promise<Camera[]> {
-    await delay();
-    return MOCK_CAMERAS.map((camera) => ({ ...camera }));
-  }
-}
 
 export class MockHazardRepository implements HazardRepository {
   private items: Hazard[];

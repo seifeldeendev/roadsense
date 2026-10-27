@@ -1,25 +1,45 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
-import type { HazardType, UpcomingAlert } from '@/domain/entities';
-import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
+import type { HazardType, LatLng, LocationSourceKind, UpcomingAlert } from '@/domain/entities';
+import { DRIVE_LOOKUP_RADIUS_M } from '@/domain/usecases/cameras/cameraRadii';
+import { driveCoverage } from '@/domain/usecases/cameras/workingSet';
+import { alertFeedback } from '@/domain/usecases/drive/alertFeedback';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
-import type { LocationSource } from '@/domain/repositories';
-import { createDemoLocationSource } from '@/services/location';
-import { speak } from '@/services/speech';
-import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
+import { driveLocationStatus, type LocationStatus } from '@/domain/usecases/drive/locationStatus';
+import type { Unsubscribe } from '@/domain/repositories';
+import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { hazardMeta } from '@/theme/tokens';
-import { clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
+import { announce, clockHHMM, statusMessage, useTransientFeedback } from './driveModeHelpers';
+import {
+  createDrivePointHandler,
+  createRouteSpeedLimitLookup,
+  createSpeedLimitLookup,
+  currentDrivePosition,
+} from './drivePointHandler';
 
 const REPORT_TYPES: HazardType[] = ['accident', 'pothole', 'checkpoint', 'flooding'];
+
+// The one driver-facing warning banner, shown (and, except while cameras are
+// being fetched, spoken) whenever a drive could be missing alerts. Location
+// problems come first: without a live position no alert can fire at all.
+export const LOCATION_FAILED_MESSAGE = 'Location unavailable — no alerts';
+export const WAITING_FOR_GPS_MESSAGE = 'Waiting for GPS — no alerts yet';
+export const GPS_LOST_MESSAGE = 'GPS signal lost — alerts paused';
+export const CAMERAS_UNAVAILABLE_MESSAGE = 'Camera alerts unavailable — retrying';
+export const CAMERAS_LOADING_MESSAGE = 'Loading cameras near you…';
+
+const LOCATION_WARNINGS: Record<Exclude<LocationStatus, 'live'>, string> = {
+  failed: LOCATION_FAILED_MESSAGE,
+  waiting: WAITING_FOR_GPS_MESSAGE,
+  lost: GPS_LOST_MESSAGE,
+};
 
 export type DriveModeViewModel = {
   isLoading: boolean;
   error: string | null;
   retry: () => void;
   isDriving: boolean;
-  speedKmh: number;
+  // null while the position is not live, so a frozen reading is never shown as current.
+  speedKmh: number | null;
   hasLimit: boolean;
   limitKmh: number;
   status: SpeedStatus;
@@ -27,86 +47,144 @@ export type DriveModeViewModel = {
   nextAlert: UpcomingAlert | null;
   reportTypes: HazardType[];
   feedback: string | null;
+  // Set while a drive could be missing alerts: no live position, or no cameras
+  // around the car (failed, timed out, or still being fetched).
+  driverWarning: string | null;
   start: () => void;
   stop: () => void;
   onReport: (type: HazardType) => void;
-  openSettings: () => void;
 };
 
 export function useDriveModeViewModel(): DriveModeViewModel {
-  const isLoading = useHazardStore((s) => s.isLoading);
+  const { useCameraStore, useDriveStore, useHazardStore, useNavigationStore, useSettingsStore } = useStores();
+  const { location } = useDependencies();
+  const hazardsLoading = useHazardStore((s) => s.isLoading);
+  const prepareDrive = useCameraStore((s) => s.prepareDrive);
+  const findInBounds = useCameraStore((s) => s.findInBounds);
+  // The Drive tab waits for the first working set, as it waited for every camera.
+  const awaitingCameras = useCameraStore((s) => s.workingSet === null && !s.fetchFailed);
   const error = useHazardStore((s) => s.error);
   const load = useHazardStore((s) => s.load);
+  const report = useHazardStore((s) => s.report);
   const isDriving = useDriveStore((s) => s.isDriving);
+  // The car's last reading, or before it the drive's start.
+  const carPosition = useDriveStore((s) => s.position ?? s.drivingFrom);
+  const drivingSince = useDriveStore((s) => s.drivingSince);
+  const lastReadingAt = useDriveStore((s) => s.lastReadingAt);
+  const locationFailed = useDriveStore((s) => s.locationError !== null);
+  const setLocationError = useDriveStore((s) => s.setLocationError);
+  const coverage = useCameraStore((s) =>
+    carPosition === null ? 'covered' : driveCoverage(s.workingSet, carPosition, s.fetchFailed, DRIVE_LOOKUP_RADIUS_M),
+  );
   const speedKmhRaw = useDriveStore((s) => s.speedKmh);
   const limitKmhRaw = useDriveStore((s) => s.limitKmh);
+  const startDrive = useDriveStore((s) => s.startDrive);
+  const stopDrive = useDriveStore((s) => s.stopDrive);
+  const currentLocation = useDriveStore((s) => s.currentLocation);
+  const locationSource = useSettingsStore((s) => s.locationSource);
+  const soundMode = useSettingsStore((s) => s.soundMode);
+  const voiceEnabled = useSettingsStore((s) => s.voiceEnabled);
   const amberThresholdPct = useSettingsStore((s) => s.amberThresholdPct);
+  const hasQueuedReplay = useNavigationStore((s) => s.pendingRoutePoints !== null);
+  const takeDemoPlayback = useNavigationStore((s) => s.takeDemoPlayback);
   const [nextAlert, setNextAlert] = useState<UpcomingAlert | null>(null);
   const [feedback, showFeedback] = useTransientFeedback();
-  const sourceRef = useRef<LocationSource | null>(null);
+  const unwatchRef = useRef<Unsubscribe | null>(null);
+  // Start awaits the cameras around the start; a second tap meanwhile is ignored.
+  const startingRef = useRef(false);
 
   useEffect(() => {
     void load();
     return () => {
-      sourceRef.current?.stop();
-      sourceRef.current = null;
+      unwatchRef.current?.();
+      unwatchRef.current = null;
     };
   }, [load]);
 
+  // A feed that stops sends nothing, so staleness is checked on a clock while driving.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!isDriving) return;
+    const tick = setInterval(() => setNow(Date.now()), 1_000);
+    return () => clearInterval(tick);
+  }, [isDriving]);
+  const locationStatus: LocationStatus = isDriving
+    ? driveLocationStatus(now, drivingSince ?? now, lastReadingAt, locationFailed)
+    : 'live';
+  const isLive = locationStatus === 'live';
+
+  // Silent no-alerts is never an option: the driver is told when it happens.
+  const driverWarning = !isDriving
+    ? null
+    : !isLive
+      ? LOCATION_WARNINGS[locationStatus]
+      : coverage === 'unavailable'
+        ? CAMERAS_UNAVAILABLE_MESSAGE
+        : coverage === 'refreshing'
+          ? CAMERAS_LOADING_MESSAGE
+          : null;
+  const spokenWarning = driverWarning === CAMERAS_LOADING_MESSAGE ? null : driverWarning;
+  useEffect(() => {
+    if (spokenWarning !== null) announce(alertFeedback(soundMode, voiceEnabled, 'camera'), spokenWarning);
+  }, [spokenWarning, soundMode, voiceEnabled]);
+
   const speedKmh = Math.round(speedKmhRaw);
-  const status = getSpeedStatus(speedKmh, limitKmhRaw, amberThresholdPct);
+  // Not live: no speed, limit or over-limit colour from a reading that may be minutes old.
+  const status = isLive ? getSpeedStatus(speedKmh, limitKmhRaw, amberThresholdPct) : 'ok';
 
   const start = useCallback(() => {
-    useDriveStore.getState().startDrive();
-    const source = createDemoLocationSource();
-    sourceRef.current = source;
-    source.start((point) => {
-      useDriveStore.getState().pushPoint(point);
-      const settings = useSettingsStore.getState();
-      const hazardState = useHazardStore.getState();
-      const results = findUpcomingAlerts(
-        { lat: point.lat, lng: point.lng },
-        point.heading,
-        hazardState.cameras,
-        hazardState.hazards,
-        settings,
-      );
-      const nearest = results[0] ?? null;
-      setNextAlert(nearest);
-      const drive = useDriveStore.getState();
-      const isNew =
-        nearest !== null &&
-        drive.activeAlert?.refId !== nearest.refId &&
-        !drive.dismissedAlertIds.includes(nearest.refId);
-      if (nearest !== null && isNew) {
-        const overlayOpen = drive.activeAlert !== null;
-        drive.setActiveAlert(nearest);
-        if (settings.voiceEnabled) {
-          speak(`${nearest.title} in ${Math.max(1, Math.round(nearest.distanceM))} metres`);
-        }
-        // An open overlay re-renders with the new alert instead of stacking another modal.
-        if (!overlayOpen) router.push('/alert');
+    if (startingRef.current) return;
+    startingRef.current = true;
+    void (async () => {
+      // A queued trip replay always plays through the demo source.
+      let kind: LocationSourceKind = locationSource === 'gps' && !hasQueuedReplay ? 'gps' : 'demo';
+      if (kind === 'gps' && !(await location.requestPermission())) {
+        kind = 'demo';
+        showFeedback('Location is off — playing the demo drive instead');
       }
+      const playback = kind === 'demo' ? takeDemoPlayback() : null;
+      const liveLimitFor = createSpeedLimitLookup(useCameraStore);
+      const limitFor =
+        playback?.kind === 'planned'
+          ? await createRouteSpeedLimitLookup(findInBounds, playback.route, liveLimitFor)
+          : liveLimitFor;
+      const source = playback === null ? location.device(limitFor) : location.demo(playback, limitFor);
+      // The cameras around the start are fetched before the drive starts (an idle
+      // set centred within the refetch distance is reused). A GPS drive with no fix
+      // yet starts from its first reading. prepareDrive never waits past the query
+      // timeout: on failure or timeout the drive still starts and the driver sees
+      // driverWarning while retries continue.
+      const startAt: LatLng | null =
+        kind === 'gps' ? currentLocation : await source.getCurrent();
+      if (startAt !== null) await prepareDrive(startAt);
+      startDrive(kind, startAt);
+      unwatchRef.current = source.watch(
+        createDrivePointHandler(
+          { drive: useDriveStore, settings: useSettingsStore, hazards: useHazardStore, cameras: useCameraStore },
+          setNextAlert,
+        ),
+        setLocationError,
+      );
+    })().finally(() => {
+      startingRef.current = false;
     });
-  }, []);
+  }, [showFeedback, locationSource, hasQueuedReplay, startDrive, location, takeDemoPlayback, useHazardStore, useCameraStore, useSettingsStore, useDriveStore, prepareDrive, findInBounds, currentLocation, setLocationError]);
 
   const stop = useCallback(() => {
-    sourceRef.current?.stop();
-    sourceRef.current = null;
-    useDriveStore.getState().stopDrive();
+    unwatchRef.current?.();
+    unwatchRef.current = null;
+    stopDrive();
     setNextAlert(null);
-  }, []);
+  }, [stopDrive]);
 
   const onReport = useCallback(
     (type: HazardType) => {
-      const drive = useDriveStore.getState();
-      if (!drive.isDriving || drive.position === null) {
+      const here = currentDrivePosition(useDriveStore);
+      if (here === null) {
         showFeedback('Start a drive to report hazards');
         return;
       }
-      useHazardStore
-        .getState()
-        .report(type, drive.position.lat, drive.position.lng, drive.heading)
+      report(type, here.position.lat, here.position.lng, here.heading)
         .then(() => {
           showFeedback(`${hazardMeta[type].label} reported at ${clockHHMM(new Date())}`);
         })
@@ -114,29 +192,25 @@ export function useDriveModeViewModel(): DriveModeViewModel {
           showFeedback("Couldn't send report — try again");
         });
     },
-    [showFeedback],
+    [report, showFeedback, useDriveStore],
   );
 
-  const openSettings = useCallback(() => {
-    router.push('/settings/alerts');
-  }, []);
-
   return {
-    isLoading,
+    isLoading: hazardsLoading || awaitingCameras,
     error,
     retry: load,
     isDriving,
-    speedKmh,
-    hasLimit: isDriving && limitKmhRaw > 0,
+    speedKmh: isLive ? speedKmh : null,
+    hasLimit: isDriving && isLive && limitKmhRaw > 0,
     limitKmh: limitKmhRaw,
     status,
-    statusLabel: statusMessage(status, speedKmh, limitKmhRaw),
+    statusLabel: isLive ? statusMessage(status, speedKmh, limitKmhRaw) : 'Speed unknown',
     nextAlert,
     reportTypes: REPORT_TYPES,
     feedback,
+    driverWarning,
     start,
     stop,
     onReport,
-    openSettings,
   };
 }

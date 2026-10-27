@@ -9,9 +9,8 @@ import {
   type WeeklyStats,
 } from '@/domain/usecases/trips/weeklyStats';
 import { formatDayTitle } from '@/domain/usecases/trips/groupTripsByDay';
-import { setDriveRoutePoints } from '@/services/location';
-import { useSettingsStore } from '@/stores/useSettingsStore';
-import { useTripStore, type ReplayRate } from '@/stores/useTripStore';
+import { useStores } from '@/stores/DependenciesProvider';
+import type { ReplayRate } from '@/stores/useTripStore';
 import { mmss } from './tripFormat';
 import {
   buildTripChips,
@@ -59,13 +58,19 @@ export type StatsReplayViewModel = {
 };
 
 export function useStatsReplayViewModel(initialTripId: string | undefined): StatsReplayViewModel {
+  const { useNavigationStore, useSettingsStore, useTripStore } = useStores();
   const trips = useTripStore((state) => state.trips);
   const isLoading = useTripStore((state) => state.isLoading);
   const error = useTripStore((state) => state.error);
   const load = useTripStore((state) => state.load);
+  const loadUnless = useTripStore((state) => state.loadUnless);
+  const play = useTripStore((state) => state.play);
+  const pause = useTripStore((state) => state.pause);
+  const tick = useTripStore((state) => state.tick);
   const replay = useTripStore((state) => state.replay);
   const selectReplayTrip = useTripStore((state) => state.selectReplayTrip);
   const setRate = useTripStore((state) => state.setRate);
+  const setDriveRoutePoints = useNavigationStore((state) => state.setDriveRoutePoints);
   const seek = useTripStore((state) => state.seek);
   const amberThresholdPct = useSettingsStore((state) => state.amberThresholdPct);
 
@@ -74,8 +79,8 @@ export function useStatsReplayViewModel(initialTripId: string | undefined): Stat
   const [today] = useState(() => new Date());
 
   useEffect(() => {
-    if (useTripStore.getState().trips.length === 0) void load();
-  }, [load]);
+    void loadUnless((state) => state.trips.length > 0 || state.isLoading);
+  }, [loadUnless]);
 
   // Preselect a trip when the screen was opened with a `replay` param.
   useEffect(() => {
@@ -92,10 +97,10 @@ export function useStatsReplayViewModel(initialTripId: string | undefined): Stat
   useEffect(() => {
     if (!isPlaying) return;
     const timer = setInterval(() => {
-      useTripStore.getState().tick();
+      tick();
     }, 1000 / rate);
     return () => clearInterval(timer);
-  }, [isPlaying, rate]);
+  }, [isPlaying, rate, tick]);
 
   const stats = useMemo(() => getWeeklyStats(trips, weekStart), [trips, weekStart]);
   const bars = useMemo(() => buildWeekBars(stats), [stats]);
@@ -139,27 +144,25 @@ export function useStatsReplayViewModel(initialTripId: string | undefined): Stat
   );
 
   const togglePlay = useCallback(() => {
-    const store = useTripStore.getState();
-    if (store.replay.isPlaying) {
-      store.pause();
+    if (replay.isPlaying) {
+      pause();
     } else {
-      store.play();
+      play();
     }
-  }, []);
+  }, [replay.isPlaying, pause, play]);
 
   const onSeek = useCallback((fraction: number) => {
-    const { trips: loadTrips, replay: replayState } = useTripStore.getState();
-    const trip = findReplayTrip(replayState.tripId, loadTrips);
+    const trip = findReplayTrip(replay.tripId, trips);
     if (trip === null || trip.points.length === 0) return;
     const index = Math.round(clamp(fraction, 0, 1) * (trip.points.length - 1));
     seek(index);
-  }, [seek]);
+  }, [replay.tripId, trips, seek]);
 
   const replayInDrive = useCallback(() => {
     if (selectedTrip === null) return;
     setDriveRoutePoints(selectedTrip.points);
     router.navigate('/drive');
-  }, [selectedTrip]);
+  }, [selectedTrip, setDriveRoutePoints]);
 
   const elapsedLabel = selectedTrip === null
     ? mmss(0)

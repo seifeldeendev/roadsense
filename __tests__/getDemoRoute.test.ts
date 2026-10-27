@@ -1,11 +1,10 @@
 import { expect, test } from '@jest/globals';
-import { getDemoRoute } from '@/services/location';
+import { DEMO_ROUTE } from '@/data/location';
+import { DEMO_TRIP } from '@/data/mock/trips';
 
 test('the demo route follows the Salah Salem trip points', () => {
-  const route = getDemoRoute();
-  expect(route.length).toBeGreaterThan(0);
-  expect(getDemoRoute()).toBe(route);
-  for (const point of route) {
+  expect(DEMO_ROUTE).toHaveLength(DEMO_TRIP.points.length);
+  for (const point of DEMO_ROUTE) {
     expect(typeof point.lat).toBe('number');
     expect(typeof point.lng).toBe('number');
   }

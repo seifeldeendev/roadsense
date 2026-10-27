@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
+import { useTabBarSpace } from '@/components/navigation';
 import { IconButton, Screen } from '@/components/ui';
 import {
   CameraMarker,
@@ -7,8 +8,7 @@ import {
   RoadMap,
   type RoadMapHandle,
 } from '@/components/map';
-import { rounded, spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { spacing } from '@/theme/tokens';
 import { MapFilterBar } from '../components/MapFilterBar';
 import {
   LiveMapEmptyOverlay,
@@ -16,26 +16,47 @@ import {
   LiveMapLoadingOverlay,
 } from '../components/LiveMapOverlays';
 import { MapBottomBar } from '../components/MapBottomBar';
-import { useLiveMapViewModel } from '../viewmodels/useLiveMapViewModel';
+import { useLiveMapViewModel, type MapFilterChipVm } from '../viewmodels/useLiveMapViewModel';
 
 const EMPTY_MESSAGE = 'No cameras or hazards match these filters';
-const FAB_BOTTOM_OFFSET = 148;
+// Above the bottom card (which itself sits above the floating tab bar).
+const FAB_ABOVE_CARD = 132;
 
 export default function LiveMapScreen() {
   const vm = useLiveMapViewModel();
-  const styles = useThemedStyles(screenStyles, undefined);
+  const tabBarSpace = useTabBarSpace();
   const mapRef = useRef<RoadMapHandle | null>(null);
   const [recentreCount, setRecentreCount] = useState(0);
+  const hasFittedRef = useRef(false);
+  const lastChipsRef = useRef<readonly MapFilterChipVm[] | null>(null);
+  const lastRecentreRef = useRef(0);
 
   useEffect(() => {
-    if (vm.fitCoords.length > 0) {
-      mapRef.current?.fit(vm.fitCoords);
-    }
-  }, [vm.fitCoords, recentreCount]);
+    // The drawn points track the viewport, so their list changes on every pan;
+    // the map only re-fits on first load, a filter change or Recentre.
+    const firstLoad = !hasFittedRef.current && vm.fitCoords.length > 0;
+    const chipsChanged = lastChipsRef.current !== null && lastChipsRef.current !== vm.chips;
+    const recentred = recentreCount !== lastRecentreRef.current;
+    if (!firstLoad && !chipsChanged && !recentred) return;
+    if (firstLoad) hasFittedRef.current = true;
+    lastChipsRef.current = vm.chips;
+    lastRecentreRef.current = recentreCount;
+    if (vm.fitCoords.length > 0) mapRef.current?.fit(vm.fitCoords);
+  }, [vm.fitCoords, vm.chips, recentreCount]);
 
   return (
     <Screen padded={false}>
-      <RoadMap ref={mapRef} initialRegion={vm.frame}>
+      <RoadMap
+        ref={mapRef}
+        initialRegion={vm.frame}
+        mapType={vm.mapType}
+        showsTraffic={vm.showTraffic}
+        onRegionChange={(region) => {
+          // Map-load events report the initial region, not a user pan, so point
+          // tracking starts only after the first fit has happened.
+          if (hasFittedRef.current) vm.onRegionChange(region);
+        }}
+      >
         {vm.visibleCameras.map((camera) => (
           <CameraMarker
             key={camera.id}
@@ -43,6 +64,7 @@ export default function LiveMapScreen() {
             lng={camera.lng}
             roadName={camera.roadName}
             speedLimitKmh={camera.speedLimitKmh}
+            type={camera.type}
           />
         ))}
         {vm.visibleHazards.map((hazard) => (
@@ -58,15 +80,19 @@ export default function LiveMapScreen() {
 
       <MapFilterBar chips={vm.chips} onToggle={vm.toggleFilter} />
 
-      <View style={styles.fabShell}>
+      <View className="absolute right-lg" style={{ bottom: tabBarSpace + spacing.md + FAB_ABOVE_CARD }}>
         <IconButton
           icon="crosshairs-gps"
+          surface="glass"
           accessibilityLabel="Recentre map"
-          onPress={() => setRecentreCount((count) => count + 1)}
+          onPress={() => {
+            vm.recentre();
+            setRecentreCount((count) => count + 1);
+          }}
         />
       </View>
 
-      <MapBottomBar summaryLine={vm.summaryLine} onPlanRoute={vm.planRoute} />
+      <MapBottomBar summaryLine={vm.summaryLine} onPlanRoute={vm.planRoute} bottomInset={tabBarSpace + spacing.md} />
 
       {vm.isLoading && vm.fitCoords.length === 0 ? (
         <LiveMapLoadingOverlay label="Loading cameras and hazards…" />
@@ -79,17 +105,4 @@ export default function LiveMapScreen() {
       ) : null}
     </Screen>
   );
-}
-
-function screenStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    fabShell: {
-      position: 'absolute',
-      right: spacing.lg,
-      bottom: FAB_BOTTOM_OFFSET,
-      backgroundColor: _theme.colors.canvas,
-      borderRadius: rounded.full,
-      ..._theme.elevation.level3,
-    },
-  });
 }

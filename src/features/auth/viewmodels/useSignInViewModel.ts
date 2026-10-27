@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { DEMO_CREDENTIALS } from '@/shared/constants';
-import { useSessionStore } from '@/stores/useSessionStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import {
   validateSignIn,
   type FieldErrors,
@@ -27,6 +27,7 @@ function errorMessage(error: unknown): string {
 }
 
 export function useSignInViewModel(): SignInViewModel {
+  const { useSessionStore } = useStores();
   // Development convenience: the demo account arrives prefilled outside production.
   const [email, setEmail] = useState(__DEV__ ? DEMO_CREDENTIALS.email : '');
   const [password, setPassword] = useState(__DEV__ ? DEMO_CREDENTIALS.password : '');
