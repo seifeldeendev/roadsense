@@ -316,3 +316,18 @@ Lint is clean, and `grep -rn "eslint-disable" src` returns nothing. _Seif: fill 
 
 With the hook's `suspend()` call removed, the first test fails.
 **Verification:** tsc, lint, jest 200/200 (37 suites, exits without `--forceExit`). 8 files touched. _Seif: fill in your notes._
+
+### AI-050 · 2026-10-27 · Seif · independent audit of the architecture migration · Claude Code (claude-opus-5-5), investigated directly
+**Prompt (verbatim, title):** "# Audit the completed Clean Architecture + MVVM migration"
+**Output:** `docs/architecture-audit.md`, with 25 findings, each with file:line, severity and a proposed fix. Only Section 7 changed code (AI-049). Counts:
+- **2 critical:** a working-set fetch that never settles leaves the driver silent with no banner; a lost or never-started GPS feed is never surfaced (this predates the migration).
+- **7 high:** four lint gaps (route-file logic, scoped `@react-native-*` packages in the domain, domain `.tsx`, packages in stores); stores-layer persistence outside DI, contradicting the report's "only mismatch" claim; the stale ~280 KB figure in AI-038 and in commit `0f2c480`; AI-046 calling a behaviour change "UX kept the same".
+- **The rest:** medium and low.
+
+**Evidence method:**
+- 48 planted violations, deleted afterwards by literal path; the lint caught 42 of 47, and the control passed;
+- 8 code mutations, each applied, run and reverted: 7 caught, 1 survives (the OSRM status check);
+- guard-test runs with a registered radius raised and with the set decoupled;
+- greps for the superseded numbers in docs and commit messages.
+
+**Correction to my own process:** I cleaned up the first batch of plants with `rm -f $(…)` before you asked for literal paths only. `git status` afterwards showed nothing else removed. The second batch was deleted one literal path at a time. _Seif: fill in your notes._
