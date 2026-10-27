@@ -10,8 +10,7 @@ const MIN_MOVE_FOR_HEADING_M = 3;
 // Streams the phone's real position as trip points. The device knows nothing
 // about speed limits, so the caller supplies them for each position.
 export class ExpoLocationSource implements LocationSource {
-  private subscription: Location.LocationSubscription | null = null;
-  private stopped = false;
+  private cancel: Unsubscribe | null = null;
   private previous: TripPoint | null = null;
 
   constructor(private readonly limitFor: (position: LatLng) => number) {}
@@ -20,30 +19,35 @@ export class ExpoLocationSource implements LocationSource {
     return getCurrentLocation();
   }
 
+  // One stream per source: a new watch ends the previous one.
   watch(onPoint: (p: TripPoint) => void): Unsubscribe {
-    this.stopped = false;
+    this.cancel?.();
     this.previous = null;
+    let stopped = false;
+    let subscription: Location.LocationSubscription | null = null;
     Location.watchPositionAsync(
       { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 },
       (location) => {
+        if (stopped) return;
         const point = this.toTripPoint(location);
         this.previous = point;
         onPoint(point);
       },
     )
-      .then((subscription) => {
+      .then((started) => {
         // The watch may have been cancelled while it was still starting.
-        if (this.stopped) subscription.remove();
-        else this.subscription = subscription;
+        if (stopped) started.remove();
+        else subscription = started;
       })
       .catch(() => undefined);
-    return () => this.stop();
-  }
-
-  private stop(): void {
-    this.stopped = true;
-    this.subscription?.remove();
-    this.subscription = null;
+    const cancel = () => {
+      stopped = true;
+      subscription?.remove();
+      subscription = null;
+      if (this.cancel === cancel) this.cancel = null;
+    };
+    this.cancel = cancel;
+    return cancel;
   }
 
   private toTripPoint(location: Location.LocationObject): TripPoint {

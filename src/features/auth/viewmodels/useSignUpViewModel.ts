@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useSessionStore } from '@/stores/useSessionStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import {
   validateSignUp,
   type FieldErrors,
@@ -32,6 +32,7 @@ function errorMessage(error: unknown): string {
 }
 
 export function useSignUpViewModel(): SignUpViewModel {
+  const { useSessionStore } = useStores();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -15,3 +15,12 @@ export type DemoPlayback =
   | { kind: 'replay'; points: readonly TripPoint[] }
   | { kind: 'planned'; route: readonly LatLng[] }
   | { kind: 'demo' };
+
+// Builds the location sources a drive can play from. The device knows nothing
+// about speed limits, so the caller supplies them for each position.
+export interface LocationSources {
+  // The recorded demo drive path, also the start point when there is no fix.
+  demoRoute: LatLng[];
+  device(limitFor: (position: LatLng) => number): LocationSource;
+  demo(playback: DemoPlayback, limitFor: (position: LatLng) => number): LocationSource;
+}

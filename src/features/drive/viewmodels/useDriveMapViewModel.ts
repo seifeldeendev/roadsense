@@ -7,8 +7,7 @@ import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 // The road database covers all of Egypt; the map draws only nearby points.
@@ -38,11 +37,13 @@ export type DriveMapViewModel = {
 };
 
 export function useDriveMapViewModel(): DriveMapViewModel {
+  const { useHazardStore, useNavigationStore } = useStores();
   const isDriving = useDriveStore((s) => s.isDriving);
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);
   const driveSource = useDriveStore((s) => s.driveSource);
   const currentLocation = useDriveStore((s) => s.currentLocation);
+  const setCurrentLocation = useDriveStore((s) => s.setCurrentLocation);
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
   const mapType = useSettingsStore((s) => s.mapType);
@@ -53,17 +54,17 @@ export function useDriveMapViewModel(): DriveMapViewModel {
 
   // Where the driver really is, so the idle map opens there (like any navigation app).
   useEffect(() => {
-    if (locationSource !== 'gps' || useDriveStore.getState().currentLocation !== null) return;
+    if (locationSource !== 'gps' || currentLocation !== null) return;
     let cancelled = false;
     void (async () => {
       if (!(await requestLocationPermission())) return;
       const location = await getCurrentLocation();
-      if (!cancelled && location !== null) useDriveStore.getState().setCurrentLocation(location);
+      if (!cancelled && location !== null) setCurrentLocation(location);
     })();
     return () => {
       cancelled = true;
     };
-  }, [locationSource]);
+  }, [locationSource, currentLocation, setCurrentLocation]);
 
   // The demo route, a trip queued from Stats & Replay, or a route from the planner.
   const driveRoute = useNavigationStore((s) => s.driveRoute);

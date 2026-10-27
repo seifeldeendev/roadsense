@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { router, type Href } from 'expo-router';
-import { useSessionStore } from '@/stores/useSessionStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { initialsOf } from './initials';
 
@@ -17,17 +17,17 @@ export type AccountViewModel = {
 };
 
 export function useAccountViewModel(): AccountViewModel {
+  const { useSessionStore } = useStores();
   const user = useSessionStore((s) => s.user);
   const locationSource = useSettingsStore((s) => s.locationSource);
+  const setLocationSource = useSettingsStore((s) => s.setLocationSource);
+  const sessionSignOut = useSessionStore((s) => s.signOut);
   const [signingOut, setSigningOut] = useState(false);
 
   const signOut = useCallback(() => {
     setSigningOut(true);
-    void useSessionStore
-      .getState()
-      .signOut()
-      .finally(() => setSigningOut(false));
-  }, []);
+    void sessionSignOut().finally(() => setSigningOut(false));
+  }, [sessionSignOut]);
 
   const name = user?.name ?? 'Driver';
   return {
@@ -38,8 +38,7 @@ export function useAccountViewModel(): AccountViewModel {
     isDemoDrive: locationSource === 'demo',
     signingOut,
     open: (href) => router.push(href),
-    toggleDemoDrive: () =>
-      useSettingsStore.getState().setLocationSource(locationSource === 'demo' ? 'gps' : 'demo'),
+    toggleDemoDrive: () => setLocationSource(locationSource === 'demo' ? 'gps' : 'demo'),
     signOut,
   };
 }

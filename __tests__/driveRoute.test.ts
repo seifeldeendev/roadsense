@@ -4,6 +4,11 @@ import { createDemoLocationSource, DEMO_ROUTE } from '@/data/location';
 import { MOCK_TRIPS } from '@/data/mock/trips';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 
+jest.mock(
+  '@react-native-async-storage/async-storage',
+  () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 const nav = () => useNavigationStore.getState();
 
 beforeEach(() => {

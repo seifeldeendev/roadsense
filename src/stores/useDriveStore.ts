@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { LatLng, LocationSourceKind, TripPoint, UpcomingAlert } from '../domain/entities';
 
-interface DriveState {
+export interface DriveState {
   isDriving: boolean;
   position: LatLng | null;
   speedKmh: number;

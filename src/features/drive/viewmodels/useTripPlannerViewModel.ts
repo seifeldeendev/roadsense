@@ -5,9 +5,7 @@ import { describeRouteAlerts, getAlertsAlongRoute, type RouteAlert } from '@/dom
 import { formatDistance, formatDuration } from '@/shared/format';
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useNavigationStore } from '@/stores/useNavigationStore';
-import { useRouteStore } from '@/stores/useRouteStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { usePlaceSearch, usePinLabel } from './plannerHooks';
 
@@ -44,12 +42,17 @@ const SUGGESTION_COUNT = 6;
 const QUICK_PLACE_COUNT = 3;
 
 export function useTripPlannerViewModel(): TripPlannerViewModel {
+  const { useHazardStore, useNavigationStore, useRouteStore } = useStores();
   const [mode, setMode] = useState<PlannerMode>('idle');
   const [query, setQuery] = useState('');
   const [pinCenter, setPinCenter] = useState<LatLng | null>(null);
   const currentLocation = useDriveStore((s) => s.currentLocation);
+  const setCurrentLocation = useDriveStore((s) => s.setCurrentLocation);
   const locationSource = useSettingsStore((s) => s.locationSource);
   const { destinations, recent, selected, route, isLoading, error } = useRouteStore();
+  const loadDestinationsUnless = useRouteStore((s) => s.loadDestinationsUnless);
+  const selectDestination = useRouteStore((s) => s.selectDestination);
+  const resetSelection = useRouteStore((s) => s.resetSelection);
   const cameras = useHazardStore((s) => s.cameras);
   const demoRoute = useNavigationStore((s) => s.demoRoute);
   const showPlannedRoute = useNavigationStore((s) => s.showPlannedRoute);
@@ -62,8 +65,8 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
   const pinLabel = usePinLabel(mode === 'pin' ? pinCenter : null);
 
   useEffect(() => {
-    if (useRouteStore.getState().destinations.length === 0) void useRouteStore.getState().loadDestinations();
-  }, []);
+    void loadDestinationsUnless((state) => state.destinations.length > 0);
+  }, [loadDestinationsUnless]);
 
   // Only a route chosen here is drawn on the Drive map (Route Preview shares the
   // store), and only real changes count, so mounting doesn't wipe a queued replay.
@@ -111,17 +114,17 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
       void (async () => {
         // A route must start where the driver is: fetch a fix if none has arrived yet.
         let from = origin;
-        if (locationSource === 'gps' && useDriveStore.getState().currentLocation === null) {
+        if (locationSource === 'gps' && currentLocation === null) {
           const fix = (await requestLocationPermission()) ? await getCurrentLocation() : null;
           if (fix !== null) {
-            useDriveStore.getState().setCurrentLocation(fix);
+            setCurrentLocation(fix);
             from = fix;
           }
         }
-        await useRouteStore.getState().selectDestination(place, from);
+        await selectDestination(place, from);
       })();
     },
-    [origin, locationSource],
+    [origin, locationSource, currentLocation, setCurrentLocation, selectDestination],
   );
 
   const confirmPin = useCallback(() => {
@@ -133,8 +136,8 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
   const close = useCallback(() => {
     setMode('idle');
     setQuery('');
-    useRouteStore.getState().resetSelection();
-  }, []);
+    resetSelection();
+  }, [resetSelection]);
 
   const alerts = useMemo(
     () => (route === null ? [] : getAlertsAlongRoute(route.points, cameras, hazards)),

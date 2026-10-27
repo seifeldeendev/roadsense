@@ -22,11 +22,16 @@ export class MockLocationSource implements LocationSource {
     return Promise.resolve(first === undefined ? null : { lat: first.lat, lng: first.lng });
   }
 
+  // One stream per source: a new watch ends the previous one, and a stale
+  // unsubscribe leaves the newer stream running.
   watch(onPoint: (p: TripPoint) => void): Unsubscribe {
+    this.stop();
     this.onPoint = onPoint;
     this.nextIndex = 0;
     this.schedule();
-    return () => this.stop();
+    return () => {
+      if (this.onPoint === onPoint) this.stop();
+    };
   }
 
   private stop(): void {
