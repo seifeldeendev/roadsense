@@ -7,3 +7,4 @@ export type { DemoPlayback, LocationSource, LocationSources, Unsubscribe } from 
 export type { RouteRepository } from './route-repository';
 export type { Geocoder, PlaceLabel } from './geocoder';
 export type { AppActivity, AppLifecycle } from './app-lifecycle';
+export type { KeyValueStorage } from './key-value-storage';

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { persistStorage } from './persistStorage';
+import { persistStorageFor } from './persistStorage';
 import type { User } from '../domain/entities';
 import type { AuthProvider, ProfileChanges } from '../domain/repositories';
 import type { Dependencies } from '../data/dependencies';
@@ -18,7 +18,7 @@ export type SessionState = {
   signOut(): Promise<void>;
 };
 
-export function createSessionStore(deps: Pick<Dependencies, 'auth'>) {
+export function createSessionStore(deps: Pick<Dependencies, 'auth' | 'storage'>) {
   const store = create<SessionState>()(
     persist(
       (set, get) => ({
@@ -52,7 +52,7 @@ export function createSessionStore(deps: Pick<Dependencies, 'auth'>) {
       }),
       {
         name: 'roadsense.session',
-        storage: persistStorage,
+        storage: persistStorageFor(deps.storage),
         partialize: (state) => ({
           user: state.user,
           hasCompletedOnboarding: state.hasCompletedOnboarding,

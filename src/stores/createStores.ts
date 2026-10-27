@@ -25,8 +25,8 @@ export function createStores(deps: Dependencies): AppStores {
   // created, and the theme must be back before the first paint (the splash waits
   // for the session, read after it). As module singletons the root layout
   // imported the theme before the composition root built the session.
-  const useThemeStore = createThemeStore();
-  const useSettingsStore = createSettingsStore();
+  const useThemeStore = createThemeStore(deps);
+  const useSettingsStore = createSettingsStore(deps);
   return {
     useThemeStore,
     useSettingsStore,

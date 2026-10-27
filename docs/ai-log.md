@@ -440,3 +440,22 @@ With the original plants put back, both tests fail and name the files. The route
 
 **Tests.** Five tests set the old singleton and then rendered with provider-built stores, so they now set the provider's own store. Each first awaits `persist.rehydrate()`, so loading saved state can't overwrite the setting under test. The full-app screen test reads the composition export.
 **Verification:** tsc, lint, jest 213/213 (39 suites, exits without `--forceExit`), web export. 24 files including this log. The dev timing log in `useDriveMapViewModel.ts` was kept out: that file was staged as HEAD plus only this change. _Seif: fill in your notes._
+
+### AI-056 · 2026-10-27 · Seif · fix round 3, part 2b: persistence behind Dependencies, stores package allowlist with no exemptions (audit F5, F4) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim):** "Then persistence behind Dependencies for all of them, then the full react-native and native-package ban in stores with zero exemptions."
+**Output:**
+- **F5.** The domain gains a `KeyValueStorage` port. `src/services/keyValueStorage.ts` holds the device implementation: AsyncStorage, or the no-op used when Expo renders web routes in Node (moved from `persistStorage.ts`, unchanged). It is wired in as `Dependencies.storage`, the same shape as gps, geocoding and AppState. All four persisted stores (session, routes, settings, theme) persist through `persistStorageFor(deps.storage)`. `persistStorage.ts` now imports only `zustand/middleware`. Keys, versions and the settings v1 migration are unchanged.
+- **F4.** The stores' `no-restricted-imports` rule is an allowlist: `src/stores` may import `zustand`, `zustand/middleware` and `react` (for the provider and hooks), plus internal paths, which the layer zones police. Everything else is an error. That covers `react-native`, every `expo*` package, AsyncStorage and any future package. There are no file exemptions; lint passes because nothing in `src/stores` imports a platform package any more. This one pattern now covers what the separate `AppState` rule did for stores. The layout zone no longer allows `stores/useThemeStore.ts`, because the layout reads the theme through the settings feature (AI-055).
+- **Tests.** Persistence is now testable through a fake (`test-support/memoryStorage.ts`):
+  - signing in writes the session to the injected storage;
+  - a saved v0 settings blob loads, migrates and writes changes back;
+  - the theme preference comes back from storage.
+
+  With `persistStorageFor` ignoring its argument, 3 of them fail.
+
+**All 48 audit plants re-run.** I recreated them and afterwards deleted each by literal path:
+- **47 of 47 violations caught.** Lint catches 45. The guard tests catch the other 2: a route file with logic, and a domain `.tsx`. Neither can be expressed as an import rule, by design (AI-053).
+- **The control passes:** `import type` from the domain in `theme`.
+- **Nothing missed.**
+
+**Verification:** tsc, lint, jest 215/215 (39 suites, exits without `--forceExit`), web export. 15 files including this log. _Seif: fill in your notes._

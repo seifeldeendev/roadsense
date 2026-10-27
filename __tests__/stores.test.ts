@@ -14,8 +14,11 @@ import { CAMERA_QUERY_TIMEOUT_MS, createCameraStore, retryDelayMs } from '@/stor
 import { createHazardStore } from '@/stores/useHazardStore';
 import { createRouteStore } from '@/stores/useRouteStore';
 import { createSessionStore } from '@/stores/useSessionStore';
+import { createSettingsStore } from '@/stores/useSettingsStore';
+import { createThemeStore } from '@/stores/useThemeStore';
 import { createTripStore } from '@/stores/useTripStore';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
+import { memoryStorage } from '../test-support/memoryStorage';
 
 jest.mock(
   '@react-native-async-storage/async-storage',
@@ -130,7 +133,7 @@ describe('route store', () => {
         destination.id === 'a' ? slow.promise : Promise.resolve(route(destination)),
       ),
     };
-    const store = createRouteStore({ routes });
+    const store = createRouteStore({ routes, storage: memoryStorage() });
     const first = store.getState().selectDestination(DEST_A, { lat: 30, lng: 31 });
     await store.getState().selectDestination(DEST_B, { lat: 30, lng: 31 });
     slow.resolve(route(DEST_A));
@@ -144,7 +147,7 @@ describe('route store', () => {
       getDestinations: jest.fn(async () => []),
       getRoute: jest.fn(async () => Promise.reject(new Error('No route found'))),
     };
-    const store = createRouteStore({ routes });
+    const store = createRouteStore({ routes, storage: memoryStorage() });
     await store.getState().selectDestination(DEST_A, { lat: 30, lng: 31 });
     expect(store.getState()).toMatchObject({ route: null, isLoading: false, error: 'No route found' });
   });
@@ -199,9 +202,12 @@ describe('session store', () => {
       updateProfile: jest.fn(async (user: User, changes: ProfileChanges) => ({ ...user, ...changes })),
       signOut: jest.fn(async () => undefined),
     };
-    const store = createSessionStore({ auth });
+    const storage = memoryStorage();
+    const store = createSessionStore({ auth, storage });
     await store.getState().signIn('driver@example.com', 'secret');
     expect(store.getState().user).toEqual(USER);
+    // Persistence goes through the injected storage, not the device's.
+    expect(JSON.parse(storage.saved.get('roadsense.session') ?? 'null')?.state?.user).toEqual(USER);
 
     await store.getState().updateProfile({ name: 'Renamed', email: USER.email });
     expect(auth.updateProfile).toHaveBeenCalledWith(USER, { name: 'Renamed', email: USER.email });
@@ -209,6 +215,30 @@ describe('session store', () => {
 
     await store.getState().signOut();
     expect(store.getState().user).toBeNull();
+  });
+});
+
+describe('persisted stores read and write through Dependencies.storage', () => {
+  it('settings load what was saved, migrated, and save changes back', async () => {
+    // A v0 save: police and speed-bump alerts did not exist yet.
+    const storage = memoryStorage({
+      'roadsense.settings': JSON.stringify({ state: { soundMode: 'muted', enabledTypes: ['camera'] }, version: 0 }),
+    });
+    const store = createSettingsStore({ storage });
+    await store.persist.rehydrate();
+    expect(store.getState().soundMode).toBe('muted');
+    expect(store.getState().enabledTypes).toEqual(['camera', 'police', 'bump']);
+
+    store.getState().setSoundMode('all');
+    await Promise.resolve();
+    expect(JSON.parse(storage.saved.get('roadsense.settings') ?? 'null')?.state?.soundMode).toBe('all');
+  });
+
+  it('the theme preference comes back from storage', async () => {
+    const storage = memoryStorage({ 'roadsense.theme': JSON.stringify({ state: { preference: 'dark' }, version: 0 }) });
+    const store = createThemeStore({ storage });
+    await store.persist.rehydrate();
+    expect(store.getState().preference).toBe('dark');
   });
 });
 
