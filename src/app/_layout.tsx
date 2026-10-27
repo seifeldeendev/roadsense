@@ -14,16 +14,15 @@ import { nativeTypography } from '@/theme/tokens';
 import { themeVars } from '@/theme/cssVars';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useTheme } from '@/theme/useTheme';
-import { useThemeStore } from '@/stores/useThemeStore';
 import { AppDependenciesProvider } from '@/composition/AppDependenciesProvider';
 import { SessionGate } from '@/features/auth/components/SessionGate';
 import { useSessionGateViewModel } from '@/features/auth/viewmodels/useSessionGateViewModel';
+import { useThemePreference } from '@/features/settings/viewmodels/useAppSettingsViewModel';
 import { BrandSplash } from '@/features/onboarding/screens/BrandSplash';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const preference = useThemeStore((s) => s.preference);
   const [fontsLoaded, fontsError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -33,11 +32,19 @@ export default function RootLayout() {
   return (
     <AppDependenciesProvider>
       <SessionGate ready={fontsLoaded || fontsError !== null}>
-        <ThemeProvider preference={preference}>
-          <ThemedChrome />
-        </ThemeProvider>
+        <ThemedRoot />
       </SessionGate>
     </AppDependenciesProvider>
+  );
+}
+
+// Inside the providers, so the saved preference comes from the app's stores.
+function ThemedRoot() {
+  const preference = useThemePreference();
+  return (
+    <ThemeProvider preference={preference}>
+      <ThemedChrome />
+    </ThemeProvider>
   );
 }
 

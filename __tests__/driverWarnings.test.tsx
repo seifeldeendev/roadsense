@@ -16,7 +16,6 @@ import { CAMERA_QUERY_TIMEOUT_MS } from '@/stores/useCameraStore';
 import { createStores } from '@/stores/createStores';
 import { DependenciesProvider } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 
 const mockSpeak = jest.fn();
@@ -72,6 +71,15 @@ const hazards: HazardRepository = {
   vote: () => Promise.reject(new Error('not used')),
 };
 
+// Fresh stores for one test, with the demo source and spoken alerts.
+async function storesFor(dependencies: Parameters<typeof createStores>[0]) {
+  const stores = createStores(dependencies);
+  // Saved settings load asynchronously; let them land before setting the ones under test.
+  await stores.useSettingsStore.persist.rehydrate();
+  stores.useSettingsStore.setState({ locationSource: 'demo', soundMode: 'all', voiceEnabled: true });
+  return stores;
+}
+
 async function startDriving(mode: 'answer' | 'hang' | 'fail' = 'answer') {
   const repo = cameraRepository();
   repo.set(mode);
@@ -81,7 +89,7 @@ async function startDriving(mode: 'answer' | 'hang' | 'fail' = 'answer') {
     cameras: repo.cameras,
     location: { ...createDependencies({}).location, demo: () => location.source },
   });
-  const stores = createStores(dependencies);
+  const stores = await storesFor(dependencies);
   const wrapper = ({ children }: { children: ReactNode }) => (
     <DependenciesProvider dependencies={dependencies} stores={stores}>
       {children}
@@ -103,7 +111,6 @@ beforeEach(() => {
   jest.useFakeTimers();
   mockSpeak.mockClear();
   useDriveStore.setState({ isDriving: false, position: null, currentLocation: null, driveSource: null });
-  useSettingsStore.setState({ locationSource: 'demo', soundMode: 'all', voiceEnabled: true });
 });
 
 // Retry and staleness timers must never outlive a test, failed or not.
@@ -122,7 +129,7 @@ describe('a camera query that hangs is a failure the driver hears about (F12)', 
       cameras: repo.cameras,
       location: { ...createDependencies({}).location, demo: () => location.source },
     });
-    const stores = createStores(dependencies);
+    const stores = await storesFor(dependencies);
     const wrapper = ({ children }: { children: ReactNode }) => (
       <DependenciesProvider dependencies={dependencies} stores={stores}>
         {children}

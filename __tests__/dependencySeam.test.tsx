@@ -6,11 +6,11 @@ import type { DemoPlayback, LocationSource, LocationSources } from '@/domain/rep
 import { createDependencies } from '@/data/dependencies';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 import { useDriveModeViewModel } from '@/features/drive/viewmodels/useDriveModeViewModel';
+import { createStores } from '@/stores/createStores';
 import { DependenciesProvider } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { createCameraStore } from '@/stores/useCameraStore';
 import { createHazardStore } from '@/stores/useHazardStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 
 jest.mock(
   '@react-native-async-storage/async-storage',
@@ -67,9 +67,14 @@ test('Drive Mode plays the location source it is given', async () => {
     },
   };
   const dependencies = createDependencies({ cameras: fakeCameras, hazards: fakeHazards, location });
-  useSettingsStore.setState({ locationSource: 'demo' });
+  const stores = createStores(dependencies);
+  // Saved settings load asynchronously; let them land before choosing the demo source.
+  await stores.useSettingsStore.persist.rehydrate();
+  stores.useSettingsStore.setState({ locationSource: 'demo' });
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <DependenciesProvider dependencies={dependencies}>{children}</DependenciesProvider>
+    <DependenciesProvider dependencies={dependencies} stores={stores}>
+      {children}
+    </DependenciesProvider>
   );
 
   const { result } = await renderHook(() => useDriveModeViewModel(), { wrapper });

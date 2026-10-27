@@ -1,7 +1,7 @@
 import type { AlertTarget, LocationSourceKind, Settings, SoundMode } from '@/domain/entities';
 import { speak } from '@/services/speech';
-import { useSettingsStore } from '@/stores/useSettingsStore';
-import { useThemeStore, type ThemePreference } from '@/stores/useThemeStore';
+import { useStores } from '@/stores/DependenciesProvider';
+import type { ThemePreference } from '@/stores/useThemeStore';
 
 // Shared by the Map & layers, Sound & voice, Drive screen and Appearance pages.
 export type AppSettingsViewModel = {
@@ -30,7 +30,14 @@ export type AppSettingsViewModel = {
 
 export type DriveScreenToggle = 'showLimitSign' | 'showSpeedometer' | 'showRoadName' | 'showAlertsAhead';
 
+// The saved light/dark preference, for the root layout's theme provider.
+export function useThemePreference(): ThemePreference {
+  const { useThemeStore } = useStores();
+  return useThemeStore((s) => s.preference);
+}
+
 export function useAppSettingsViewModel(): AppSettingsViewModel {
+  const { useSettingsStore, useThemeStore } = useStores();
   const settings = useSettingsStore();
   const themePreference = useThemeStore((s) => s.preference);
   const setThemePreference = useThemeStore((s) => s.setPreference);

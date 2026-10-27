@@ -4,7 +4,6 @@ import type { AlertTarget, Camera, Settings, UpcomingAlert } from '@/domain/enti
 import { useAsyncResult } from '@/shared/useAsyncResult';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export type AlertSettingsViewModel = {
   alertDistanceM: Settings['alertDistanceM'];
@@ -21,7 +20,7 @@ export type AlertSettingsViewModel = {
 const SAMPLE_CAMERA = 'first-speed-camera';
 
 export function useAlertSettingsViewModel(): AlertSettingsViewModel {
-  const { useCameraStore } = useStores();
+  const { useCameraStore, useSettingsStore } = useStores();
   const settings = useSettingsStore();
   const findFirstSpeedCamera = useCameraStore((s) => s.findFirstSpeedCamera);
   const setActiveAlert = useDriveStore((s) => s.setActiveAlert);

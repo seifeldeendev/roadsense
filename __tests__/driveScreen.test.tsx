@@ -142,7 +142,7 @@ test('"New alert" opens the report sheet with the four hazard types', async () =
 });
 
 test('choosing "Muted" in the sound menu updates the sound mode', async () => {
-  const { useSettingsStore } = require('../src/stores/useSettingsStore');
+  const { useSettingsStore } = require('../src/composition/stores');
   expect(useSettingsStore.getState().soundMode).toBe('all');
   await fireEvent.press(screen.getByLabelText('Sound'));
   await fireEvent.press(screen.getByLabelText('Muted'));
@@ -150,7 +150,7 @@ test('choosing "Muted" in the sound menu updates the sound mode', async () => {
 });
 
 test('"Other options" toggles satellite view', async () => {
-  const { useSettingsStore } = require('../src/stores/useSettingsStore');
+  const { useSettingsStore } = require('../src/composition/stores');
   await fireEvent.press(screen.getByLabelText('Other options'));
   await fireEvent.press(screen.getAllByLabelText('Satellite view')[0]);
   expect(useSettingsStore.getState().mapType).toBe('satellite');
@@ -188,7 +188,7 @@ test('tapping the map outside the planner closes it', async () => {
 });
 
 test('the Account tab opens settings pages that hide map layers and screen parts', async () => {
-  const { useSettingsStore } = require('../src/stores/useSettingsStore');
+  const { useSettingsStore } = require('../src/composition/stores');
   await testRouter.push('/account');
   await advanceVirtualTime();
   expect(screen.getByText('Demo driver')).toBeTruthy();
