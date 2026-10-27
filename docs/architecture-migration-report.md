@@ -79,7 +79,7 @@ The standing rule was "no behavior changes unless the item says so". These chang
 
 ## Corrections of stated claims
 
-1. **Item 3 size.** I first claimed the change made the app "~1 MB smaller". The measurement showed −160 KB in the bundle against +438 KB for the database. You then corrected the net install growth to ~390 KB once the 549 KB indexed `.db` landed. The correction is recorded in AI-039 and AI-040, and the commit message carries the measured numbers.
+1. **Item 3 size.** I first claimed the change made the app "~1 MB smaller". The measurement showed −160 KB in the bundle against +438 KB for the database. You then corrected the net install growth to ~390 KB once the 549 KB indexed `.db` landed. The correction is recorded in AI-039 (its text was edited in the AI-040 commit, `ae69909`) and in AI-038, whose ~280 KB figure is marked superseded. The commit message of `0f2c480` still says ~280 KB; it is superseded, not rewritten.
 2. **Unguarded loads.** My item-3 list of unguarded loads missed a sixth one: the trip planner's destinations load. It was outside item 6's scope, so it was logged as debt (see below) and not folded into B.
 3. **Working-set geometry.** 5 km / 2 km was approved on my recommendation, but I had not checked the radii the consumers draw. Measured on the real database with the car 2 km off-centre, the Live Map's 10 km default view lost **53%** of its markers, and the 4 km driving map lost **9.3%**. Replaced by the 12 km derivation and its guard test. Of the three, this is the correction that affected users. It is recorded in AI-047 and in the F commit message.
 

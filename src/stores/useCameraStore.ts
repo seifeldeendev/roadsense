@@ -6,11 +6,11 @@ import { boundsAround } from '../domain/usecases/geo/bounds';
 import { isFreshFor, WORKING_SET_RADIUS_M, WorkingSet } from '../domain/usecases/cameras/workingSet';
 import { withTimeout } from '../shared/withTimeout';
 
-// Every camera query fails after this long rather than hanging. Measured on the
-// shipped database (node:sqlite, desktop): the slowest query, a 52 km panned
-// view of 2,400 rows, takes 5.6 ms; a 12 km working set at most 1.4 ms. Device
-// latency is not yet measured, and the first query of a fresh install also
-// copies the 549 KB database, so the limit leaves ~900x headroom.
+// A hang detector, not a latency budget: a camera query that never answers
+// must terminate so the driver is told. Do not tune it toward measured query
+// times. The first query of a fresh install copies the 549 KB database before
+// it answers, and a cold copy on a slow phone takes far longer than any query;
+// a tight limit would fail working drives. See AI-051.
 export const CAMERA_QUERY_TIMEOUT_MS = 5_000;
 
 // Retry delays after a failed working-set fetch: doubling from 1 s, capped at 30 s.
