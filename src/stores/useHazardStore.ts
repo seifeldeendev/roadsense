@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-// eslint-disable-next-line no-restricted-imports -- TODO(composition-root): default instance built from production dependencies
-import { productionDependencies, type Dependencies } from '../data/dependencies';
+import type { Dependencies } from '../data/dependencies';
 import type { Camera, Hazard, HazardType } from '../domain/entities';
 
 export interface HazardState {
@@ -54,5 +53,3 @@ export function createHazardStore(deps: Pick<Dependencies, 'cameras' | 'hazards'
     getById: (id) => get().hazards.find((h) => h.id === id),
   }));
 }
-
-export const useHazardStore = createHazardStore(productionDependencies);

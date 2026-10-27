@@ -11,7 +11,8 @@ import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
 
 type DriveMapProps = {
-  routePoints: LatLng[];
+  drivenRoute: LatLng[];
+  remainingRoute: LatLng[];
   routeFrame: MapFrame;
   idleFitCoords: LatLng[];
   currentLocation: LatLng | null;
@@ -20,7 +21,6 @@ type DriveMapProps = {
   position: LatLng | null;
   heading: number;
   isDriving: boolean;
-  travelledIndex: number;
   mapType: MapType;
   showTraffic: boolean;
   northUp: boolean;
@@ -32,7 +32,8 @@ type DriveMapProps = {
 
 // Full-screen driving map: follows the vehicle while driving, frames the route when idle.
 export function DriveMap({
-  routePoints,
+  drivenRoute,
+  remainingRoute,
   routeFrame,
   idleFitCoords,
   currentLocation,
@@ -41,7 +42,6 @@ export function DriveMap({
   position,
   heading,
   isDriving,
-  travelledIndex,
   mapType,
   showTraffic,
   northUp,
@@ -68,7 +68,7 @@ export function DriveMap({
       onCenterChange={onCenterChange}
       onRegionChange={onRegionChange}
     >
-      <RouteLine coordinates={routePoints} progressIndex={isDriving ? travelledIndex : undefined} />
+      <RouteLine driven={drivenRoute} remaining={remainingRoute} />
       {cameras.map((camera) => (
         <CameraMarker
           key={camera.id}

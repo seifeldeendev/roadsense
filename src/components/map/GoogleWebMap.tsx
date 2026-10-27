@@ -1,12 +1,10 @@
 /// <reference types="google.maps" />
-import { useEffect, useImperativeHandle, useMemo, type ReactNode, type Ref } from 'react';
+import { useEffect, useImperativeHandle, type ReactNode, type Ref } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AdvancedMarker, APIProvider, Map, Polyline, useMap } from '@vis.gl/react-google-maps';
 import type { CameraType, HazardType, LatLng } from '@/domain/entities';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- TODO(map-boundaries): splitRoute is domain logic in a map primitive; pass split segments in
-import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 import { fixedPointIcon, hazardMeta, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { MarkerCanvas } from './MarkerCanvas';
@@ -237,10 +235,8 @@ export function PinMarker({ lat, lng, accessibilityLabel, onPress }: PinMarkerPr
   );
 }
 
-export function RouteLine({ coordinates, progressIndex }: { coordinates: LatLng[]; progressIndex?: number }) {
+export function RouteLine({ driven: travelled = [], remaining: ahead }: { driven?: LatLng[]; remaining: LatLng[] }) {
   const { colors } = useTheme();
-  const { travelled, ahead } = useMemo(() => splitRoute(coordinates, progressIndex), [coordinates, progressIndex]);
-  if (coordinates.length < 2) return null;
   return (
     <>
       {travelled.length > 1 ? <Polyline path={travelled} strokeColor={colors.mute} strokeWeight={LINE_WIDTH} /> : null}

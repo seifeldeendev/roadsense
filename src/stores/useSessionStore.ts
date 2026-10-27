@@ -3,8 +3,7 @@ import { persist } from 'zustand/middleware';
 import { persistStorage } from './persistStorage';
 import type { User } from '../domain/entities';
 import type { AuthProvider, ProfileChanges } from '../domain/repositories';
-// eslint-disable-next-line no-restricted-imports -- TODO(composition-root): default instance built from production dependencies
-import { productionDependencies, type Dependencies } from '../data/dependencies';
+import type { Dependencies } from '../data/dependencies';
 
 export type SessionState = {
   user: User | null;
@@ -66,5 +65,3 @@ export function createSessionStore(deps: Pick<Dependencies, 'auth'>) {
   );
   return store;
 }
-
-export const useSessionStore = createSessionStore(productionDependencies);

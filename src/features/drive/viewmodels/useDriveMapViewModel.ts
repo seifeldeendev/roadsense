@@ -5,6 +5,7 @@ import { isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/useca
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
+import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 // eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
@@ -18,8 +19,10 @@ const MAX_IDLE_RADIUS_M = 30_000;
 const METRES_PER_DEGREE = 111_000;
 
 export type DriveMapViewModel = {
-  // Empty when no route applies (a GPS drive with nothing planned).
-  routePoints: LatLng[];
+  // The route split at the driver's progress (all of it ahead when not driving);
+  // both empty when no route applies (a GPS drive with nothing planned).
+  drivenRoute: LatLng[];
+  remainingRoute: LatLng[];
   routeFrame: MapFrame;
   // What the map frames while not driving: the route, or the driver's real position.
   idleFitCoords: LatLng[];
@@ -29,7 +32,6 @@ export type DriveMapViewModel = {
   position: LatLng | null;
   heading: number;
   isDriving: boolean;
-  travelledIndex: number;
   mapType: MapType;
   showTraffic: boolean;
   northUp: boolean;
@@ -119,9 +121,14 @@ export function useDriveMapViewModel(): DriveMapViewModel {
     () => (position === null || routePoints.length === 0 ? -1 : nearestRouteIndex(routePoints, position)),
     [routePoints, position],
   );
+  const { travelled: drivenRoute, ahead: remainingRoute } = useMemo(
+    () => splitRoute(routePoints, isDriving ? travelledIndex : undefined),
+    [routePoints, isDriving, travelledIndex],
+  );
 
   return {
-    routePoints,
+    drivenRoute,
+    remainingRoute,
     routeFrame,
     idleFitCoords,
     currentLocation,
@@ -130,7 +137,6 @@ export function useDriveMapViewModel(): DriveMapViewModel {
     position,
     heading,
     isDriving,
-    travelledIndex,
     mapType,
     showTraffic,
     northUp,

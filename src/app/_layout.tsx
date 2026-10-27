@@ -15,9 +15,9 @@ import { themeVars } from '@/theme/cssVars';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useTheme } from '@/theme/useTheme';
 import { useThemeStore } from '@/stores/useThemeStore';
-import { DependenciesProvider } from '@/stores/DependenciesProvider';
+import { AppDependenciesProvider } from '@/composition/AppDependenciesProvider';
 // eslint-disable-next-line import/no-restricted-paths -- TODO(auth-gate): move session-driven rendering into an auth-gate component in a feature slice
-import { useSessionStore } from '@/stores/useSessionStore';
+import { useSessionStore } from '@/composition/stores';
 import { BrandSplash } from '@/features/onboarding/screens/BrandSplash';
 
 void SplashScreen.preventAutoHideAsync();
@@ -44,11 +44,11 @@ export default function RootLayout() {
   }
 
   return (
-    <DependenciesProvider>
+    <AppDependenciesProvider>
       <ThemeProvider preference={preference}>
         <ThemedChrome />
       </ThemeProvider>
-    </DependenciesProvider>
+    </AppDependenciesProvider>
   );
 }
 
