@@ -2,9 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
-import { alertTargetFor, isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/usecases/drive/fixedPoints';
+import { LIVE_MAP_RADIUS_M } from '@/domain/usecases/cameras/cameraRadii';
+import {
+  alertTargetFor,
+  isMinorRegionChange,
+  nearestPoints,
+  pointsInView,
+  regionCenter,
+  viewRadiusM,
+} from '@/domain/usecases/drive/fixedPoints';
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
+import { useLatest } from '@/shared/useLatest';
+import { useCamerasAround } from '@/stores/cameraHooks';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -19,7 +29,6 @@ export type MapFilterKey = 'all' | HazardKind;
 // The road database covers all of Egypt; only the nearest points around the
 // driver are drawn so the map stays responsive.
 const MAX_FIXED_POINTS = 150;
-const FIXED_POINT_RADIUS_M = 10_000;
 
 export type MapFilterChipVm = {
   key: MapFilterKey;
@@ -70,9 +79,8 @@ function toKindKeys(kinds: ReadonlySet<MapFilterKey>): HazardKind[] {
 
 export function useLiveMapViewModel(): LiveMapViewModel {
   const { useHazardStore, useNavigationStore } = useStores();
-  const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
-  const isLoading = useHazardStore((s) => s.isLoading);
+  const hazardsLoading = useHazardStore((s) => s.isLoading);
   const error = useHazardStore((s) => s.error);
   const load = useHazardStore((s) => s.load);
   const loadUnless = useHazardStore((s) => s.loadUnless);
@@ -100,7 +108,7 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   }, []);
 
   useEffect(() => {
-    void loadUnless((state) => state.cameras.length > 0 || state.hazards.length > 0 || state.isLoading);
+    void loadUnless((state) => state.hasLoaded || state.hazards.length > 0 || state.isLoading);
   }, [loadUnless]);
 
   const toggleFilter = useCallback((key: MapFilterKey) => {
@@ -132,13 +140,24 @@ export function useLiveMapViewModel(): LiveMapViewModel {
     [selected],
   );
 
-  const shownCameras = useMemo(() => visibleOnMap(cameras, hiddenOnMap), [cameras, hiddenOnMap]);
-
-  const nearbyCameras = useMemo(() => {
+  // Around the driver from the working set; after a pan, a query of the view.
+  const around = useCamerasAround(
+    viewport !== null ? regionCenter(viewport) : (currentLocation ?? demoRoute[0]),
+    viewport !== null ? viewRadiusM(viewport) : LIVE_MAP_RADIUS_M,
+  );
+  const cameras = around.cameras;
+  const freshCameras = useMemo(() => {
+    if (cameras === null) return null;
+    const shownCameras = visibleOnMap(cameras, hiddenOnMap);
     // After a pan, the drawn points follow what the map is looking at.
     if (viewport !== null) return pointsInView(shownCameras, viewport, MAX_FIXED_POINTS);
-    return nearestPoints(shownCameras, currentLocation ?? demoRoute[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M);
-  }, [shownCameras, viewport, currentLocation, demoRoute]);
+    return nearestPoints(shownCameras, currentLocation ?? demoRoute[0], MAX_FIXED_POINTS, LIVE_MAP_RADIUS_M);
+  }, [cameras, hiddenOnMap, viewport, currentLocation, demoRoute]);
+  // The markers already drawn stay until the new view's cameras arrive.
+  const latestCameras = useLatest(freshCameras);
+  const nearbyCameras = useMemo(() => latestCameras ?? [], [latestCameras]);
+  // Waits for the first cameras as it did when every camera loaded with the hazards.
+  const isLoading = hazardsLoading || (latestCameras === null && !around.failed);
 
   const visibleCameras = useMemo(
     () =>
