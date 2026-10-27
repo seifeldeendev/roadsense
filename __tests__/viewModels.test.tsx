@@ -5,11 +5,13 @@ import type { Camera, Hazard, Trip } from '@/domain/entities';
 import type { CameraRepository, Geocoder, HazardRepository, TripRepository } from '@/domain/repositories';
 import { createDependencies, type Dependencies } from '@/data/dependencies';
 import { usePlaceSearch } from '@/features/drive/viewmodels/plannerHooks';
+import { useSessionGateViewModel } from '@/features/auth/viewmodels/useSessionGateViewModel';
 import { useReportDetailsViewModel } from '@/features/map/viewmodels/useReportDetailsViewModel';
 import { useRoutePreviewViewModel } from '@/features/map/viewmodels/useRoutePreviewViewModel';
 import { useStatsReplayViewModel } from '@/features/trips/viewmodels/useStatsReplayViewModel';
 import { useTripDetailsViewModel } from '@/features/trips/viewmodels/useTripDetailsViewModel';
 import { useTripHistoryViewModel } from '@/features/trips/viewmodels/useTripHistoryViewModel';
+import { createStores } from '@/stores/createStores';
 import { DependenciesProvider, useStores } from '@/stores/DependenciesProvider';
 
 jest.mock(
@@ -166,4 +168,31 @@ describe('the planner searches through the injected geocoder', () => {
     expect(result.current).toEqual([place]);
     jest.useRealTimers();
   });
+});
+
+describe('the session gate', () => {
+  it.each([
+    [{ hasCompletedOnboarding: false, user: null }, { canOnboard: true, canSignIn: false, canUseApp: false, startHref: '/onboarding' }],
+    [{ hasCompletedOnboarding: true, user: null }, { canOnboard: false, canSignIn: true, canUseApp: false, startHref: '/sign-in' }],
+    [
+      { hasCompletedOnboarding: true, user: { id: 'u1', name: 'Driver', email: 'd@example.com' } },
+      { canOnboard: false, canSignIn: false, canUseApp: true, startHref: '/drive' },
+    ],
+  ])('opens the right route group for %j', async (session, expected) => {
+    const dependencies = createDependencies();
+    const stores = createStores(dependencies);
+    // Persisted stores rehydrate from the shared mock storage; let that finish first.
+    await stores.useSessionStore.persist.rehydrate();
+    stores.useSessionStore.setState({ ...session, hasHydrated: true });
+    const { result } = await renderHook(() => useSessionGateViewModel(), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <DependenciesProvider dependencies={dependencies} stores={stores}>
+          {children}
+        </DependenciesProvider>
+      ),
+    });
+    expect(result.current.hasHydrated).toBe(true);
+    expect(result.current).toMatchObject(expected);
+  });
+
 });
