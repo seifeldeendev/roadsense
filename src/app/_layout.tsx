@@ -7,7 +7,7 @@ import {
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import '../../global.css';
 import { nativeTypography } from '@/theme/tokens';
@@ -16,46 +16,34 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useTheme } from '@/theme/useTheme';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { AppDependenciesProvider } from '@/composition/AppDependenciesProvider';
-// eslint-disable-next-line import/no-restricted-paths -- TODO(auth-gate): move session-driven rendering into an auth-gate component in a feature slice
-import { useSessionStore } from '@/composition/stores';
+import { SessionGate } from '@/features/auth/components/SessionGate';
+import { useSessionGateViewModel } from '@/features/auth/viewmodels/useSessionGateViewModel';
 import { BrandSplash } from '@/features/onboarding/screens/BrandSplash';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const preference = useThemeStore((s) => s.preference);
-  const hasHydrated = useSessionStore((s) => s.hasHydrated);
   const [fontsLoaded, fontsError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_700Bold,
   });
 
-  const ready = (fontsLoaded || fontsError !== null) && hasHydrated;
-
-  useEffect(() => {
-    if (ready) {
-      void SplashScreen.hideAsync();
-    }
-  }, [ready]);
-
-  if (!ready) {
-    return null;
-  }
-
   return (
     <AppDependenciesProvider>
-      <ThemeProvider preference={preference}>
-        <ThemedChrome />
-      </ThemeProvider>
+      <SessionGate ready={fontsLoaded || fontsError !== null}>
+        <ThemeProvider preference={preference}>
+          <ThemedChrome />
+        </ThemeProvider>
+      </SessionGate>
     </AppDependenciesProvider>
   );
 }
 
 function ThemedChrome() {
   const { colors, scheme } = useTheme();
-  const user = useSessionStore((s) => s.user);
-  const hasCompletedOnboarding = useSessionStore((s) => s.hasCompletedOnboarding);
+  const access = useSessionGateViewModel();
   const [splashShown, setSplashShown] = useState(true);
   const hideSplash = useCallback(() => setSplashShown(false), []);
   // Palette as CSS variables so NativeWind classes (bg-canvas, text-ink…) follow the theme.
@@ -77,13 +65,13 @@ function ThemedChrome() {
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Protected guard={!hasCompletedOnboarding}>
+        <Stack.Protected guard={access.canOnboard}>
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Protected guard={hasCompletedOnboarding && user === null}>
+        <Stack.Protected guard={access.canSignIn}>
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Protected guard={user !== null}>
+        <Stack.Protected guard={access.canUseApp}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="alert"
