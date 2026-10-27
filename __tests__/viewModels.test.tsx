@@ -1,12 +1,14 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { useEffect, type ReactNode } from 'react';
-import type { Camera, Hazard, Trip } from '@/domain/entities';
-import type { CameraRepository, Geocoder, HazardRepository, TripRepository } from '@/domain/repositories';
+import type { Camera, GeoBounds, Hazard, Trip } from '@/domain/entities';
+import type { CameraRepository, Geocoder, HazardRepository, LocationSource, TripRepository } from '@/domain/repositories';
 import { createDependencies, type Dependencies } from '@/data/dependencies';
 import { usePlaceSearch } from '@/features/drive/viewmodels/plannerHooks';
 import { useSessionGateViewModel } from '@/features/auth/viewmodels/useSessionGateViewModel';
 import { useAlertSettingsViewModel } from '@/features/drive/viewmodels/useAlertSettingsViewModel';
+import { CAMERAS_UNAVAILABLE_MESSAGE, useDriveModeViewModel } from '@/features/drive/viewmodels/useDriveModeViewModel';
+import { useLiveMapViewModel } from '@/features/map/viewmodels/useLiveMapViewModel';
 import { useReportDetailsViewModel } from '@/features/map/viewmodels/useReportDetailsViewModel';
 import { useRoutePreviewViewModel } from '@/features/map/viewmodels/useRoutePreviewViewModel';
 import { useStatsReplayViewModel } from '@/features/trips/viewmodels/useStatsReplayViewModel';
@@ -14,8 +16,12 @@ import { useTripDetailsViewModel } from '@/features/trips/viewmodels/useTripDeta
 import { useTripHistoryViewModel } from '@/features/trips/viewmodels/useTripHistoryViewModel';
 import { createStores } from '@/stores/createStores';
 import { DependenciesProvider, useStores } from '@/stores/DependenciesProvider';
+import { useDriveStore } from '@/stores/useDriveStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 
+const mockSpeak = jest.fn();
+jest.mock('expo-speech', () => ({ speak: (text: string) => mockSpeak(text), stop: () => undefined }));
 jest.mock(
   '@react-native-async-storage/async-storage',
   () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -54,15 +60,16 @@ const TRIP: Trip = {
 // Repositories that answer only when the test says so, to observe loads in flight.
 function slowRepositories() {
   let releaseTrips: () => void = () => undefined;
-  let releaseCameras: () => void = () => undefined;
+  let releaseHazards: () => void = () => undefined;
   const trips: TripRepository = {
     list: jest.fn(() => new Promise<Trip[]>((resolve) => (releaseTrips = () => resolve([TRIP])))),
     getById: jest.fn(async () => TRIP),
   };
-  const cameras: CameraRepository = fakeCameraRepository([CAMERA], {
-    getAll: jest.fn(() => new Promise<Camera[]>((resolve) => (releaseCameras = () => resolve([CAMERA])))),
-  });
-  return { trips, cameras, release: () => (releaseTrips(), releaseCameras()) };
+  const hazards: HazardRepository = {
+    ...fakeHazards(),
+    getActive: jest.fn(() => new Promise<Hazard[]>((resolve) => (releaseHazards = () => resolve([HAZARD])))),
+  };
+  return { trips, hazards, release: () => (releaseTrips(), releaseHazards()) };
 }
 
 const fakeHazards = (): HazardRepository => ({
@@ -78,7 +85,7 @@ const wrapperFor = (dependencies: Dependencies) =>
 
 // Starts the store's load before the screen under test mounts, so the screen
 // sees a load already in flight.
-function useLoadStarted(kind: 'trips' | 'cameras') {
+function useLoadStarted(kind: 'trips' | 'hazards') {
   const { useTripStore, useHazardStore } = useStores();
   const loadTrips = useTripStore((s) => s.load);
   const loadPins = useHazardStore((s) => s.load);
@@ -99,7 +106,7 @@ describe('a screen does not start a second fetch while one is in flight', () => 
         useLoadStarted('trips');
         useScreen();
       },
-      { wrapper: wrapperFor(createDependencies({ trips: slow.trips, cameras: slow.cameras, hazards: fakeHazards() })) },
+      { wrapper: wrapperFor(createDependencies({ trips: slow.trips, hazards: slow.hazards })) },
     );
     expect(slow.trips.list).toHaveBeenCalledTimes(1);
     await act(async () => slow.release());
@@ -108,16 +115,16 @@ describe('a screen does not start a second fetch while one is in flight', () => 
   it.each([
     ['trip details', () => useTripDetailsViewModel(TRIP.id)],
     ['route preview', () => useRoutePreviewViewModel()],
-  ])('%s: cameras and hazards', async (_name, useScreen) => {
+  ])('%s: hazards', async (_name, useScreen) => {
     const slow = slowRepositories();
     await renderHook(
       () => {
-        useLoadStarted('cameras');
+        useLoadStarted('hazards');
         useScreen();
       },
-      { wrapper: wrapperFor(createDependencies({ trips: slow.trips, cameras: slow.cameras, hazards: fakeHazards() })) },
+      { wrapper: wrapperFor(createDependencies({ trips: slow.trips, hazards: slow.hazards })) },
     );
-    expect(slow.cameras.getAll).toHaveBeenCalledTimes(1);
+    expect(slow.hazards.getActive).toHaveBeenCalledTimes(1);
     await act(async () => slow.release());
   });
 });
@@ -258,7 +265,80 @@ describe('one-off camera queries', () => {
     });
     await act(async () => undefined);
     expect(cameras.getFirstSpeedCamera).toHaveBeenCalledTimes(1);
-    expect(cameras.getAll).not.toHaveBeenCalled();
+    expect(cameras.getInBounds).not.toHaveBeenCalled();
     expect(result.current.message).toBeNull();
+  });
+});
+
+describe('cameras around the driver (working set) and around a panned view (query)', () => {
+  const withStores = (dependencies: Dependencies) => {
+    const stores = createStores(dependencies);
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <DependenciesProvider dependencies={dependencies} stores={stores}>
+        {children}
+      </DependenciesProvider>
+    );
+    return { stores, wrapper };
+  };
+
+  beforeEach(() => {
+    useDriveStore.setState({ isDriving: false, position: null, currentLocation: null, driveSource: null });
+    useSettingsStore.setState({ locationSource: 'demo' });
+  });
+
+  it('a pan away from the working set queries the view and keeps the old markers until it answers', async () => {
+    const dependencies = createDependencies({ hazards: fakeHazards() });
+    const start = dependencies.location.demoRoute[0];
+    const HERE: Camera = { ...CAMERA, id: 'cam-here', lat: start.lat, lng: start.lng };
+    // ~55 km north: outside the 12 km working set.
+    const THERE: Camera = { ...CAMERA, id: 'cam-there', lat: start.lat + 0.5, lng: start.lng };
+    let releasePan: () => void = () => undefined;
+    const answer = fakeCameraRepository([HERE, THERE]).getInBounds;
+    const cameras = fakeCameraRepository([HERE, THERE], {
+      getInBounds: jest.fn((bounds: GeoBounds) =>
+        bounds.minLat > start.lat
+          ? new Promise<Camera[]>((resolve) => (releasePan = () => void answer(bounds).then(resolve)))
+          : answer(bounds),
+      ),
+    });
+    const { wrapper } = withStores({ ...dependencies, cameras });
+    const { result } = await renderHook(() => useLiveMapViewModel(), { wrapper });
+    await act(async () => undefined);
+    expect(result.current.visibleCameras.map((camera) => camera.id)).toEqual(['cam-here']);
+    // The working set answered the default view: one fetch, no view query.
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      result.current.onRegionChange({ latitude: THERE.lat, longitude: THERE.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+    });
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(2);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.visibleCameras.map((camera) => camera.id)).toEqual(['cam-here']);
+
+    await act(async () => releasePan());
+    expect(result.current.visibleCameras.map((camera) => camera.id)).toEqual(['cam-there']);
+  });
+
+  it('a drive whose cameras cannot be fetched starts, and tells the driver', async () => {
+    const start = { lat: 30.05, lng: 31.3 };
+    const source: LocationSource = { getCurrent: async () => start, watch: () => () => undefined };
+    const dependencies = createDependencies({
+      hazards: fakeHazards(),
+      cameras: fakeCameraRepository([], { getInBounds: jest.fn(async () => Promise.reject(new Error('database closed'))) }),
+      location: { ...createDependencies({}).location, demo: () => source },
+    });
+    const { stores, wrapper } = withStores(dependencies);
+    const { result } = await renderHook(() => useDriveModeViewModel(), { wrapper });
+    expect(result.current.cameraWarning).toBeNull();
+
+    await act(async () => result.current.start());
+    await act(async () => undefined);
+    expect(result.current.isDriving).toBe(true);
+    expect(result.current.cameraWarning).toBe(CAMERAS_UNAVAILABLE_MESSAGE);
+    expect(mockSpeak).toHaveBeenCalledWith(CAMERAS_UNAVAILABLE_MESSAGE);
+
+    await act(async () => result.current.stop());
+    stores.useCameraStore.getState().suspend();
+    expect(result.current.cameraWarning).toBeNull();
   });
 });

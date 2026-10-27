@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import type { Dependencies } from '../data/dependencies';
-import type { Camera, Hazard, HazardType } from '../domain/entities';
+import type { Hazard, HazardType } from '../domain/entities';
 
 export interface HazardState {
-  cameras: Camera[];
   hazards: Hazard[];
+  // A load has succeeded at least once (the list may still be empty).
+  hasLoaded: boolean;
   isLoading: boolean;
   error: string | null;
   load(): Promise<void>;
@@ -15,20 +16,17 @@ export interface HazardState {
   getById(id: string): Hazard | undefined;
 }
 
-export function createHazardStore(deps: Pick<Dependencies, 'cameras' | 'hazards'>) {
+export function createHazardStore(deps: Pick<Dependencies, 'hazards'>) {
   return create<HazardState>()((set, get) => ({
-    cameras: [],
     hazards: [],
+    hasLoaded: false,
     isLoading: false,
     error: null,
     load: async () => {
       set({ isLoading: true, error: null });
       try {
-        const [cameras, hazards] = await Promise.all([
-          deps.cameras.getAll(),
-          deps.hazards.getActive(),
-        ]);
-        set({ cameras, hazards, isLoading: false });
+        const hazards = await deps.hazards.getActive();
+        set({ hazards, hasLoaded: true, isLoading: false });
       } catch (err) {
         set({
           isLoading: false,

@@ -11,21 +11,21 @@ const feed = require('../../../assets/data/radars_eg.json') as RadarFeed;
 export class JsonRadarCameraRepository implements CameraRepository {
   private cache: Camera[] | null = null;
 
-  async getAll(): Promise<Camera[]> {
+  private all(): Camera[] {
     this.cache ??= parseRadarFeed(feed);
     return this.cache;
   }
 
   async getInBounds(bounds: GeoBounds): Promise<Camera[]> {
-    return (await this.getAll()).filter((camera) => isInBounds(camera, bounds));
+    return this.all().filter((camera) => isInBounds(camera, bounds));
   }
 
   async getByIds(ids: readonly string[]): Promise<Camera[]> {
     const wanted = new Set(ids);
-    return (await this.getAll()).filter((camera) => wanted.has(camera.id));
+    return this.all().filter((camera) => wanted.has(camera.id));
   }
 
   async getFirstSpeedCamera(): Promise<Camera | null> {
-    return (await this.getAll()).find(isSpeedCamera) ?? null;
+    return this.all().find(isSpeedCamera) ?? null;
   }
 }

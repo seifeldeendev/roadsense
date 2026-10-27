@@ -1,7 +1,6 @@
 import type { Camera, GeoBounds } from '../entities';
 
 export interface CameraRepository {
-  getAll(): Promise<Camera[]>;
   // Cameras inside the box (edges included), in the road database's order.
   getInBounds(bounds: GeoBounds): Promise<Camera[]>;
   // The cameras with these ids that exist, in the road database's order.

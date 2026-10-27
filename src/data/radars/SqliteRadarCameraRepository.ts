@@ -21,17 +21,9 @@ const placeholders = (count: number) => Array.from({ length: count }, () => '?')
 
 // The Egypt road database (radars, police, speed bumps) from the seeded SQLite copy.
 export class SqliteRadarCameraRepository implements CameraRepository {
-  private cache: Camera[] | null = null;
   private database: Promise<RadarDatabase> | null = null;
 
   constructor(private readonly open: () => Promise<RadarDatabase> = openRadarDatabase) {}
-
-  async getAll(): Promise<Camera[]> {
-    if (this.cache !== null) return this.cache;
-    const rows = await (await this.db()).getAllAsync<CameraRow>(`${SELECT} ${IN_ORDER}`);
-    this.cache = rows.map(toCamera);
-    return this.cache;
-  }
 
   // Served by the cameras_lat_lng index.
   async getInBounds(bounds: GeoBounds): Promise<Camera[]> {

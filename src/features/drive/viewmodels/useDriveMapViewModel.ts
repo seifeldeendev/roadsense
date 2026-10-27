@@ -1,22 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Camera, Hazard, LatLng, MapType } from '@/domain/entities';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
-import { isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/usecases/drive/fixedPoints';
+import { DRIVING_MAP_RADIUS_M } from '@/domain/usecases/cameras/cameraRadii';
+import { isMinorRegionChange, nearestPoints, pointsInView, regionCenter, viewRadiusM } from '@/domain/usecases/drive/fixedPoints';
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { splitRoute } from '@/domain/usecases/routes/splitRoute';
+import { useCamerasAround } from '@/stores/cameraHooks';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useLatest } from '@/shared/useLatest';
 
 // The road database covers all of Egypt; the map draws only nearby points.
 const MAX_MAP_POINTS = 150;
-const DRIVING_RADIUS_M = 4000;
 const MAX_IDLE_RADIUS_M = 30_000;
 const METRES_PER_DEGREE = 111_000;
 
 export type DriveMapViewModel = {
+  // The first cameras for the map are still being looked up.
+  isLoading: boolean;
   // The route split at the driver's progress (all of it ahead when not driving);
   // both empty when no route applies (a GPS drive with nothing planned).
   drivenRoute: LatLng[];
@@ -46,7 +50,6 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   const driveSource = useDriveStore((s) => s.driveSource);
   const currentLocation = useDriveStore((s) => s.currentLocation);
   const setCurrentLocation = useDriveStore((s) => s.setCurrentLocation);
-  const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
   const mapType = useSettingsStore((s) => s.mapType);
   const showTraffic = useSettingsStore((s) => s.showTraffic);
@@ -95,21 +98,27 @@ export function useDriveMapViewModel(): DriveMapViewModel {
 
   // Driving: around the vehicle. Idle: whatever the map is framing (panned viewport,
   // or the route/position the map was fitted to).
-  const visibleCameras = useMemo(() => {
-    const shown = visibleOnMap(cameras, hiddenOnMap);
-    if (isDriving && position !== null) {
-      return nearestPoints(shown, position, MAX_MAP_POINTS, DRIVING_RADIUS_M);
-    }
-    if (!isDriving && viewport !== null) {
-      return pointsInView(shown, viewport, MAX_MAP_POINTS);
-    }
-    const center = { lat: routeFrame.latitude, lng: routeFrame.longitude };
+  const shownArea = useMemo(() => {
+    if (isDriving && position !== null) return { center: position, radiusM: DRIVING_MAP_RADIUS_M, viewport: null };
+    if (!isDriving && viewport !== null) return { center: regionCenter(viewport), radiusM: viewRadiusM(viewport), viewport };
     const radiusM = Math.min(
       MAX_IDLE_RADIUS_M,
-      Math.max(DRIVING_RADIUS_M, (Math.max(routeFrame.latitudeDelta, routeFrame.longitudeDelta) * METRES_PER_DEGREE) / 2),
+      Math.max(DRIVING_MAP_RADIUS_M, (Math.max(routeFrame.latitudeDelta, routeFrame.longitudeDelta) * METRES_PER_DEGREE) / 2),
     );
-    return nearestPoints(shown, center, MAX_MAP_POINTS, radiusM);
-  }, [cameras, hiddenOnMap, isDriving, position, routeFrame, viewport]);
+    return { center: regionCenter(routeFrame), radiusM, viewport: null };
+  }, [isDriving, position, routeFrame, viewport]);
+  // The working set around the driver, or a query of a panned or route-framed view.
+  const around = useCamerasAround(shownArea.center, shownArea.radiusM);
+  const cameras = around.cameras;
+  const freshCameras = useMemo(() => {
+    if (cameras === null) return null;
+    const shown = visibleOnMap(cameras, hiddenOnMap);
+    return shownArea.viewport !== null
+      ? pointsInView(shown, shownArea.viewport, MAX_MAP_POINTS)
+      : nearestPoints(shown, shownArea.center, MAX_MAP_POINTS, shownArea.radiusM);
+  }, [cameras, hiddenOnMap, shownArea]);
+  // The markers already drawn stay until the new area's cameras arrive.
+  const visibleCameras = useLatest(freshCameras);
 
   // Re-evaluated whenever the hazard list changes (e.g. a vote expires one).
   const activeHazards = useMemo(
@@ -126,12 +135,13 @@ export function useDriveMapViewModel(): DriveMapViewModel {
   );
 
   return {
+    isLoading: visibleCameras === null && !around.failed,
     drivenRoute,
     remainingRoute,
     routeFrame,
     idleFitCoords,
     currentLocation,
-    cameras: visibleCameras,
+    cameras: visibleCameras ?? [],
     activeHazards,
     position,
     heading,
