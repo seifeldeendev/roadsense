@@ -85,7 +85,7 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 const { DEMO_TRIP, MOCK_TRIPS } = require('../src/data/mock/trips');
-const { useTripStore } = require('../src/stores/useTripStore');
+const { useTripStore } = require('../src/composition/stores');
 
 function clockHHMM(ms: number): string {
   const date = new Date(ms);
@@ -108,7 +108,7 @@ async function advanceVirtualTime(count = 30, stepMs = 200): Promise<void> {
 let renderResult: RenderRouterResult;
 
 beforeAll(async () => {
-  require('../src/stores/useSessionStore').useSessionStore.setState({
+  require('../src/composition/stores').useSessionStore.setState({
     user: { id: 'demo', name: 'Demo', email: 'demo@roadsense.app' },
     hasCompletedOnboarding: true,
     hasHydrated: true,
