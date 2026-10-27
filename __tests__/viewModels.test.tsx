@@ -2,8 +2,9 @@ import { act, renderHook } from '@testing-library/react-native';
 import { describe, expect, it, jest } from '@jest/globals';
 import { useEffect, type ReactNode } from 'react';
 import type { Camera, Hazard, Trip } from '@/domain/entities';
-import type { CameraRepository, HazardRepository, TripRepository } from '@/domain/repositories';
+import type { CameraRepository, Geocoder, HazardRepository, TripRepository } from '@/domain/repositories';
 import { createDependencies, type Dependencies } from '@/data/dependencies';
+import { usePlaceSearch } from '@/features/drive/viewmodels/plannerHooks';
 import { useReportDetailsViewModel } from '@/features/map/viewmodels/useReportDetailsViewModel';
 import { useRoutePreviewViewModel } from '@/features/map/viewmodels/useRoutePreviewViewModel';
 import { useStatsReplayViewModel } from '@/features/trips/viewmodels/useStatsReplayViewModel';
@@ -143,5 +144,26 @@ describe('view models read their stores through the provider', () => {
     expect(hazards.vote).toHaveBeenCalledWith(HAZARD.id, true);
     expect(result.current.hasVoted).toBe(true);
     expect(result.current.confirmations).toBe(3);
+  });
+});
+
+describe('the planner searches through the injected geocoder', () => {
+  it('debounces typing and returns the geocoder results', async () => {
+    jest.useFakeTimers();
+    const place = { id: 'geo-1', name: 'Cairo Tower', area: 'Zamalek', lat: 30.0459, lng: 31.2243 };
+    const geocoder: Geocoder = {
+      search: jest.fn(async () => [place]),
+      describe: jest.fn(async () => null),
+    };
+    const { result } = await renderHook(() => usePlaceSearch('Cairo Tow'), {
+      wrapper: wrapperFor(createDependencies({ geocoder })),
+    });
+    expect(geocoder.search).not.toHaveBeenCalled();
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+    expect(geocoder.search).toHaveBeenCalledWith('Cairo Tow');
+    expect(result.current).toEqual([place]);
+    jest.useRealTimers();
   });
 });

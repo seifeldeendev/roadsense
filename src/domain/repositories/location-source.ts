@@ -21,6 +21,10 @@ export type DemoPlayback =
 export interface LocationSources {
   // The recorded demo drive path, also the start point when there is no fix.
   demoRoute: LatLng[];
+  // Asks for foreground location access; false when refused or unavailable.
+  requestPermission(): Promise<boolean>;
+  // One fix of the phone's position; null when unavailable or not permitted.
+  currentPosition(): Promise<LatLng | null>;
   device(limitFor: (position: LatLng) => number): LocationSource;
   demo(playback: DemoPlayback, limitFor: (position: LatLng) => number): LocationSource;
 }

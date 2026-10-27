@@ -6,10 +6,8 @@ import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { nearestRouteIndex } from '@/domain/usecases/drive/nearestRouteIndex';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { splitRoute } from '@/domain/usecases/routes/splitRoute';
-// eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
-import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useStores } from '@/stores/DependenciesProvider';
+import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 // The road database covers all of Egypt; the map draws only nearby points.
@@ -41,6 +39,7 @@ export type DriveMapViewModel = {
 
 export function useDriveMapViewModel(): DriveMapViewModel {
   const { useHazardStore, useNavigationStore } = useStores();
+  const { location } = useDependencies();
   const isDriving = useDriveStore((s) => s.isDriving);
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);
@@ -60,14 +59,14 @@ export function useDriveMapViewModel(): DriveMapViewModel {
     if (locationSource !== 'gps' || currentLocation !== null) return;
     let cancelled = false;
     void (async () => {
-      if (!(await requestLocationPermission())) return;
-      const location = await getCurrentLocation();
-      if (!cancelled && location !== null) setCurrentLocation(location);
+      if (!(await location.requestPermission())) return;
+      const fix = await location.currentPosition();
+      if (!cancelled && fix !== null) setCurrentLocation(fix);
     })();
     return () => {
       cancelled = true;
     };
-  }, [locationSource, currentLocation, setCurrentLocation]);
+  }, [locationSource, currentLocation, setCurrentLocation, location]);
 
   // The demo route, a trip queued from Stats & Replay, or a route from the planner.
   const driveRoute = useNavigationStore((s) => s.driveRoute);

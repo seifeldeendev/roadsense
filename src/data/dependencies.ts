@@ -1,6 +1,7 @@
 import type {
   AuthRepository,
   CameraRepository,
+  Geocoder,
   HazardRepository,
   LocationSources,
   RouteRepository,
@@ -13,6 +14,8 @@ import { MockHazardRepository, MockSettingsRepository, MockTripRepository } from
 import { MockRouteRepository } from './mock/routes';
 import { OsrmRouteRepository } from './osrm/OsrmRouteRepository';
 import { RadarCameraRepository } from './radars';
+import { describePlace, searchPlaces } from '../services/geocoding';
+import { getCurrentLocation, requestLocationPermission } from '../services/gps';
 
 // Everything the stores and viewmodels need from the outside world, as interfaces.
 export type Dependencies = {
@@ -23,6 +26,7 @@ export type Dependencies = {
   settings: SettingsRepository;
   routes: RouteRepository;
   location: LocationSources;
+  geocoder: Geocoder;
 };
 
 // The production wiring; tests pass fakes for the parts they exercise.
@@ -36,9 +40,12 @@ export function createDependencies(overrides: Partial<Dependencies> = {}): Depen
     routes: overrides.routes ?? new OsrmRouteRepository(new MockRouteRepository()),
     location: overrides.location ?? {
       demoRoute: DEMO_ROUTE,
+      requestPermission: requestLocationPermission,
+      currentPosition: getCurrentLocation,
       device: (limitFor) => new ExpoLocationSource(limitFor),
       demo: (playback, limitFor) => createDemoLocationSource(playback, limitFor),
     },
+    geocoder: overrides.geocoder ?? { search: searchPlaces, describe: describePlace },
   };
 }
 

@@ -54,6 +54,8 @@ test('Drive Mode plays the location source it is given', async () => {
   const playbacks: DemoPlayback[] = [];
   const location: LocationSources = {
     demoRoute: [{ lat: 30.05, lng: 31.3 }],
+    requestPermission: async () => true,
+    currentPosition: async () => null,
     device: () => source,
     demo: (playback: DemoPlayback, _limitFor: (position: LatLng) => number) => {
       playbacks.push(playback);

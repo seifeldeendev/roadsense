@@ -254,3 +254,9 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Behaviour fix (in scope):** route-preview hazards, trip-details pins and the three trip-screen loads lacked the "not already loading" guard, so a screen mounting while another screen's load was in flight started a second fetch. Each now also skips while loading; each screen's data-needed condition is unchanged. A test per site starts a load, mounts the screen, and expects one fetch; with the five guards reverted, five tests fail.
 **Correction:** my item-3 list of unguarded loads missed a sixth with the same drift, the trip planner's destinations (`useTripPlannerViewModel`). It was not in this item's scope and is left as known debt.
 **Verification:** tsc, lint, jest 172/172 (35 suites). _Seif: fill in your notes._
+
+### AI-044 · 2026-10-27 · Seif · gps and geocoding behind Dependencies · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, item heading):** "### C. gps-di (one commit)"
+**Output:** the domain's `LocationSources` gains `requestPermission()` and `currentPosition()`, and a new `Geocoder` interface (`search`, `describe`) joins `Dependencies`. `createDependencies` wires them to the existing `services/gps` and `services/geocoding` functions, which stay in the infrastructure layer. The Drive map, Drive mode and trip planner view models and the planner's search / pin-label hooks read them through `useDependencies()`; haptics, speech and imagePicker stay direct, as agreed. No behaviour change: the injected objects are stable, so no effect runs more often than before.
+**Debt:** the 4 `gps-di` disables are removed; 2 remain (`auth-gate`).
+**Verification:** tsc, lint, jest 173/173, including a test that the planner's search is debounced and served by an injected geocoder. _Seif: fill in your notes._

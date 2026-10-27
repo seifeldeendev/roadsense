@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HazardType, LocationSourceKind, UpcomingAlert } from '@/domain/entities';
 import { getSpeedStatus, type SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
 import type { Unsubscribe } from '@/domain/repositories';
-// eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
-import { requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -66,7 +64,7 @@ export function useDriveModeViewModel(): DriveModeViewModel {
     void (async () => {
       // A queued trip replay always plays through the demo source.
       let kind: LocationSourceKind = locationSource === 'gps' && !hasQueuedReplay ? 'gps' : 'demo';
-      if (kind === 'gps' && !(await requestLocationPermission())) {
+      if (kind === 'gps' && !(await location.requestPermission())) {
         kind = 'demo';
         showFeedback('Location is off — playing the demo drive instead');
       }
