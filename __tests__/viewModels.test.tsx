@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { useEffect, type ReactNode } from 'react';
 import type { Camera, GeoBounds, Hazard, Trip } from '@/domain/entities';
 import type { CameraRepository, Geocoder, HazardRepository, LocationSource, TripRepository } from '@/domain/repositories';
@@ -76,6 +76,13 @@ const fakeHazards = (): HazardRepository => ({
   getActive: jest.fn(async () => [HAZARD]),
   report: jest.fn(async () => HAZARD),
   vote: jest.fn(async (id: string, stillThere: boolean) => ({ ...HAZARD, id, confirmations: HAZARD.confirmations + (stillThere ? 1 : 0) })),
+});
+
+// A test that fails while on fake timers must not leave them (or their
+// pending callbacks) to the tests after it.
+afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
 });
 
 const wrapperFor = (dependencies: Dependencies) =>
@@ -175,7 +182,6 @@ describe('the planner searches through the injected geocoder', () => {
     });
     expect(geocoder.search).toHaveBeenCalledWith('Cairo Tow');
     expect(result.current).toEqual([place]);
-    jest.useRealTimers();
   });
 });
 

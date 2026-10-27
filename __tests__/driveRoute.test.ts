@@ -1,4 +1,4 @@
-import { beforeEach, expect, jest, test } from '@jest/globals';
+import { afterEach, beforeEach, expect, jest, test } from '@jest/globals';
 import type { LocationSource } from '@/domain/repositories';
 import { createDemoLocationSource, DEMO_ROUTE } from '@/data/location';
 import { MOCK_TRIPS } from '@/data/mock/trips';
@@ -13,6 +13,12 @@ const nav = () => useNavigationStore.getState();
 
 beforeEach(() => {
   nav().reset();
+});
+
+// A test that fails on fake timers must not leave them to the tests after it.
+afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
 });
 
 test('a queued replay is published to the drive map and the demo returns afterwards', () => {
@@ -67,7 +73,6 @@ test('a demo drive follows the planned route, and a replay replaces the plan', (
   expect(firstPoint(createDemoLocationSource(nav().takeDemoPlayback()))).toMatchObject({
     lat: MOCK_TRIPS[1].points[0].lat,
   });
-  jest.useRealTimers();
 });
 
 test('reset clears queued and planned routes', () => {

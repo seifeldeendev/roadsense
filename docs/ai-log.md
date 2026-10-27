@@ -361,3 +361,27 @@ With the hook's `suspend()` call removed, the first test fails.
 - **Break-and-revert, all caught:** no query timeout (3 failures); pending counted as covered (1); readings never stale (1); frozen speed shown (3); Expo `errorHandler` dropped (1, after the new test; it survived before it); Expo start failure dropped (1); no overall `prepareDrive` deadline (1).
 
 **Verification:** tsc, lint, jest 208/208 (38 suites, exits without `--forceExit`). _Seif: fill in your notes._
+
+### AI-052 · 2026-10-27 · Seif · fix round 2: tests that could not fail, and a working set that cannot be misread (audit F17, F18, F11) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, round heading):** "## Round 2 — tests that cannot fail"
+**F17.**
+- **Fix.** The OSRM error-status case now answers 503 with a body holding a usable route, the same body the success case accepts, so only the status check can make it fall back. It asserts the exact fallback route.
+- **Proof.** With `if (!response.ok) throw` deleted, exactly that test fails (1 of 8), where before all 8 passed.
+
+**F18.**
+- **Original leak.** The driver-warning test that could hang moved to `__tests__/driverWarnings.test.tsx` in round 1. That file runs on fake timers and clears them in `afterEach`.
+- **Same leak elsewhere.** Auditing the other tests found the pattern in three more places: `viewModels.test.tsx` (planner debounce), `driveRoute.test.ts` (demo playback) and `locationSources.test.ts` (demo watch). Each switched to fake timers mid-test and back at its end, so a failed assertion left fake timers on for every later test in the file. All three now restore and clear in `afterEach`. `stores.test.ts` already restored real timers in `afterEach`, and now also clears pending ones.
+- **Proof.** With the driver warning removed, the full suite without `--forceExit` fails 7 tests in 1 suite and exits (code 1) in 13 s instead of hanging.
+
+**F11, by type.**
+- **Private list.** `WorkingSet` is now a class with its camera list private, and there are two ways in:
+  - `forConsumer(consumer, at)` takes a key of `WORKING_SET_CONSUMER_RADII_M` and returns only the cameras within that consumer's registered radius. An unregistered name doesn't compile, and if it is cast past the type it throws rather than reading nothing.
+  - `inArea(centre, radius)` is for map views of any size. It returns null unless the set covers the whole circle; the maps then query the area, as before.
+- **No behaviour change.** The drive reads are `spokenAlerts` (≤ 800 m, filtered again by the alert-distance setting), `roadMatch` (600 m, the speed limit) and `activeAlerts` (2 km), each within the radius its code already used. A set that is off-centre still alerts on what it holds; the banner (AI-051) owns coverage.
+- **Proof.** Typecheck-time `@ts-expect-error` lines cover an unregistered consumer and a direct read of the list.
+  - Making the list public fails `tsc` (`Unused '@ts-expect-error'`).
+  - `forConsumer` ignoring its radius fails 1 test.
+  - `inArea` never returning null fails 1 test.
+
+**Re-sampling of the round 1 and 2 tests:** every mutation listed in AI-051 and above was caught; none passed against broken code.
+**Verification:** tsc, lint, jest 211/211 (38 suites, exits without `--forceExit`). _Seif: fill in your notes._

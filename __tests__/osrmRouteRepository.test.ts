@@ -59,10 +59,14 @@ describe('OsrmRouteRepository', () => {
     expect(backup.getRoute).toHaveBeenCalledWith(DESTINATION, FROM);
   });
 
-  it('falls back when the server answers with an error status', async () => {
-    respondWith({}, { ok: false, status: 503 });
+  it('falls back when the server answers with an error status, even with a usable route in the body', async () => {
+    // The body alone would be accepted (see the success case): only the status can reject it.
+    respondWith(
+      { code: 'Ok', routes: [{ distance: 1234.6, duration: 98.4, geometry: { coordinates: [[31.5, 30.2], [31.6, 30.3]] } }] },
+      { ok: false, status: 503 },
+    );
     const route = await new OsrmRouteRepository(fallback()).getRoute(DESTINATION, FROM);
-    expect(route.estimated).toBe(true);
+    expect(route).toEqual({ ...FALLBACK_ROUTE, estimated: true });
   });
 
   it.each([

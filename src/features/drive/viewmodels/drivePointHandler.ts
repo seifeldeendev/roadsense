@@ -32,7 +32,7 @@ export function currentDrivePosition(drive: Readable<DriveState>): { position: L
 
 // The speed limit at a position, from the working set at that moment.
 export function createSpeedLimitLookup(cameras: Readable<CameraState>): (position: LatLng) => number {
-  return (position) => nearestSpeedLimit(position, cameras.getState().workingSet?.cameras ?? []);
+  return (position) => nearestSpeedLimit(position, cameras.getState().workingSet?.forConsumer('roadMatch', position) ?? []);
 }
 
 // A simulated drive along a planned route works out every limit up front, so
@@ -70,7 +70,7 @@ export function createDrivePointHandler(stores: DriveStores, onNextAlert: (alert
     // Each reading moves the working set along with the car.
     const cameraState = stores.cameras.getState();
     cameraState.follow({ lat: point.lat, lng: point.lng });
-    const cameras = cameraState.workingSet?.cameras ?? [];
+    const cameras = cameraState.workingSet?.forConsumer('spokenAlerts', point) ?? [];
     const { hazards } = stores.hazards.getState();
     const nearest = findUpcomingAlerts(point, point.heading, cameras, hazards, settings)[0] ?? null;
     onNextAlert(nearest);

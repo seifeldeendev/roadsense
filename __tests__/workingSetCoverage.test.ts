@@ -3,7 +3,7 @@ import type { LatLng } from '@/domain/entities';
 import { JsonRadarCameraRepository } from '@/data/radars/JsonRadarCameraRepository';
 import { parseRadarFeed, type RadarFeed } from '@/data/radars/parseRadarFeed';
 import { WORKING_SET_CONSUMER_RADII_M } from '@/domain/usecases/cameras/cameraRadii';
-import { REFETCH_DISTANCE_M, WORKING_SET_RADIUS_M } from '@/domain/usecases/cameras/workingSet';
+import { REFETCH_DISTANCE_M, WORKING_SET_RADIUS_M, WorkingSet } from '@/domain/usecases/cameras/workingSet';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { nearestSpeedLimit } from '@/domain/usecases/drive/nearestRoadName';
 import { createRouteSpeedLimitLookup } from '@/features/drive/viewmodels/drivePointHandler';
@@ -84,5 +84,32 @@ describe('a simulated drive on a planned route', () => {
       () => 42,
     );
     expect(limitFor({ lat: 30, lng: 31 })).toBe(42);
+  });
+});
+
+describe('the working set can only be read with a radius it was sized for (F11)', () => {
+  const centre = { lat: 30, lng: 31 };
+  const at = (km: number) => ({ lat: centre.lat + km / 111, lng: centre.lng });
+  const camera = (id: string, km: number) => ({ ...at(km), id, heading: null, speedLimitKmh: 60, roadName: 'R', type: 'fixed' as const });
+  const set = new WorkingSet(centre, [camera('near', 0.5), camera('mid', 1.5), camera('far', 9)]);
+
+  it('a registered consumer gets only the cameras within its own registered radius', () => {
+    expect(set.forConsumer('roadMatch', centre).map((c) => c.id)).toEqual(['near']);
+    expect(set.forConsumer('activeAlerts', centre).map((c) => c.id)).toEqual(['near', 'mid']);
+    expect(set.forConsumer('liveMap', centre).map((c) => c.id)).toEqual(['near', 'mid', 'far']);
+  });
+
+  it('an area reader gets null, not a partial list, outside what the set covers', () => {
+    expect(set.inArea(centre, 10_000)).not.toBeNull();
+    expect(set.inArea(at(3), 10_000)).toBeNull();
+    expect(set.inArea(centre, 12_001)).toBeNull();
+  });
+
+  it('does not compile for an unregistered consumer or a direct read of the list', () => {
+    // These lines are the test: tsc fails if either ever compiles.
+    // @ts-expect-error an unregistered consumer has no radius the set was sized for
+    expect(() => set.forConsumer('newScreen', centre)).toThrow();
+    // @ts-expect-error the list is private: no reader can pick its own radius
+    expect(set.cameras).toHaveLength(3);
   });
 });
