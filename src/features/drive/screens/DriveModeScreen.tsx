@@ -1,6 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AppButton, ErrorState, LoadingState, Screen } from '@/components/ui';
-import { colors, hazardMeta, spacing, typography } from '@/theme/tokens';
+import { StyleSheet, View } from 'react-native';
+import {
+  AppButton,
+  AppText,
+  ErrorState,
+  IconButton,
+  LoadingState,
+  Screen,
+  SectionHeader,
+} from '@/components/ui';
+import { hazardMeta, spacing } from '@/theme/tokens';
 import { DriveStatusPanel } from '../components/DriveStatusPanel';
 import { NextAlertCard } from '../components/NextAlertCard';
 import { ReportBanner } from '../components/ReportBanner';
@@ -27,18 +35,20 @@ export default function DriveModeScreen() {
   }
 
   return (
-    <Screen>
+    <Screen scroll>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Drive</Text>
-          <Pressable
-            accessibilityRole="button"
+          <View style={styles.headerText}>
+            <AppText variant="displayXl">Drive</AppText>
+            <AppText variant="bodyMd" color="body" numberOfLines={1}>
+              {vm.isDriving ? `Live · ${vm.statusLabel}` : 'Salah Salem demo route'}
+            </AppText>
+          </View>
+          <IconButton
+            icon="cog-outline"
             accessibilityLabel="Alert settings"
             onPress={vm.openSettings}
-            style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
-          >
-            <Text style={styles.settingsIcon}>⚙</Text>
-          </Pressable>
+          />
         </View>
 
         <DriveStatusPanel
@@ -52,24 +62,28 @@ export default function DriveModeScreen() {
 
         <NextAlertCard alert={vm.nextAlert} />
 
-        <View style={styles.grid}>
-          {vm.reportTypes.map((type) => (
-            <ReportButton
-              key={type}
-              icon={hazardMeta[type].icon}
-              label={hazardMeta[type].label}
-              color={hazardMeta[type].color}
-              onPress={() => vm.onReport(type)}
-            />
-          ))}
+        <View style={styles.reportSection}>
+          <SectionHeader
+            title="Report a hazard"
+            subtitle="One tap — location and time are added for you"
+          />
+          <View style={styles.grid}>
+            {vm.reportTypes.map((type) => (
+              <ReportButton
+                key={type}
+                icon={hazardMeta[type].icon}
+                label={hazardMeta[type].label}
+                onPress={() => vm.onReport(type)}
+              />
+            ))}
+          </View>
         </View>
 
         <ReportBanner message={vm.feedback} />
 
         <AppButton
           title={vm.isDriving ? 'Stop drive' : 'Start drive'}
-          size="lg"
-          variant={vm.isDriving ? 'danger' : 'primary'}
+          variant={vm.isDriving ? 'secondary' : 'large'}
           onPress={vm.isDriving ? vm.stop : vm.start}
           accessibilityLabel={vm.isDriving ? 'Stop drive' : 'Start drive'}
         />
@@ -80,38 +94,24 @@ export default function DriveModeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+    gap: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.md,
   },
-  title: {
-    fontSize: typography.size.title,
-    fontWeight: '700',
-    color: colors.text,
+  headerText: {
+    flex: 1,
+    gap: spacing.xxs,
   },
-  settingsButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
-  },
-  settingsIcon: {
-    fontSize: 24,
-    color: colors.muted,
-  },
-  pressed: {
-    opacity: 0.7,
+  reportSection: {
+    gap: spacing.sm,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
 });

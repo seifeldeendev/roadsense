@@ -1,14 +1,15 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, touch, typography } from '@/theme/tokens';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui';
+import { colors, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
 
 type ReportButtonProps = {
-  icon: string;
+  icon: HazardIconName;
   label: string;
-  color: string;
   onPress: () => void;
 };
 
-export function ReportButton({ icon, label, color, onPress }: ReportButtonProps) {
+export function ReportButton({ icon, label, onPress }: ReportButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -16,10 +17,12 @@ export function ReportButton({ icon, label, color, onPress }: ReportButtonProps)
       onPress={onPress}
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
     >
-      <View style={[styles.iconWrap, { borderColor: color }]}>
-        <Text style={styles.icon}>{icon}</Text>
+      <View style={styles.iconWrap}>
+        <MaterialCommunityIcons name={icon} size={20} color={colors.ink} />
       </View>
-      <Text style={styles.label}>{label}</Text>
+      <AppText variant="bodyMdStrong" style={styles.label}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
@@ -29,32 +32,25 @@ const styles = StyleSheet.create({
     flexBasis: '46%',
     flexGrow: 1,
     minHeight: touch.large,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderRadius: rounded.xl,
+    backgroundColor: colors.canvasSoft,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
   },
   pressed: {
-    opacity: 0.7,
+    backgroundColor: colors.surfacePressed,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    borderWidth: 2,
+    width: spacing.xxxl,
+    height: spacing.xxxl,
+    borderRadius: rounded.full,
+    backgroundColor: colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  icon: {
-    fontSize: 18,
-  },
   label: {
-    fontSize: typography.size.caption,
-    fontWeight: '700',
-    color: colors.text,
+    color: colors.ink,
   },
 });

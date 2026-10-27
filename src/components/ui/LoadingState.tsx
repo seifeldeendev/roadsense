@@ -1,5 +1,6 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { colors, spacing } from '@/theme/tokens';
+import { AppText } from './AppText';
 
 type LoadingStateProps = {
   label?: string;
@@ -8,8 +9,12 @@ type LoadingStateProps = {
 export function LoadingState({ label }: LoadingStateProps) {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      {label !== undefined && <Text style={styles.label}>{label}</Text>}
+      <ActivityIndicator size="large" color={colors.ink} />
+      {label !== undefined && (
+        <AppText variant="bodyMd" color="body" style={styles.centered}>
+          {label}
+        </AppText>
+      )}
     </View>
   );
 }
@@ -22,9 +27,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.lg,
   },
-  label: {
-    fontSize: typography.size.body,
-    color: colors.muted,
+  centered: {
     textAlign: 'center',
   },
 });

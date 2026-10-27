@@ -28,3 +28,16 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Output:** 3 screens, 3 ViewModel hooks + helpers, 8 feature components in `src/features/drive/`.
 **My changes & verification:** Re-ran tsc, jest (16/16), lint and an Android bundle export; checked screens/components import no stores, services or data. Fixed two bugs: (1) a new alert while the overlay was open pushed a second stacked `/alert` modal — now the open overlay just updates; (2) the "target behind you" auto-dismiss ran while not driving, so "Preview alert" could close instantly after a stopped drive — now only checked while driving. _Seif: add your own review notes and on-device test results._
 **Rationale:** _Seif: fill in._
+
+### AI-005 · 2026-10-24 · Seif · design system (tokens, fonts, ui primitives, navigation) · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-005-design-system.txt` (applies `DESIGN.md`)
+**Output:** tokens rewritten to DESIGN.md (black/white/grayscale, Inter type scale, 4-px spacing, pill/xl radii, elevation levels), Inter fonts loaded behind the splash screen, light header/tab bar with vector icons, all ui primitives restyled, new `AppText` and `IconButton`; callers migrated.
+**Design decision:** DESIGN.md forbids accent colours, but FR1 requires amber/red speed status — kept two semantic colours (`status.near`, `status.over`) used only for speed status.
+**My changes & verification:** Re-ran tsc, jest (16/16), lint; grepped `src/` for hex literals, `fontWeight`, letter-spacing and upper-casing outside tokens — none. Reviewed tokens against DESIGN.md tables. _Seif: add your notes._
+**Rationale:** _Seif: fill in._
+
+### AI-006 · 2026-10-24 · Seif · features/drive redesign to DESIGN.md · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-006-drive-redesign.txt`
+**Output:** Drive Mode (speed card with level-2 shadow, black next-alert band, monochrome report tiles, one black CTA), Alert Overlay (modal card, pill vote buttons), Alert Settings (tab-toggle segmented controls, faq-row toggles, validation note); ViewModels unchanged.
+**My changes & verification:** Re-ran tsc, jest, lint, Android export; grepped screens/components for hex, font props, letter-spacing and store/service/data imports — none. Replaced a duplicated `SpeedStatus` union with a type re-export from the domain so it can't drift. _Seif: add on-device review notes._
+**Rationale:** _Seif: fill in._

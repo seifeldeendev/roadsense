@@ -1,0 +1,49 @@
+<task>
+Project: RoadSense, React Native + Expo SDK 58 + TypeScript strict + Expo Router, `@/*` -> `./src/*`. The design system was just rebuilt to match DESIGN.md (repo root — READ IT IN FULL FIRST): see src/theme/tokens.ts (colors, spacing, rounded, elevation, typography, touch, hazardMeta with MaterialCommunityIcons names) and src/components/ui (AppText, AppButton variants primary/secondary/subtle/floating/large, Card variants content/elevated/soft/dark/form, Chip, Badge, IconButton, SectionHeader, ToggleRow, SegmentedControl, Screen, EmptyState, ErrorState, LoadingState).
+
+Approved deviation: only `colors.status.near` (amber) and `colors.status.over` (red) may add colour, and only for speed status. Everything else black / white / grayscale.
+
+Task: a visual redesign of the three Drive feature screens and their components in src/features/drive/ so they follow DESIGN.md. Keep ALL behaviour, ViewModel APIs and accessibility labels exactly as they are (the ViewModels in src/features/drive/viewmodels are correct — only touch them if a purely presentational value must move; prefer not to). Screens render only what ViewModels return (MVVM rule: screens/components must not import stores, services, data or use-case functions).
+
+Apply these DESIGN.md patterns:
+
+1. DriveModeScreen (scrollable Screen, canvas white):
+   - Top row: sentence-case headline "Drive" in displayXl + bodyMd subline in `body` colour ("Salah Salem demo route" when idle / "Live · within limit" style status when driving); IconButton (cog / 'cog-outline') on the right for Alert settings.
+   - Speed hero as a `request-form-card`-style Card (variant form: rounded.xl, padding lg, level2 shadow): SpeedGauge centred — big speed number in displayXxl (52/64), "km/h" in bodySm body colour, circular ring (thick border) in status colour (ok = ink, near = status.near, over = status.over); LimitBadge beside or under it: white circle, thick ink border (status.over border when over), limit number in displayMd. Status line under it in bodyMdStrong coloured by status.
+   - Next alert as a polarity-flipped black band: Card variant 'dark' (promo-card-on-dark, rounded.xl, padding 2xl): white circular icon container with hazardMeta MaterialCommunityIcons icon in ink, title in displaySm onDark, distance + road in bodyMd onDark/mute; when no alert: "No alerts ahead" with mute subline. This is the one dark band on the page.
+   - Report section: SectionHeader "Report a hazard" + subtitle "One tap — location and time are added for you"; a 2x2 grid of category-button style tiles (canvasSoft, rounded.xl, min height touch.large, icon in a white circular container + bodyMdStrong label), pressed -> surfacePressed. Monochrome only.
+   - Feedback banner as ex-toast: ink pill/rounded.xl surface with onDark bodyMdStrong text and level3 shadow, appearing above the bottom CTA.
+   - Bottom CTA: the ONE black conversion button on the screen: AppButton variant 'large' full width — "Start drive" / "Stop drive" (Stop uses variant 'secondary' white pill with hairline border so there is still only one black CTA... use your judgement but keep exactly one black primary button visible).
+   - Idle state: soft Card (canvasSoft) with circular icon 'steering', displaySm "Ready when you are", bodyMd explanation.
+   - Loading / error: LoadingState / ErrorState from ui.
+
+2. AlertOverlayScreen (transparentModal): backdrop colors.backdrop; bottom sheet = ex-modal-card: canvas white, rounded.xl top corners (or fully rounded with lg side margin), padding 2xl, level2 shadow. Top row: circular icon container (canvasSoft, ink icon) + IconButton 'close' (accessibilityLabel "Dismiss alert" preserved). Eyebrow-free sentence-case title in displayLg, live distance in displayXxl ink with road name in bodyMd body colour. Camera: LimitBadge. Hazard: soft Card "Still there?" in displaySm + reported line in bodySm body colour + two pills side by side: "Yes, still there" (primary black pill) and "No, it's gone" (secondary white pill); after voting a Badge/inline "Thanks — vote recorded" with check icon. Empty state: EmptyState + Back secondary pill.
+
+3. AlertSettingsScreen (scrollable): headline "Alert settings" displayXl is already in the native header — so start with a bodyMd intro line in body colour. Sections separated by spacing 3xl, each with SectionHeader (displaySm): "Alert distance" (SegmentedControl tab-toggle), "Alert types" (ToggleRow faq-row list with hairline dividers and circular icons from hazardMeta), "Sound and voice" (ToggleRows), "Amber warning" (SegmentedControl + bodySm helper). Validation message ("Keep at least one alert type on") as bodySmStrong in ink inside a canvasSoft rounded.md row with 'alert-circle-outline' icon. Actions at the bottom stacked with gap md: "Preview alert" (primary black pill — the one black CTA), "Test voice" (subtle pill; disabled state + helper text when voice is off), "Reset to defaults" (secondary white pill).
+
+General: use AppText/typography tokens only (no raw fontSize/fontWeight/fontFamily, no hex literals outside tokens.ts), spacing/rounded tokens only, pill shape on every interactive element except the documented exceptions (large CTA rounded.xl, segmented control pillTab, report tiles as cards are fine at rounded.xl), sentence case everywhere, no letterSpacing, no all-caps. Touch targets >= touch.min (report tiles >= touch.large). Must fit a 360 dp wide phone with 16 px gutters. Files under ~150 lines; split components if needed.
+
+Leave untouched: everything outside src/features/drive/. If something outside must change, don't — describe it in the report.
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+  grep src/features/drive for hex colour literals, fontWeight, fontSize, fontFamily, letterSpacing, and imports of @/stores, @/services, @/data or use-case functions inside screens/ or components/ — must find none.
+Then `git status --porcelain` must show changes only under src/features/drive/.
+</verification_loop>
+
+<action_safety>
+Scoped to this task. Do NOT git add or git commit; the orchestrator commits after review. No `any`/`as any`. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Per screen: which DESIGN.md components/tokens each part now uses
+  2. Files created/modified
+  3. Gate outcomes (tsc, jest, lint, export, greps)
+  4. Deviations from DESIGN.md and why; anything you'd change outside src/features/drive
+</structured_output_contract>

@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { AppButton } from '@/components/ui';
+import { StyleSheet, View } from 'react-native';
+import { AppButton, Card, AppText } from '@/components/ui';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '@/theme/tokens';
 
 type StillThereSectionProps = {
@@ -10,49 +11,46 @@ type StillThereSectionProps = {
 
 export function StillThereSection({ hasVoted, reportedLine, onVote }: StillThereSectionProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.question}>Still there?</Text>
-      <View style={styles.row}>
-        <View style={styles.half}>
-          <AppButton
-            title="Yes"
-            variant="primary"
-            onPress={() => onVote(true)}
-            disabled={hasVoted}
-            accessibilityLabel="Confirm hazard is still there"
-          />
-        </View>
-        <View style={styles.half}>
-          <AppButton
-            title="No"
-            variant="secondary"
-            onPress={() => onVote(false)}
-            disabled={hasVoted}
-            accessibilityLabel="Hazard is no longer there"
-          />
-        </View>
-      </View>
+    <Card variant="soft">
+      <AppText variant="displaySm" style={styles.centered}>
+        Still there?
+      </AppText>
       {hasVoted ? (
-        <Text style={styles.thanks}>Thanks — vote recorded</Text>
+        <View style={styles.thanks}>
+          <MaterialCommunityIcons name="check" size={16} color={colors.ink} />
+          <AppText variant="bodySmStrong">Thanks — vote recorded</AppText>
+        </View>
       ) : (
-        <Text style={styles.meta}>{reportedLine}</Text>
+        <View style={styles.stack}>
+          <View style={styles.row}>
+            <View style={styles.half}>
+              <AppButton
+                title="Yes, still there"
+                onPress={() => onVote(true)}
+                accessibilityLabel="Confirm hazard is still there"
+              />
+            </View>
+            <View style={styles.half}>
+              <AppButton
+                title="No, it's gone"
+                variant="secondary"
+                onPress={() => onVote(false)}
+                accessibilityLabel="Hazard is no longer there"
+              />
+            </View>
+          </View>
+          <AppText variant="bodySm" color="body" style={styles.centered}>
+            {reportedLine}
+          </AppText>
+        </View>
       )}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  stack: {
     gap: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-  },
-  question: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',
@@ -62,15 +60,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   thanks: {
-    fontSize: 12,
-    color: colors.ok,
-    textAlign: 'center',
-    fontWeight: '600',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
   },
-  meta: {
-    fontSize: 12,
-    color: colors.muted,
+  centered: {
     textAlign: 'center',
-    lineHeight: spacing.md,
   },
 });

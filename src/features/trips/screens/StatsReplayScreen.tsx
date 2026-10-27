@@ -4,8 +4,8 @@ export default function StatsReplayScreen() {
   return (
     <Screen scroll>
       <EmptyState
-        icon="📊"
-        title="Stats & replay"
+        icon="chart-bar"
+        title="Stats and replay"
         message="Coming soon"
       />
     </Screen>
