@@ -17,7 +17,6 @@ import { useLatest } from '@/shared/useLatest';
 import { useCamerasAround } from '@/stores/cameraHooks';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import {
   hazardMeta,
   type HazardIconName,
@@ -78,7 +77,7 @@ function toKindKeys(kinds: ReadonlySet<MapFilterKey>): HazardKind[] {
 }
 
 export function useLiveMapViewModel(): LiveMapViewModel {
-  const { useHazardStore, useNavigationStore } = useStores();
+  const { useHazardStore, useNavigationStore, useSettingsStore } = useStores();
   const hazards = useHazardStore((s) => s.hazards);
   const hazardsLoading = useHazardStore((s) => s.isLoading);
   const error = useHazardStore((s) => s.error);

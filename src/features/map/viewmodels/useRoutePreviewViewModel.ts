@@ -10,7 +10,6 @@ import { formatDistance, formatDuration } from '@/shared/format';
 import { useAsyncResult } from '@/shared/useAsyncResult';
 import { useStores } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 
 const SUGGESTION_LIMIT = 5;
 const START_MARKER_MIN_POINTS = 2;
@@ -37,7 +36,7 @@ export type RoutePreviewViewModel = {
 };
 
 export function useRoutePreviewViewModel(): RoutePreviewViewModel {
-  const { useCameraStore, useHazardStore, useNavigationStore, useRouteStore } = useStores();
+  const { useCameraStore, useHazardStore, useNavigationStore, useRouteStore, useSettingsStore } = useStores();
   const findInBounds = useCameraStore((s) => s.findInBounds);
   const destinations = useRouteStore((s) => s.destinations);
   const selected = useRouteStore((s) => s.selected);
