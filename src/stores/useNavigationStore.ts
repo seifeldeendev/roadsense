@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { LatLng, TripPoint } from '../domain/entities';
 import type { DemoPlayback } from '../domain/repositories';
+// eslint-disable-next-line no-restricted-imports -- TODO(composition-root): default instance built from production dependencies
 import { productionDependencies } from '../data/dependencies';
 
 interface NavigationState {

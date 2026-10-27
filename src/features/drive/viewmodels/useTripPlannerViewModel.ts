@@ -3,6 +3,7 @@ import type { Destination, LatLng, PlannedRoute } from '@/domain/entities';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { describeRouteAlerts, getAlertsAlongRoute, type RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance, formatDuration } from '@/shared/format';
+// eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
 import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';

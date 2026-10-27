@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AdvancedMarker, APIProvider, Map, Polyline, useMap } from '@vis.gl/react-google-maps';
 import type { CameraType, HazardType, LatLng } from '@/domain/entities';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- TODO(map-boundaries): splitRoute is domain logic in a map primitive; pass split segments in
 import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 import { fixedPointIcon, hazardMeta, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';

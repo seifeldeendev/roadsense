@@ -1,7 +1,9 @@
 import type { Camera, Hazard, HazardType, Settings, UpcomingAlert } from '../../entities';
-import { HEADING_CONE_DEG } from '../../../shared/constants';
 import { alertTargetFor, fixedPointTitle, isSpeedCamera } from './fixedPoints';
 import { angleDiffDeg, bearingDeg, haversineDistanceM } from './geo';
+
+// Points more than this far off the heading are not ahead of the driver.
+const HEADING_CONE_DEG = 45;
 
 const HAZARD_TITLES: Record<HazardType, string> = {
   accident: 'Accident',

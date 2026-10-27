@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Trip } from '../domain/entities';
+// eslint-disable-next-line no-restricted-imports -- TODO(composition-root): default instance built from production dependencies
 import { productionDependencies, type Dependencies } from '../data/dependencies';
 
 export type ReplayRate = 1 | 2 | 4;

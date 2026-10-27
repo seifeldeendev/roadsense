@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Polyline } from 'react-native-maps';
 import type { LatLng as RouteLatLng } from 'react-native-maps';
 import type { LatLng } from '@/domain/entities';
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- TODO(map-boundaries): splitRoute is domain logic in a map primitive; pass split segments in
 import { splitRoute } from '@/domain/usecases/routes/splitRoute';
 import { useTheme } from '@/theme/useTheme';
 
