@@ -8,10 +8,10 @@ import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { formatDistance, formatDuration } from '@/shared/format';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useRouteStore } from '@/stores/useRouteStore';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { getDemoRoute, showPlannedRoute } from '@/services/location';
 
 const SUGGESTION_LIMIT = 5;
 const START_MARKER_MIN_POINTS = 2;
@@ -50,6 +50,8 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
   const resetSelection = useRouteStore((s) => s.resetSelection);
   const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
+  const demoRoute = useNavigationStore((s) => s.demoRoute);
+  const showPlannedRoute = useNavigationStore((s) => s.showPlannedRoute);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
 
   const selectedDestination: Destination | null = selected;
   // Routes start from the real position when known, otherwise the demo start.
-  const origin = locationSource === 'gps' && currentLocation !== null ? currentLocation : getDemoRoute()[0];
+  const origin = locationSource === 'gps' && currentLocation !== null ? currentLocation : demoRoute[0];
 
   const suggestions = useMemo<Destination[]>(() => {
     const q = query.trim().toLowerCase();
@@ -122,7 +124,7 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
     // Hand the chosen route to the Drive map before switching to it.
     showPlannedRoute(useRouteStore.getState().route?.points ?? null);
     router.navigate('/drive');
-  }, []);
+  }, [showPlannedRoute]);
 
   const startHeading =
     route !== null && route.points.length >= START_MARKER_MIN_POINTS
