@@ -29,7 +29,7 @@ export function RouteMapCard({ route, frame, startHeading, destinationName }: Ro
   return (
     <View className="aspect-video overflow-hidden rounded-xl">
       <RoadMap ref={mapRef} initialRegion={frame}>
-        <RouteLine coordinates={route.points} />
+        <RouteLine remaining={route.points} />
         <UserMarker lat={route.points[0].lat} lng={route.points[0].lng} heading={startHeading} />
         <PinMarker
           lat={last.lat}
