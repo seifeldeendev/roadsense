@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { Camera, Hazard, LatLng, TripPoint } from '@/domain/entities';
 import type { DemoPlayback, LocationSource, LocationSources } from '@/domain/repositories';
 import { createDependencies } from '@/data/dependencies';
+import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 import { useDriveModeViewModel } from '@/features/drive/viewmodels/useDriveModeViewModel';
 import { DependenciesProvider } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
@@ -25,7 +26,7 @@ const CAMERA: Camera = {
   type: 'fixed',
 };
 
-const fakeCameras = { getAll: () => Promise.resolve([CAMERA]) };
+const fakeCameras = fakeCameraRepository([CAMERA]);
 const fakeHazards = {
   getActive: () => Promise.resolve([] as Hazard[]),
   report: () => Promise.reject(new Error('not used')),

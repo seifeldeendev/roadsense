@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { router } from 'expo-router';
 import type { AlertTarget, Camera, Settings, UpcomingAlert } from '@/domain/entities';
-import { isSpeedCamera } from '@/domain/usecases/drive/fixedPoints';
+import { useAsyncResult } from '@/shared/useAsyncResult';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -18,19 +18,17 @@ export type AlertSettingsViewModel = {
   reset: () => void;
 };
 
+const SAMPLE_CAMERA = 'first-speed-camera';
+
 export function useAlertSettingsViewModel(): AlertSettingsViewModel {
-  const { useHazardStore } = useStores();
+  const { useCameraStore } = useStores();
   const settings = useSettingsStore();
-  const cameras = useHazardStore((s) => s.cameras);
-  const load = useHazardStore((s) => s.load);
+  const findFirstSpeedCamera = useCameraStore((s) => s.findFirstSpeedCamera);
   const setActiveAlert = useDriveStore((s) => s.setActiveAlert);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (cameras.length === 0) {
-      void load();
-    }
-  }, [cameras.length, load]);
+  // Looked up once on mount, so the preview opens at once when tapped.
+  const sample = useAsyncResult(SAMPLE_CAMERA, () => findFirstSpeedCamera().catch(() => null));
 
   const toggleType = useCallback((type: AlertTarget) => {
     const current = settings.enabledTypes;
@@ -44,8 +42,8 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
 
   const sampleCameraAlert = useCallback((): UpcomingAlert | null => {
     // The road database also lists police and bumps; the preview uses a speed camera.
-    const camera: Camera | undefined = cameras.find((item) => isSpeedCamera(item));
-    if (camera === undefined) return null;
+    const camera: Camera | null = sample.value;
+    if (camera === null) return null;
     return {
       kind: 'camera',
       refId: camera.id,
@@ -55,7 +53,7 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
       speedLimitKmh: camera.speedLimitKmh > 0 ? camera.speedLimitKmh : undefined,
       camera,
     };
-  }, [cameras]);
+  }, [sample.value]);
 
   const previewAlert = useCallback(() => {
     const alert = sampleCameraAlert();

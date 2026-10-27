@@ -1,6 +1,7 @@
 import type { AlertKind, Camera, CameraType, Hazard, HazardType, LatLng } from '../../entities';
 import { fixedPointTitle, isSpeedCamera } from '../drive/fixedPoints';
 import { haversineDistanceM, pointToSegmentDistanceM } from '../drive/geo';
+import { boundsAround, isInBounds } from '../geo/bounds';
 import { isHazardExpired } from '../hazards/isHazardExpired';
 
 export type RouteAlert = {
@@ -14,21 +15,13 @@ export type RouteAlert = {
   featureType?: CameraType;
 };
 
-// ~111 km per degree of latitude; used to skip points far outside the route's box.
-const METRES_PER_DEGREE = 111_000;
+// How far from the route a point may lie and still count as on the way.
+export const ROUTE_ALERT_DISTANCE_M = 50;
 
-function routeBox(points: readonly LatLng[], marginM: number) {
-  const marginDeg = marginM / METRES_PER_DEGREE;
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
-  // Longitude degrees shrink with latitude; dividing by cos keeps the margin in metres.
-  const lngMarginDeg = marginDeg / Math.cos((Math.max(...lats) * Math.PI) / 180);
-  return {
-    minLat: Math.min(...lats) - marginDeg,
-    maxLat: Math.max(...lats) + marginDeg,
-    minLng: Math.min(...lngs) - lngMarginDeg,
-    maxLng: Math.max(...lngs) + lngMarginDeg,
-  };
+// The only points getAlertsAlongRoute can report: everything else lies outside
+// the route's box, so callers may fetch just these.
+export function routeAlertBounds(points: readonly LatLng[], maxDistanceM = ROUTE_ALERT_DISTANCE_M) {
+  return boundsAround(points, maxDistanceM);
 }
 
 const HAZARD_TITLES: Record<HazardType, string> = {
@@ -61,13 +54,13 @@ export function getAlertsAlongRoute(
   points: readonly LatLng[],
   cameras: readonly Camera[],
   hazards: readonly Hazard[],
-  maxDistanceM = 50,
+  maxDistanceM = ROUTE_ALERT_DISTANCE_M,
   now: Date = new Date(),
 ): RouteAlert[] {
   if (points.length < 2) return [];
   const alerts: RouteAlert[] = [];
-  const box = routeBox(points, maxDistanceM);
-  const inBox = (p: LatLng) => p.lat >= box.minLat && p.lat <= box.maxLat && p.lng >= box.minLng && p.lng <= box.maxLng;
+  const box = routeAlertBounds(points, maxDistanceM);
+  const inBox = (p: LatLng) => isInBounds(p, box);
 
   for (const camera of cameras) {
     if (!inBox(camera)) continue;

@@ -2,7 +2,7 @@ import type { AlertTarget, Camera, CameraType, LatLng } from '../../entities';
 import type { MapFrame } from './fitRegion';
 import { haversineDistanceM } from './geo';
 
-const SPEED_CAMERA_TYPES: readonly CameraType[] = ['fixed', 'average', 'red_light'];
+export const SPEED_CAMERA_TYPES: readonly CameraType[] = ['fixed', 'average', 'red_light'];
 
 export function isSpeedCamera(camera: Pick<Camera, 'type'>): boolean {
   return SPEED_CAMERA_TYPES.includes(camera.type);

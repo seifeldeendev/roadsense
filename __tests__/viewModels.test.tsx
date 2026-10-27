@@ -6,6 +6,7 @@ import type { CameraRepository, Geocoder, HazardRepository, TripRepository } fro
 import { createDependencies, type Dependencies } from '@/data/dependencies';
 import { usePlaceSearch } from '@/features/drive/viewmodels/plannerHooks';
 import { useSessionGateViewModel } from '@/features/auth/viewmodels/useSessionGateViewModel';
+import { useAlertSettingsViewModel } from '@/features/drive/viewmodels/useAlertSettingsViewModel';
 import { useReportDetailsViewModel } from '@/features/map/viewmodels/useReportDetailsViewModel';
 import { useRoutePreviewViewModel } from '@/features/map/viewmodels/useRoutePreviewViewModel';
 import { useStatsReplayViewModel } from '@/features/trips/viewmodels/useStatsReplayViewModel';
@@ -13,6 +14,7 @@ import { useTripDetailsViewModel } from '@/features/trips/viewmodels/useTripDeta
 import { useTripHistoryViewModel } from '@/features/trips/viewmodels/useTripHistoryViewModel';
 import { createStores } from '@/stores/createStores';
 import { DependenciesProvider, useStores } from '@/stores/DependenciesProvider';
+import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 
 jest.mock(
   '@react-native-async-storage/async-storage',
@@ -57,9 +59,9 @@ function slowRepositories() {
     list: jest.fn(() => new Promise<Trip[]>((resolve) => (releaseTrips = () => resolve([TRIP])))),
     getById: jest.fn(async () => TRIP),
   };
-  const cameras: CameraRepository = {
+  const cameras: CameraRepository = fakeCameraRepository([CAMERA], {
     getAll: jest.fn(() => new Promise<Camera[]>((resolve) => (releaseCameras = () => resolve([CAMERA])))),
-  };
+  });
   return { trips, cameras, release: () => (releaseTrips(), releaseCameras()) };
 }
 
@@ -134,7 +136,7 @@ describe('view models read their stores through the provider', () => {
 
   it('report details shows the injected hazard and sends a vote to the repository', async () => {
     const hazards = fakeHazards();
-    const cameras: CameraRepository = { getAll: jest.fn(async () => [CAMERA]) };
+    const cameras: CameraRepository = fakeCameraRepository([CAMERA]);
     const { result } = await renderHook(() => useReportDetailsViewModel(HAZARD.id), {
       wrapper: wrapperFor(createDependencies({ hazards, cameras })),
     });
@@ -195,4 +197,68 @@ describe('the session gate', () => {
     expect(result.current).toMatchObject(expected);
   });
 
+});
+
+describe('one-off camera queries', () => {
+  const DEST = { id: 'dest-1', name: 'Dest', area: '', lat: 30.02, lng: 31 };
+  const ROUTE = {
+    destinationId: 'dest-1',
+    points: [
+      { lat: 30, lng: 31 },
+      { lat: 30.02, lng: 31 },
+    ],
+    distanceM: 2200,
+    durationS: 180,
+  };
+  const ON_ROUTE: Camera = { ...CAMERA, id: 'cam-on-route', lat: 30.01, lng: 31 };
+  const FAR: Camera = { ...CAMERA, id: 'cam-far', lat: 31.2, lng: 29.9 };
+
+  it('route preview stays loading until the cameras in the route box arrive, then lists them', async () => {
+    let release: () => void = () => undefined;
+    const cameras = fakeCameraRepository([ON_ROUTE, FAR], {
+      getInBounds: jest.fn(
+        () => new Promise<Camera[]>((resolve) => (release = () => resolve([ON_ROUTE]))),
+      ),
+    });
+    const routes = { getDestinations: jest.fn(async () => [DEST]), getRoute: jest.fn(async () => ROUTE) };
+    const { result } = await renderHook(() => useRoutePreviewViewModel(), {
+      wrapper: wrapperFor(createDependencies({ cameras, routes, hazards: fakeHazards() })),
+    });
+    await act(async () => undefined);
+    await act(async () => result.current.chooseDestination(DEST.id));
+
+    // The route is fetched but its cameras are not: still loading, no summary yet.
+    expect(result.current.route).toBeNull();
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.countsLine).toBeNull();
+
+    await act(async () => release());
+    expect(result.current.route).toEqual(ROUTE);
+    expect(result.current.isLoading).toBe(false);
+    const cameraAlerts = result.current.alerts.filter((alert) => alert.kind === 'camera');
+    expect(cameraAlerts.map((alert) => alert.refId)).toEqual(['cam-on-route']);
+  });
+
+  it('trip details resolves its camera markers by id', async () => {
+    const trip: Trip = { ...TRIP, alerts: [{ kind: 'camera', refId: ON_ROUTE.id, ts: 500, distanceM: 300 }] };
+    const trips: TripRepository = { list: jest.fn(async () => [trip]), getById: jest.fn(async () => trip) };
+    const cameras = fakeCameraRepository([ON_ROUTE, FAR]);
+    const { result } = await renderHook(() => useTripDetailsViewModel(trip.id), {
+      wrapper: wrapperFor(createDependencies({ trips, cameras, hazards: fakeHazards() })),
+    });
+    await act(async () => undefined);
+    expect(cameras.getByIds).toHaveBeenCalledWith([ON_ROUTE.id]);
+    expect(result.current.alertMarkers).toMatchObject([{ kind: 'camera', lat: 30.01, lng: 31, roadName: 'Fake Road' }]);
+  });
+
+  it('the alert preview uses the first speed camera', async () => {
+    const cameras = fakeCameraRepository([{ ...FAR, type: 'police' }, ON_ROUTE]);
+    const { result } = await renderHook(() => useAlertSettingsViewModel(), {
+      wrapper: wrapperFor(createDependencies({ cameras })),
+    });
+    await act(async () => undefined);
+    expect(cameras.getFirstSpeedCamera).toHaveBeenCalledTimes(1);
+    expect(cameras.getAll).not.toHaveBeenCalled();
+    expect(result.current.message).toBeNull();
+  });
 });
