@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Dependencies } from '../data/dependencies';
 import type { Destination, LatLng, PlannedRoute } from '../domain/entities';
-import { persistStorage } from './persistStorage';
+import { persistStorageFor } from './persistStorage';
 
 const MAX_RECENT = 5;
 
@@ -20,7 +20,7 @@ export interface RouteState {
   resetSelection(): void;
 }
 
-export function createRouteStore(deps: Pick<Dependencies, 'routes'>) {
+export function createRouteStore(deps: Pick<Dependencies, 'routes' | 'storage'>) {
   return create<RouteState>()(
     persist(
       (set, get) => ({
@@ -70,7 +70,7 @@ export function createRouteStore(deps: Pick<Dependencies, 'routes'>) {
       }),
       {
         name: 'roadsense.routes',
-        storage: persistStorage,
+        storage: persistStorageFor(deps.storage),
         partialize: (state) => ({ recent: state.recent }),
       },
     ),

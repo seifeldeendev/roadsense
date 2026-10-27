@@ -35,7 +35,7 @@ const routeZone = zone(
 // Reading state to decide what to render is logic and stays out of them.
 const layoutZone = zone(
   './src/app',
-  ['./app', './features', './domain', './theme', './composition/AppDependenciesProvider.tsx', './stores/useThemeStore.ts'],
+  ['./app', './features', './domain', './theme', './composition/AppDependenciesProvider.tsx'],
   'Layout files may wire providers, theme and fonts; state that decides what to render belongs in a feature.',
 );
 
@@ -166,21 +166,27 @@ module.exports = defineConfig([
     },
   },
   {
-    // Stores take data through the Dependencies type; building production
-    // dependencies is the composition root's job.
+    // Stores take the outside world through the Dependencies type; building
+    // production dependencies is the composition root's job. Packages are an
+    // allowlist with no exemptions: state (zustand) and React for the provider
+    // and hooks. Platform code (react-native, Expo, AsyncStorage) reaches stores
+    // only through Dependencies (location, lifecycle, storage). Relative paths
+    // are the layer zone's job above.
     files: ['src/stores/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          // Repeats APP_STATE_IMPORT: this block's options replace the one above.
-          paths: [
-            ...['../data/dependencies', '@/data/dependencies'].map((name) => ({
-              name,
-              importNames: ['productionDependencies', 'createDependencies'],
-              message: 'Stores receive Dependencies; only the composition root builds them.',
-            })),
-            APP_STATE_IMPORT,
+          paths: ['../data/dependencies', '@/data/dependencies'].map((name) => ({
+            name,
+            importNames: ['productionDependencies', 'createDependencies'],
+            message: 'Stores receive Dependencies; only the composition root builds them.',
+          })),
+          patterns: [
+            {
+              regex: '^(?!\.\.?/|@/(domain|shared|stores)(/|$)|@/data/dependencies$|zustand(/middleware)?$|react$)',
+              message: 'src/stores may use only zustand and react; platform code comes in through Dependencies.',
+            },
           ],
         },
       ],

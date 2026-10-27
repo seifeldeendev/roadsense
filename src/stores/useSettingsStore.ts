@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { persistStorage } from './persistStorage';
+import { persistStorageFor } from './persistStorage';
+import type { Dependencies } from '../data/dependencies';
 import type { AlertTarget, LocationSourceKind, MapType, Settings, SoundMode } from '../domain/entities';
 import { DEFAULT_SETTINGS } from '../shared/constants';
 
@@ -23,7 +24,7 @@ export interface SettingsState extends Settings {
   reset(): void;
 }
 
-export function createSettingsStore() {
+export function createSettingsStore(deps: Pick<Dependencies, 'storage'>) {
   return create<SettingsState>()(
     persist(
       (set) => ({
@@ -56,7 +57,7 @@ export function createSettingsStore() {
       }),
       {
         name: 'roadsense.settings',
-        storage: persistStorage,
+        storage: persistStorageFor(deps.storage),
         // v1 added the police and speed-bump alert switches; turn them on for saved settings.
         version: 1,
         migrate: (persisted, version) => {

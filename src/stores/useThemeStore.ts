@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { persistStorage } from './persistStorage';
+import { persistStorageFor } from './persistStorage';
+import type { Dependencies } from '../data/dependencies';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
@@ -9,7 +10,7 @@ export interface ThemeState {
   setPreference(preference: ThemePreference): void;
 }
 
-export function createThemeStore() {
+export function createThemeStore(deps: Pick<Dependencies, 'storage'>) {
   return create<ThemeState>()(
     persist(
       (set) => ({
@@ -18,7 +19,7 @@ export function createThemeStore() {
       }),
       {
         name: 'roadsense.theme',
-        storage: persistStorage,
+        storage: persistStorageFor(deps.storage),
       },
     ),
   );
