@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from './AppText';
-import { colors, rounded, spacing, type HazardIconName } from '@/theme/tokens';
+import { rounded, spacing, type HazardIconName } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 
 type EmptyStateProps = {
   icon: HazardIconName;
@@ -12,9 +13,10 @@ type EmptyStateProps = {
 };
 
 export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.card}>
-      <View style={styles.iconCircle}>
+    <View style={[styles.card, { backgroundColor: colors.canvasSoft }]}>
+      <View style={[styles.iconCircle, { backgroundColor: colors.canvasSofter }]}>
         <MaterialCommunityIcons name={icon} size={26} color={colors.ink} />
       </View>
       <AppText variant="displaySm" style={styles.centered}>
@@ -36,13 +38,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.xxl,
     borderRadius: rounded.xl,
-    backgroundColor: colors.canvasSoft,
   },
   iconCircle: {
     width: 56,
     height: 56,
     borderRadius: rounded.full,
-    backgroundColor: colors.canvasSofter,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,

@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 import { AppText } from './AppText';
 
 type LoadingStateProps = {
@@ -7,6 +8,7 @@ type LoadingStateProps = {
 };
 
 export function LoadingState({ label }: LoadingStateProps) {
+  const { colors } = useTheme();
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.ink} />

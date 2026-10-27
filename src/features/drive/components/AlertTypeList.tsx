@@ -2,7 +2,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { ToggleRow } from '@/components/ui';
 import type { AlertTarget } from '@/domain/entities';
-import { colors, hazardMeta, type HazardIconName } from '@/theme/tokens';
+import { hazardMeta, type HazardIconName } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 
 const TYPE_ROWS: { type: AlertTarget; label: string }[] = [
   { type: 'camera', label: 'Speed cameras' },
@@ -18,6 +19,7 @@ type AlertTypeListProps = {
 };
 
 export function AlertTypeList({ enabledTypes, onToggle }: AlertTypeListProps) {
+  const { colors } = useTheme();
   return (
     <View>
       {TYPE_ROWS.map(({ type, label }) => (

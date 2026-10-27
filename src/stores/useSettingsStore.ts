@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { persistStorage } from './persistStorage';
 import type { AlertTarget, Settings } from '../domain/entities';
 import { DEFAULT_SETTINGS } from '../shared/constants';
 
@@ -31,7 +31,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'roadsense.settings',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: persistStorage,
     },
   ),
 );

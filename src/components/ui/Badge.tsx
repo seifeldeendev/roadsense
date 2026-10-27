@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, rounded, spacing, typography } from '@/theme/tokens';
+import { rounded, spacing, typography } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 
 export type BadgeVariant = 'soft' | 'ink';
 
@@ -10,8 +11,9 @@ type BadgeProps = {
 };
 
 export function Badge({ text, variant = 'soft', color }: BadgeProps) {
+  const { colors } = useTheme();
   const background = color ?? (variant === 'ink' ? colors.ink : colors.canvasSoft);
-  const textColor = variant === 'ink' ? colors.onDark : colors.ink;
+  const textColor = variant === 'ink' ? colors.onInverse : colors.ink;
 
   return (
     <View style={[styles.badge, { backgroundColor: background }]}>
