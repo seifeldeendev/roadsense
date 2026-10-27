@@ -3,10 +3,8 @@ import type { Destination, LatLng, PlannedRoute } from '@/domain/entities';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { describeRouteAlerts, getAlertsAlongRoute, type RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance, formatDuration } from '@/shared/format';
-// eslint-disable-next-line import/no-restricted-paths -- TODO(gps-di): inject via Dependencies
-import { getCurrentLocation, requestLocationPermission } from '@/services/gps';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useStores } from '@/stores/DependenciesProvider';
+import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { usePlaceSearch, usePinLabel } from './plannerHooks';
 
@@ -44,6 +42,7 @@ const QUICK_PLACE_COUNT = 3;
 
 export function useTripPlannerViewModel(): TripPlannerViewModel {
   const { useHazardStore, useNavigationStore, useRouteStore } = useStores();
+  const { location } = useDependencies();
   const [mode, setMode] = useState<PlannerMode>('idle');
   const [query, setQuery] = useState('');
   const [pinCenter, setPinCenter] = useState<LatLng | null>(null);
@@ -116,7 +115,7 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
         // A route must start where the driver is: fetch a fix if none has arrived yet.
         let from = origin;
         if (locationSource === 'gps' && currentLocation === null) {
-          const fix = (await requestLocationPermission()) ? await getCurrentLocation() : null;
+          const fix = (await location.requestPermission()) ? await location.currentPosition() : null;
           if (fix !== null) {
             setCurrentLocation(fix);
             from = fix;
@@ -125,7 +124,7 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
         await selectDestination(place, from);
       })();
     },
-    [origin, locationSource, currentLocation, setCurrentLocation, selectDestination],
+    [origin, locationSource, currentLocation, setCurrentLocation, selectDestination, location],
   );
 
   const confirmPin = useCallback(() => {
