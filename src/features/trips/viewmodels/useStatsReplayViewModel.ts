@@ -80,7 +80,7 @@ export function useStatsReplayViewModel(initialTripId: string | undefined): Stat
   const [today] = useState(() => new Date());
 
   useEffect(() => {
-    void loadUnless((state) => state.trips.length > 0);
+    void loadUnless((state) => state.trips.length > 0 || state.isLoading);
   }, [loadUnless]);
 
   // Preselect a trip when the screen was opened with a `replay` param.
