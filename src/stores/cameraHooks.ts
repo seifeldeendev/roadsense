@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { AppState } from 'react-native';
 import type { Camera, LatLng } from '../domain/entities';
 import {
   coversArea,
@@ -12,7 +11,7 @@ import {
 } from '../domain/usecases/cameras/workingSet';
 import { boundsAround } from '../domain/usecases/geo/bounds';
 import { useAsyncResult } from '../shared/useAsyncResult';
-import { useStores } from './DependenciesProvider';
+import { useDependencies, useStores } from './DependenciesProvider';
 import { useDriveStore } from './useDriveStore';
 
 // Keeps the camera working set centred on the car while driving, else the
@@ -30,6 +29,7 @@ function useFollowTarget(): LatLng | null {
 
 function useFollowWorkingSet(): void {
   const { useCameraStore, useNavigationStore } = useStores();
+  const { lifecycle } = useDependencies();
   const follow = useCameraStore((s) => s.follow);
   const suspend = useCameraStore((s) => s.suspend);
   const resume = useCameraStore((s) => s.resume);
@@ -43,7 +43,7 @@ function useFollowWorkingSet(): void {
   }, [lat, lng, follow]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => {
+    return lifecycle.subscribe((state) => {
       if (state === 'background') {
         suspend();
       } else if (state === 'active') {
@@ -56,8 +56,7 @@ function useFollowWorkingSet(): void {
         }
       }
     });
-    return () => subscription.remove();
-  }, [follow, suspend, resume, demoStart]);
+  }, [lifecycle, follow, suspend, resume, demoStart]);
 }
 
 export type CamerasAround = {

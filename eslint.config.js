@@ -84,6 +84,14 @@ const layerZones = [
   zone('./src/theme', ['./theme', './shared', './domain'], 'src/theme may import only shared (and domain types).'),
 ];
 
+// App lifecycle events reach the app through Dependencies (AppLifecycle); only
+// the service behind it touches AppState.
+const APP_STATE_IMPORT = {
+  name: 'react-native',
+  importNames: ['AppState'],
+  message: 'Use AppLifecycle from Dependencies; only src/services/appLifecycle.ts reads AppState.',
+};
+
 // Relative or aliased imports of src/domain.
 const DOMAIN_IMPORT = '^(@/|(\\.\\./)+)domain(/|$)';
 
@@ -129,6 +137,13 @@ module.exports = defineConfig([
     },
   },
   {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/services/appLifecycle.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: [APP_STATE_IMPORT] }],
+    },
+  },
+  {
     // The domain is framework-free.
     files: ['src/domain/**/*.ts'],
     rules: {
@@ -153,11 +168,15 @@ module.exports = defineConfig([
       'no-restricted-imports': [
         'error',
         {
-          paths: ['../data/dependencies', '@/data/dependencies'].map((name) => ({
-            name,
-            importNames: ['productionDependencies', 'createDependencies'],
-            message: 'Stores receive Dependencies; only the composition root builds them.',
-          })),
+          // Repeats APP_STATE_IMPORT: this block's options replace the one above.
+          paths: [
+            ...['../data/dependencies', '@/data/dependencies'].map((name) => ({
+              name,
+              importNames: ['productionDependencies', 'createDependencies'],
+              message: 'Stores receive Dependencies; only the composition root builds them.',
+            })),
+            APP_STATE_IMPORT,
+          ],
         },
       ],
     },
