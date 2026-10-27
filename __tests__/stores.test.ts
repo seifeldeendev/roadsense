@@ -1,5 +1,6 @@
-import { describe, expect, it, jest } from '@jest/globals';
-import type { Camera, Destination, Hazard, PlannedRoute, Trip, User } from '@/domain/entities';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import type { Camera, Destination, GeoBounds, Hazard, PlannedRoute, Trip, User } from '@/domain/entities';
+import { driveCoverage } from '@/domain/usecases/cameras/workingSet';
 import type {
   AuthRepository,
   CameraRepository,
@@ -9,6 +10,7 @@ import type {
   RouteRepository,
   TripRepository,
 } from '@/domain/repositories';
+import { createCameraStore, retryDelayMs } from '@/stores/useCameraStore';
 import { createHazardStore } from '@/stores/useHazardStore';
 import { createRouteStore } from '@/stores/useRouteStore';
 import { createSessionStore } from '@/stores/useSessionStore';
@@ -55,7 +57,6 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-const fakeCameras = (cameras: Camera[] = [CAMERA]): CameraRepository => fakeCameraRepository(cameras);
 
 const fakeHazards = (overrides: Partial<HazardRepository> = {}): HazardRepository => ({
   getActive: jest.fn(async () => [HAZARD]),
@@ -70,34 +71,34 @@ const fakeHazards = (overrides: Partial<HazardRepository> = {}): HazardRepositor
 });
 
 describe('hazard store', () => {
-  it('loads cameras and hazards from its repositories', async () => {
-    const store = createHazardStore({ cameras: fakeCameras(), hazards: fakeHazards() });
+  it('loads hazards from its repository', async () => {
+    const store = createHazardStore({ hazards: fakeHazards() });
     await store.getState().load();
-    expect(store.getState()).toMatchObject({ cameras: [CAMERA], hazards: [HAZARD], isLoading: false, error: null });
+    expect(store.getState()).toMatchObject({ hazards: [HAZARD], hasLoaded: true, isLoading: false, error: null });
   });
 
   it('turns a failed load into an error message', async () => {
     const hazards = fakeHazards({ getActive: jest.fn(async () => Promise.reject(new Error('offline'))) });
-    const store = createHazardStore({ cameras: fakeCameras(), hazards });
+    const store = createHazardStore({ hazards });
     await store.getState().load();
-    expect(store.getState()).toMatchObject({ isLoading: false, error: 'offline', cameras: [] });
+    expect(store.getState()).toMatchObject({ isLoading: false, error: 'offline', hasLoaded: false });
   });
 
   it('skips a load when the caller says the state is good enough', async () => {
-    const cameras = fakeCameras();
-    const store = createHazardStore({ cameras, hazards: fakeHazards() });
-    const pending = deferred<Camera[]>();
-    (cameras.getAll as jest.Mock<() => Promise<Camera[]>>).mockReturnValueOnce(pending.promise);
+    const hazards = fakeHazards();
+    const store = createHazardStore({ hazards });
+    const pending = deferred<Hazard[]>();
+    (hazards.getActive as jest.Mock<() => Promise<Hazard[]>>).mockReturnValueOnce(pending.promise);
     const first = store.getState().loadUnless((state) => state.isLoading);
     await store.getState().loadUnless((state) => state.isLoading);
-    expect(cameras.getAll).toHaveBeenCalledTimes(1);
-    pending.resolve([CAMERA]);
+    expect(hazards.getActive).toHaveBeenCalledTimes(1);
+    pending.resolve([HAZARD]);
     await first;
   });
 
   it('adds a reported hazard and applies a vote', async () => {
     const hazards = fakeHazards();
-    const store = createHazardStore({ cameras: fakeCameras(), hazards });
+    const store = createHazardStore({ hazards });
     await store.getState().load();
     await store.getState().report('accident', 30.1, 31.1, 90);
     expect(hazards.report).toHaveBeenCalledWith({ type: 'accident', lat: 30.1, lng: 31.1, heading: 90 });
@@ -208,5 +209,124 @@ describe('session store', () => {
 
     await store.getState().signOut();
     expect(store.getState().user).toBeNull();
+  });
+});
+
+describe('camera working set', () => {
+  const HOME = { lat: 30, lng: 31 };
+  // ~1.1 km and ~3.3 km north of HOME: inside and beyond the 2 km refetch distance.
+  const NEAR = { lat: 30.01, lng: 31 };
+  const FAR = { lat: 30.03, lng: 31 };
+  const camerasAt = (where: { lat: number; lng: number }): Camera[] => [{ ...CAMERA, id: `cam-${where.lat}`, ...where }];
+  // Answers each box with the cameras at its centre, or with the next queued outcome.
+  const repository = () => {
+    const outcomes: ('fail' | 'ok')[] = [];
+    const cameras: CameraRepository = fakeCameraRepository([], {
+      getInBounds: jest.fn(async (bounds: GeoBounds) => {
+        if (outcomes.shift() === 'fail') throw new Error('database closed');
+        return camerasAt({ lat: (bounds.minLat + bounds.maxLat) / 2, lng: (bounds.minLng + bounds.maxLng) / 2 });
+      }),
+    });
+    return { cameras, outcomes };
+  };
+  const settle = () => jest.advanceTimersByTimeAsync(0);
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('fetches around the followed position and again only past the refetch distance', async () => {
+    const { cameras } = repository();
+    const store = createCameraStore({ cameras });
+    store.getState().follow(HOME);
+    await settle();
+    expect(store.getState().workingSet?.centre).toEqual(HOME);
+    store.getState().follow(NEAR);
+    await settle();
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(1);
+    store.getState().follow(FAR);
+    await settle();
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(2);
+    expect(store.getState().workingSet?.centre).toEqual(FAR);
+  });
+
+  it('keeps the current set through failures and retries with backoff', async () => {
+    const { cameras, outcomes } = repository();
+    const store = createCameraStore({ cameras });
+    store.getState().follow(HOME);
+    await settle();
+    const homeSet = store.getState().workingSet;
+
+    outcomes.push('fail', 'fail');
+    store.getState().follow(FAR);
+    await settle();
+    expect(store.getState()).toMatchObject({ workingSet: homeSet, fetchFailed: true });
+    await jest.advanceTimersByTimeAsync(999);
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(2);
+    await jest.advanceTimersByTimeAsync(1);
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(3);
+    // Second failure: the next try waits twice as long.
+    expect(store.getState().workingSet).toBe(homeSet);
+    await jest.advanceTimersByTimeAsync(1999);
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(3);
+    await jest.advanceTimersByTimeAsync(1);
+    expect(store.getState()).toMatchObject({ fetchFailed: false, workingSet: { centre: FAR } });
+    expect(retryDelayMs(1)).toBe(1000);
+    expect(retryDelayMs(6)).toBe(30_000);
+    expect(retryDelayMs(20)).toBe(30_000);
+  });
+
+  it('starts a drive on an idle set centred within the refetch distance, without fetching', async () => {
+    const { cameras } = repository();
+    const store = createCameraStore({ cameras });
+    store.getState().follow(HOME);
+    await settle();
+    await expect(store.getState().prepareDrive(NEAR)).resolves.toBe(true);
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetches before a drive that starts away from the idle set, and reports a failure', async () => {
+    const { cameras, outcomes } = repository();
+    const store = createCameraStore({ cameras });
+    store.getState().follow(HOME);
+    await settle();
+    // A set is present but centred 3.3 km away: not fresh enough, so it is fetched.
+    await expect(store.getState().prepareDrive(FAR)).resolves.toBe(true);
+    expect(store.getState().workingSet?.centre).toEqual(FAR);
+
+    outcomes.push('fail');
+    const drive = store.getState().prepareDrive(HOME);
+    await settle();
+    await expect(drive).resolves.toBe(false);
+    expect(store.getState().workingSet?.centre).toEqual(FAR);
+    expect(driveCoverage(store.getState().workingSet, store.getState().followed, store.getState().fetchFailed, 2_000)).toBe(
+      'covered',
+    );
+    expect(driveCoverage(null, HOME, true, 2_000)).toBe('unavailable');
+  });
+
+  it('stops in the background and trusts no position from before it on return', async () => {
+    const { cameras, outcomes } = repository();
+    const store = createCameraStore({ cameras });
+    store.getState().follow(HOME);
+    await settle();
+    outcomes.push('fail');
+    store.getState().follow(FAR);
+    await settle();
+    store.getState().suspend();
+    await jest.advanceTimersByTimeAsync(60_000);
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(2);
+    store.getState().follow(FAR);
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(2);
+
+    store.getState().resume();
+    expect(store.getState().followed).toBeNull();
+    expect(driveCoverage(store.getState().workingSet, store.getState().followed, false, 2_000)).toBe('loading');
+    store.getState().follow(FAR);
+    await settle();
+    expect(store.getState().workingSet?.centre).toEqual(FAR);
   });
 });

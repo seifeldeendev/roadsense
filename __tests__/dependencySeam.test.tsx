@@ -8,6 +8,7 @@ import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 import { useDriveModeViewModel } from '@/features/drive/viewmodels/useDriveModeViewModel';
 import { DependenciesProvider } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
+import { createCameraStore } from '@/stores/useCameraStore';
 import { createHazardStore } from '@/stores/useHazardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
@@ -34,11 +35,13 @@ const fakeHazards = {
 };
 
 test('a store built from fake dependencies loads from them', async () => {
-  const useHazards = createHazardStore({ cameras: fakeCameras, hazards: fakeHazards });
-  await useHazards.getState().load();
-  expect(useHazards.getState().cameras).toEqual([CAMERA]);
+  const useCameras = createCameraStore({ cameras: fakeCameras });
+  expect(await useCameras.getState().findInBounds({ minLat: 29, maxLat: 31, minLng: 30, maxLng: 32 })).toEqual([CAMERA]);
 
-  await useHazards.getState().loadUnless((state) => state.cameras.length > 0);
+  const useHazards = createHazardStore({ hazards: fakeHazards });
+  await useHazards.getState().load();
+  expect(useHazards.getState().hasLoaded).toBe(true);
+  await useHazards.getState().loadUnless((state) => state.hasLoaded);
   expect(useHazards.getState().isLoading).toBe(false);
 });
 

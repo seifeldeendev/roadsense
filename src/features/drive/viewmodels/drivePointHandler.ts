@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
 import type { StoreApi } from 'zustand';
-import type { LatLng, TripPoint, UpcomingAlert } from '@/domain/entities';
+import type { Camera, GeoBounds, LatLng, TripPoint, UpcomingAlert } from '@/domain/entities';
 import { alertFeedback } from '@/domain/usecases/drive/alertFeedback';
 import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
-import { nearestSpeedLimit } from '@/domain/usecases/drive/nearestRoadName';
+import { nearestSpeedLimit, ROAD_MATCH_RADIUS_M } from '@/domain/usecases/drive/nearestRoadName';
+import { boundsAround } from '@/domain/usecases/geo/bounds';
 import { shouldTriggerSpeedAlarm } from '@/domain/usecases/drive/speedAlarm';
+import type { CameraState } from '@/stores/useCameraStore';
 import type { DriveState } from '@/stores/useDriveStore';
 import type { HazardState } from '@/stores/useHazardStore';
 import type { SettingsState } from '@/stores/useSettingsStore';
@@ -18,6 +20,7 @@ export type DriveStores = {
   drive: Readable<DriveState>;
   settings: Readable<SettingsState>;
   hazards: Readable<HazardState>;
+  cameras: Readable<CameraState>;
 };
 
 // Where the car is at this instant (null when not driving). Read from the store
@@ -27,9 +30,26 @@ export function currentDrivePosition(drive: Readable<DriveState>): { position: L
   return isDriving && position !== null ? { position, heading } : null;
 }
 
-// The speed limit at a position, from the cameras known at that moment.
-export function createSpeedLimitLookup(hazards: Readable<HazardState>): (position: LatLng) => number {
-  return (position) => nearestSpeedLimit(position, hazards.getState().cameras);
+// The speed limit at a position, from the working set at that moment.
+export function createSpeedLimitLookup(cameras: Readable<CameraState>): (position: LatLng) => number {
+  return (position) => nearestSpeedLimit(position, cameras.getState().workingSet?.cameras ?? []);
+}
+
+// A simulated drive along a planned route works out every limit up front, so
+// it needs the cameras along the whole route, not only those around the start.
+// Falls back to the working set if they cannot be fetched.
+export async function createRouteSpeedLimitLookup(
+  findInBounds: (bounds: GeoBounds) => Promise<Camera[]>,
+  route: readonly LatLng[],
+  fallback: (position: LatLng) => number,
+): Promise<(position: LatLng) => number> {
+  if (route.length === 0) return fallback;
+  try {
+    const alongRoute = await findInBounds(boundsAround(route, ROAD_MATCH_RADIUS_M));
+    return (position) => nearestSpeedLimit(position, alongRoute);
+  } catch {
+    return fallback;
+  }
 }
 
 // Builds the per-reading handler for a drive (GPS or demo): records the point,
@@ -47,7 +67,11 @@ export function createDrivePointHandler(stores: DriveStores, onNextAlert: (alert
     }
     previousSpeedKmh = point.speedKmh;
 
-    const { cameras, hazards } = stores.hazards.getState();
+    // Each reading moves the working set along with the car.
+    const cameraState = stores.cameras.getState();
+    cameraState.follow({ lat: point.lat, lng: point.lng });
+    const cameras = cameraState.workingSet?.cameras ?? [];
+    const { hazards } = stores.hazards.getState();
     const nearest = findUpcomingAlerts(point, point.heading, cameras, hazards, settings)[0] ?? null;
     onNextAlert(nearest);
     const drive = stores.drive.getState();

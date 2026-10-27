@@ -1,7 +1,7 @@
 import type { Camera, LatLng } from '../../entities';
 import { haversineDistanceM } from './geo';
 
-const ROAD_MATCH_RADIUS_M = 600;
+export const ROAD_MATCH_RADIUS_M = 600;
 
 // The mock data has no road graph, so the current road (name and limit) is
 // taken from the closest known camera when one is near enough.

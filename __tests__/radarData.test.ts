@@ -11,6 +11,9 @@ import { nearestSpeedLimit } from '../src/domain/usecases/drive/nearestRoadName'
 import { describeRouteAlerts, getAlertsAlongRoute } from '../src/domain/usecases/routes/getAlertsAlongRoute';
 import { DEFAULT_SETTINGS } from '../src/shared/constants';
 
+// The whole database: every camera lies in this box.
+const EVERYWHERE = { minLat: -90, maxLat: 90, minLng: -180, maxLng: 180 };
+
 const feed: RadarFeed = {
   radars: [
     { id: '1', latitude: '30.0700', longitude: '31.3380', type: 'F', speed_limit: '80', road_name: ' Salah Salem ' },
@@ -31,14 +34,14 @@ describe('parseRadarFeed', () => {
   });
 
   it('loads the bundled Egypt database', async () => {
-    const all = await new RadarCameraRepository().getAll();
+    const all = await new RadarCameraRepository().getInBounds(EVERYWHERE);
     expect(all.length).toBeGreaterThan(4000);
     expect(all.every((c: Camera) => Number.isFinite(c.lat) && Number.isFinite(c.lng))).toBe(true);
   });
 
   it('seeds SQLite with exactly what the JSON export parses to, on every platform', async () => {
-    const fromSqlite = await new RadarCameraRepository().getAll();
-    const fromJson = await new JsonRadarCameraRepository().getAll();
+    const fromSqlite = await new RadarCameraRepository().getInBounds(EVERYWHERE);
+    const fromJson = await new JsonRadarCameraRepository().getInBounds(EVERYWHERE);
     expect(fromSqlite).toEqual(fromJson);
   });
 
@@ -55,7 +58,7 @@ describe('parseRadarFeed', () => {
     const json = new JsonRadarCameraRepository();
 
     it('getInBounds over many random boxes, from city-sized to country-sized, plus empty ones', async () => {
-      const all = await json.getAll();
+      const all = await json.getInBounds(EVERYWHERE);
       let nonEmpty = 0;
       for (let i = 0; i < 200; i += 1) {
         // Centre on a real camera most of the time so boxes are not all empty.
@@ -77,14 +80,14 @@ describe('parseRadarFeed', () => {
     });
 
     it('includes a camera lying exactly on the box edge', async () => {
-      const [camera] = await json.getAll();
+      const [camera] = await json.getInBounds(EVERYWHERE);
       const edge = { minLat: camera.lat, maxLat: camera.lat + 0.01, minLng: camera.lng - 0.01, maxLng: camera.lng };
       expect((await sqlite.getInBounds(edge)).map((c: Camera) => c.id)).toContain(camera.id);
       expect(await sqlite.getInBounds(edge)).toEqual(await json.getInBounds(edge));
     });
 
     it('getByIds over random id sets, including unknown ids and an empty set', async () => {
-      const all = await json.getAll();
+      const all = await json.getInBounds(EVERYWHERE);
       for (let i = 0; i < 50; i += 1) {
         const ids = Array.from({ length: Math.floor(random() * 12) }, () => all[Math.floor(random() * all.length)].id);
         if (i % 5 === 0) ids.push('eg-does-not-exist');
@@ -97,7 +100,7 @@ describe('parseRadarFeed', () => {
       const first = await sqlite.getFirstSpeedCamera();
       expect(first).not.toBeNull();
       expect(first).toEqual(await json.getFirstSpeedCamera());
-      expect(first).toEqual((await json.getAll()).find(isSpeedCamera));
+      expect(first).toEqual((await json.getInBounds(EVERYWHERE)).find(isSpeedCamera));
     });
   });
 

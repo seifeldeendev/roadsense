@@ -27,7 +27,7 @@ export default function DriveModeScreen() {
   const insets = useSafeAreaInsets();
   const tabBarSpace = useTabBarSpace();
 
-  if (vm.isLoading) {
+  if (vm.isLoading || map.isLoading) {
     return (
       <Screen>
         <LoadingState label="Loading cameras and hazards…" />
@@ -79,6 +79,7 @@ export default function DriveModeScreen() {
               {/* Black only while driving, so the idle screen keeps a single black CTA. */}
               <MapFab icon="plus" accessibilityLabel="New alert" primary={vm.isDriving} onPress={() => controls.openSheet('report')} />
             </View>
+            <ReportBanner message={vm.cameraWarning} />
             <ReportBanner message={vm.feedback} />
             {showsRouteCard && planner.destination !== null ? (
               <RouteSummaryCard
