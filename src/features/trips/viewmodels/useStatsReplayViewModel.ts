@@ -9,7 +9,7 @@ import {
   type WeeklyStats,
 } from '@/domain/usecases/trips/weeklyStats';
 import { formatDayTitle } from '@/domain/usecases/trips/groupTripsByDay';
-import { setDriveRoutePoints } from '@/services/location';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useTripStore, type ReplayRate } from '@/stores/useTripStore';
 import { mmss } from './tripFormat';
@@ -66,6 +66,7 @@ export function useStatsReplayViewModel(initialTripId: string | undefined): Stat
   const replay = useTripStore((state) => state.replay);
   const selectReplayTrip = useTripStore((state) => state.selectReplayTrip);
   const setRate = useTripStore((state) => state.setRate);
+  const setDriveRoutePoints = useNavigationStore((state) => state.setDriveRoutePoints);
   const seek = useTripStore((state) => state.seek);
   const amberThresholdPct = useSettingsStore((state) => state.amberThresholdPct);
 
@@ -159,7 +160,7 @@ export function useStatsReplayViewModel(initialTripId: string | undefined): Stat
     if (selectedTrip === null) return;
     setDriveRoutePoints(selectedTrip.points);
     router.navigate('/drive');
-  }, [selectedTrip]);
+  }, [selectedTrip, setDriveRoutePoints]);
 
   const elapsedLabel = selectedTrip === null
     ? mmss(0)
