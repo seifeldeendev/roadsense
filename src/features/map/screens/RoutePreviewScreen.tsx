@@ -1,4 +1,4 @@
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import {
   AppButton,
   AppText,
@@ -8,8 +8,6 @@ import {
   Screen,
   SectionHeader,
 } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { RouteAlertRow } from '../components/RouteAlertRow';
 import { RouteMapCard } from '../components/RouteMapCard';
 import { RouteSearchCard } from '../components/RouteSearchCard';
@@ -19,7 +17,6 @@ const EMPTY_ALERTS_MESSAGE = 'No cameras or hazards on this route';
 
 export default function RoutePreviewScreen() {
   const vm = useRoutePreviewViewModel();
-  const styles = useThemedStyles(screenStyles, undefined);
 
   if (vm.isLoading && vm.route === null && vm.selectedDestination === null) {
     return (
@@ -40,13 +37,13 @@ export default function RoutePreviewScreen() {
   return (
     <Screen padded={false}>
       <FlatList
-        style={styles.fill}
+        className="flex-1"
         data={vm.alerts}
         keyExtractor={(item) => item.refId}
         renderItem={({ item }) => <RouteAlertRow alert={item} />}
-        contentContainerStyle={styles.content}
+        contentContainerClassName="gap-xxxl p-lg pb-xl"
         ListHeaderComponent={
-          <View style={styles.headerGroup}>
+          <View className="gap-xxxl">
             <AppText variant="displayXl">Route preview</AppText>
             <AppText variant="bodyMd" color="body">
               Pick a destination to preview the drive with its cameras and hazards.
@@ -98,20 +95,4 @@ export default function RoutePreviewScreen() {
       />
     </Screen>
   );
-}
-
-function screenStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    fill: {
-      flex: 1,
-    },
-    content: {
-      padding: spacing.lg,
-      gap: spacing.xxxl,
-      paddingBottom: spacing.xl,
-    },
-    headerGroup: {
-      gap: spacing.xxxl,
-    },
-  });
 }

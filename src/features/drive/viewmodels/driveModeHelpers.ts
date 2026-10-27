@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { AlertFeedback } from '@/domain/usecases/drive/alertFeedback';
 import type { SpeedStatus } from '@/domain/usecases/drive/getSpeedStatus';
+import { vibrateForAlert } from '@/services/haptics';
+import { speak } from '@/services/speech';
 
 const FEEDBACK_MS = 3000;
 
 export function clockHHMM(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+export function announce(feedback: AlertFeedback, text: string): void {
+  if (feedback === 'speak') speak(text);
+  else if (feedback === 'vibrate') vibrateForAlert();
 }
 
 export function statusMessage(

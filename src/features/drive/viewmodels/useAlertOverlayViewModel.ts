@@ -4,8 +4,7 @@ import type { Hazard, UpcomingAlert } from '@/domain/entities';
 import { angleDiffDeg, bearingDeg, haversineDistanceM } from '@/domain/usecases/drive/geo';
 import { formatDistance, formatTimeAgo } from '@/shared/format';
 import { stopSpeaking } from '@/services/speech';
-import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
+import { useStores } from '@/stores/DependenciesProvider';
 
 const AUTO_DISMISS_MS = 8000;
 const BEHIND_THRESHOLD_DEG = 90;
@@ -17,6 +16,9 @@ export type AlertOverlayViewModel = {
   roadName: string | null;
   distanceLabel: string;
   cameraLimitKmh: number | null;
+  // Share of the warning distance already covered, 0..1.
+  progress: number;
+  isOverCameraLimit: boolean;
   hazard: Hazard | null;
   reportedLine: string | null;
   hasVoted: boolean;
@@ -25,11 +27,16 @@ export type AlertOverlayViewModel = {
 };
 
 export function useAlertOverlayViewModel(): AlertOverlayViewModel {
+  const { useDriveStore, useHazardStore, useSettingsStore } = useStores();
   const activeAlert = useDriveStore((s) => s.activeAlert);
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);
   const isDriving = useDriveStore((s) => s.isDriving);
+  const speedKmh = useDriveStore((s) => s.speedKmh);
+  const alertDistanceM = useSettingsStore((s) => s.alertDistanceM);
+  const dismissAlert = useDriveStore((s) => s.dismissAlert);
   const hazards = useHazardStore((s) => s.hazards);
+  const vote = useHazardStore((s) => s.vote);
   const [votedRefId, setVotedRefId] = useState<string | null>(null);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,14 +55,13 @@ export function useAlertOverlayViewModel(): AlertOverlayViewModel {
   }, []);
 
   const onDismiss = useCallback(() => {
-    const alert = useDriveStore.getState().activeAlert;
     clearDismissTimer();
-    if (alert !== null) {
-      useDriveStore.getState().dismissAlert(alert.refId);
+    if (activeAlert !== null) {
+      dismissAlert(activeAlert.refId);
     }
     stopSpeaking();
     router.back();
-  }, [clearDismissTimer]);
+  }, [activeAlert, clearDismissTimer, dismissAlert]);
 
   useEffect(() => {
     if (activeAlert === null) return undefined;
@@ -77,15 +83,13 @@ export function useAlertOverlayViewModel(): AlertOverlayViewModel {
 
   const onVote = useCallback(
     (stillThere: boolean) => {
-      const alert = useDriveStore.getState().activeAlert;
+      const alert = activeAlert;
       if (alert === null || hasVoted) return;
-      useHazardStore
-        .getState()
-        .vote(alert.refId, stillThere)
+      vote(alert.refId, stillThere)
         .then(() => setVotedRefId(alert.refId))
         .catch(() => undefined);
     },
-    [hasVoted],
+    [activeAlert, hasVoted, vote],
   );
 
   const distanceM = useMemo(() => {
@@ -110,6 +114,11 @@ export function useAlertOverlayViewModel(): AlertOverlayViewModel {
     roadName: activeAlert?.roadName ?? null,
     distanceLabel: activeAlert === null ? '' : formatDistance(distanceM),
     cameraLimitKmh: activeAlert?.speedLimitKmh ?? null,
+    progress: activeAlert === null ? 0 : Math.min(1, Math.max(0, 1 - distanceM / alertDistanceM)),
+    isOverCameraLimit:
+      activeAlert?.kind === 'camera' &&
+      activeAlert.speedLimitKmh !== undefined &&
+      speedKmh > activeAlert.speedLimitKmh,
     hazard,
     reportedLine,
     hasVoted,

@@ -1,7 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppText } from '@/components/ui';
-import { rounded, spacing } from '@/theme/tokens';
-import { useTheme, useThemedStyles } from '@/theme/useTheme';
 import type { WeekBar } from '../viewmodels/statsReplayFormat';
 
 const CHART_HEIGHT = 96;
@@ -12,34 +10,22 @@ type WeekBarChartProps = {
 };
 
 export function WeekBarChart({ bars }: WeekBarChartProps) {
-  const styles = useThemedStyles(chartStyles, undefined);
-  const { colors } = useTheme();
   const maxKm = Math.max(...bars.map((bar) => bar.km), 1);
   return (
-    <View style={styles.grid}>
+    <View className="flex-row gap-sm">
       {bars.map((bar) => {
         const height = bar.km === 0 ? 0 : Math.max(MIN_BAR_HEIGHT, Math.round((bar.km / maxKm) * CHART_HEIGHT));
         return (
-          <View key={bar.id} style={styles.column}>
-            <View style={styles.valueSlot}>
+          <View key={bar.id} className="flex-1 items-center gap-xs">
+            <View className="h-5 justify-end">
               {bar.isPeak ? (
                 <AppText variant="caption" color="body">
                   {`${bar.km.toFixed(1)} km`}
                 </AppText>
               ) : null}
             </View>
-            <View style={styles.barArea}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    height,
-                    backgroundColor: colors.ink,
-                    borderTopLeftRadius: rounded.md,
-                    borderTopRightRadius: rounded.md,
-                  },
-                ]}
-              />
+            <View className="w-full items-center justify-end" style={{ height: CHART_HEIGHT }}>
+              <View className="w-[70%] rounded-t-md bg-ink" style={{ height }} />
             </View>
             <AppText variant="caption" color="body">
               {bar.initial}
@@ -49,32 +35,4 @@ export function WeekBarChart({ bars }: WeekBarChartProps) {
       })}
     </View>
   );
-}
-
-function chartStyles() {
-  return StyleSheet.create({
-    grid: {
-      flexDirection: 'row',
-      gap: spacing.sm,
-    },
-    column: {
-      flex: 1,
-      alignItems: 'center',
-      gap: spacing.xs,
-    },
-    valueSlot: {
-      height: 20,
-      justifyContent: 'flex-end',
-    },
-    barArea: {
-      height: CHART_HEIGHT,
-      width: '100%',
-      justifyContent: 'flex-end',
-      alignItems: 'center',
-    },
-    bar: {
-      width: '70%',
-      minHeight: 0,
-    },
-  });
 }

@@ -1,7 +1,5 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText, Card } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 export type TimelineLine = { id: string; text: string };
 
@@ -10,7 +8,6 @@ type TripTimelineProps = {
 };
 
 export function TripTimeline({ lines }: TripTimelineProps) {
-  const styles = useThemedStyles(timelineStyles, undefined);
   if (lines.length === 0) {
     return (
       <AppText variant="bodyMd" color="body">
@@ -22,7 +19,11 @@ export function TripTimeline({ lines }: TripTimelineProps) {
     <Card variant="content">
       <View>
         {lines.map((line, index) => (
-          <View key={line.id} style={index === 0 ? styles.firstRow : styles.row}>
+          <View
+            key={line.id}
+            className={index === 0 ? '' : 'mt-sm border-hairline pt-sm'}
+            style={index === 0 ? undefined : divider.top}
+          >
             <AppText variant="bodySm">{line.text}</AppText>
           </View>
         ))}
@@ -31,16 +32,6 @@ export function TripTimeline({ lines }: TripTimelineProps) {
   );
 }
 
-function timelineStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    firstRow: {
-      paddingTop: 0,
-    },
-    row: {
-      marginTop: spacing.sm,
-      paddingTop: spacing.sm,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.hairline,
-    },
-  });
-}
+const divider = StyleSheet.create({
+  top: { borderTopWidth: StyleSheet.hairlineWidth },
+});

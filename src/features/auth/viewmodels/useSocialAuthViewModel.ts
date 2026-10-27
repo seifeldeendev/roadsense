@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { AuthProvider } from '@/domain/repositories';
-import { useSessionStore } from '@/stores/useSessionStore';
+import { useStores } from '@/stores/DependenciesProvider';
 
 export type SocialAuthViewModel = {
   pendingProvider: AuthProvider | null;
@@ -14,6 +14,7 @@ const PROVIDER_LABEL: Record<AuthProvider, string> = {
 };
 
 export function useSocialAuthViewModel(): SocialAuthViewModel {
+  const { useSessionStore } = useStores();
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const signInWithProvider = useSessionStore((s) => s.signInWithProvider);

@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/ui';
-import { rounded, spacing } from '@/theme/tokens';
-import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { useTheme } from '@/theme/useTheme';
 
 type BrandSplashProps = {
   onFinished: () => void;
@@ -14,7 +13,6 @@ const FADE_MS = 350;
 
 export function BrandSplash({ onFinished }: BrandSplashProps) {
   const { colors } = useTheme();
-  const styles = useThemedStyles(baseStyles, undefined);
   const [opacity] = useState(() => new Animated.Value(1));
   const [fading, setFading] = useState(false);
 
@@ -34,8 +32,8 @@ export function BrandSplash({ onFinished }: BrandSplashProps) {
   }, [opacity, onFinished]);
 
   return (
-    <Animated.View pointerEvents={fading ? 'none' : 'auto'} style={[styles.fill, { opacity }]}>
-      <View style={styles.center}>
+    <Animated.View pointerEvents={fading ? 'none' : 'auto'} style={[StyleSheet.absoluteFill, splashStyles.fill, { backgroundColor: colors.inverse, opacity }]}>
+      <View className="items-center gap-sm">
         <MaterialCommunityIcons name="speedometer" size={40} color={colors.onInverse} />
         <AppText variant="displayXxl" color="onInverse">
           RoadSense
@@ -48,18 +46,7 @@ export function BrandSplash({ onFinished }: BrandSplashProps) {
   );
 }
 
-function baseStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    fill: {
-      ...StyleSheet.absoluteFill,
-      backgroundColor: theme.colors.inverse,
-      borderRadius: rounded.none,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    center: {
-      alignItems: 'center',
-      gap: spacing.sm,
-    },
-  });
-}
+// Animated.View keeps plain styles; the fade drives its opacity.
+const splashStyles = StyleSheet.create({
+  fill: { alignItems: 'center', justifyContent: 'center' },
+});

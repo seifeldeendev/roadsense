@@ -13,4 +13,6 @@ export interface PlannedRoute {
   points: LatLng[];
   distanceM: number;
   durationS: number;
+  // True when no road routing was available and the line is an approximation.
+  estimated?: boolean;
 }

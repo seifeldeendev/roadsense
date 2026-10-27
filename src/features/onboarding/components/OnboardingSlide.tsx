@@ -1,18 +1,16 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
+import { View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
 import { AppText } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import { OnboardingIllustration } from './OnboardingIllustration';
 import type { OnboardingSlideData } from '../viewmodels/useOnboardingViewModel';
 
 type OnboardingSlideProps = {
   slide: OnboardingSlideData;
   width: number;
+  height?: number | undefined;
 };
 
-export function OnboardingSlide({ slide, width }: OnboardingSlideProps) {
-  const styles = useThemedStyles(slideStyles, undefined);
+export function OnboardingSlide({ slide, width, height }: OnboardingSlideProps) {
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
 
   const measureIllustrationBox = (event: LayoutChangeEvent) => {
@@ -37,42 +35,18 @@ export function OnboardingSlide({ slide, width }: OnboardingSlideProps) {
   }, [box]);
 
   return (
-    <View style={[styles.root, { width }]}>
-      <View style={styles.illustration} onLayout={measureIllustrationBox}>
+    <View className="flex-1 items-center justify-center gap-lg px-lg" style={{ width, height }}>
+      <View className="w-full flex-1 items-center justify-center" onLayout={measureIllustrationBox}>
         <OnboardingIllustration icons={slide.icons} style={frameStyle} />
       </View>
-      <View style={styles.copy}>
-        <AppText variant="displayXl" style={styles.centered}>
+      <View className="gap-sm">
+        <AppText variant="displayXl" className="text-center">
           {slide.headline}
         </AppText>
-        <AppText variant="bodyLg" color="body" style={styles.centered}>
+        <AppText variant="bodyLg" color="body" className="text-center">
           {slide.body}
         </AppText>
       </View>
     </View>
   );
-}
-
-function slideStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    root: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.lg,
-      paddingHorizontal: spacing.lg,
-    },
-    illustration: {
-      flex: 1,
-      width: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    copy: {
-      gap: spacing.sm,
-    },
-    centered: {
-      textAlign: 'center',
-    },
-  });
 }

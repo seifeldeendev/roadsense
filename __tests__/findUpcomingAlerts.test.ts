@@ -123,4 +123,13 @@ describe('findUpcomingAlerts', () => {
     );
     expect(result.map((a) => a.refId)).toEqual(['cam-near', 'hz-far']);
   });
+
+  it('looks further ahead when given a wider distance', () => {
+    // ~1.1 km north: beyond the 300 m alert distance but inside a 2 km look-ahead.
+    const far = [camera('cam-far', 30.08, ORIGIN.lng)];
+    expect(findUpcomingAlerts(ORIGIN, 0, far, [], settings({}))).toEqual([]);
+    expect(findUpcomingAlerts(ORIGIN, 0, far, [], settings({}), 2000).map((a) => a.refId)).toEqual([
+      'cam-far',
+    ]);
+  });
 });

@@ -5,6 +5,7 @@ import { afterAll, beforeAll, expect, jest, test } from '@jest/globals';
 import { renderRouter, testRouter, type RenderRouterResult } from 'expo-router/testing-library';
 import type React from 'react';
 
+jest.mock('expo-router/native-tabs', () => require('../test-support/nativeTabsMock'));
 jest.mock(
   '@react-native-async-storage/async-storage',
   () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -58,7 +59,6 @@ jest.mock('react-native-maps', () => {
     Marker: makeNative('map-marker'),
     Polyline: makeNative('map-polyline'),
     PROVIDER_GOOGLE: 'google',
-    PROVIDER_DEFAULT: undefined,
   };
 });
 jest.mock('react-native-safe-area-context', () => {
@@ -96,7 +96,7 @@ async function advanceVirtualTime(count = 24, stepMs = 250): Promise<void> {
 let renderResult: RenderRouterResult;
 
 beforeAll(async () => {
-  require('../src/stores/useSessionStore').useSessionStore.setState({
+  require('../src/composition/stores').useSessionStore.setState({
     user: null,
     hasCompletedOnboarding: false,
     hasHydrated: true,
@@ -135,8 +135,8 @@ test('demo sign-in lands on the drive tab', async () => {
   expect(renderResult.getPathname()).toBe('/drive');
 });
 
-test('sign out from settings lands back on sign-in with no history back', async () => {
-  await testRouter.push('/settings/alerts');
+test('sign out from the Account tab lands back on sign-in with no history back', async () => {
+  await testRouter.push('/account');
   await advanceVirtualTime();
   await fireEvent.press(screen.getByLabelText('Sign out'));
   await advanceVirtualTime();

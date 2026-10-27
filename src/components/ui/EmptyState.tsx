@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from './AppText';
-import { rounded, spacing, type HazardIconName } from '@/theme/tokens';
+import type { HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type EmptyStateProps = {
@@ -15,43 +15,17 @@ type EmptyStateProps = {
 export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.canvasSoft }]}>
-      <View style={[styles.iconCircle, { backgroundColor: colors.canvasSofter }]}>
+    <View className="flex-1 items-center justify-center gap-sm rounded-xl bg-canvas-soft p-xxl">
+      <View className="mb-xs h-14 w-14 items-center justify-center rounded-full bg-canvas-softer">
         <MaterialCommunityIcons name={icon} size={26} color={colors.ink} />
       </View>
-      <AppText variant="displaySm" style={styles.centered}>
+      <AppText variant="displaySm" className="text-center">
         {title}
       </AppText>
-      <AppText variant="bodyMd" color="body" style={styles.centered}>
+      <AppText variant="bodyMd" color="body" className="text-center">
         {message}
       </AppText>
-      {action !== undefined && <View style={styles.action}>{action}</View>}
+      {action !== undefined && <View className="mt-sm min-w-[220px]">{action}</View>}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    padding: spacing.xxl,
-    borderRadius: rounded.xl,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: rounded.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  centered: {
-    textAlign: 'center',
-  },
-  action: {
-    marginTop: spacing.sm,
-    minWidth: 220,
-  },
-});

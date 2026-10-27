@@ -1,9 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { HazardMarker, RoadMap } from '@/components/map';
 import type { Hazard } from '@/domain/entities';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
-import { rounded } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 type ReportMapCardProps = {
   hazard: Hazard;
@@ -13,9 +11,8 @@ type ReportMapCardProps = {
 const MIN_MARK = 0.01;
 
 export function ReportMapCard({ hazard, frame }: ReportMapCardProps) {
-  const styles = useThemedStyles(mapCardStyles, undefined);
   return (
-    <View style={styles.frame}>
+    <View className="aspect-video overflow-hidden rounded-xl">
       <RoadMap
         initialRegion={{
           latitude: frame.latitude,
@@ -31,14 +28,4 @@ export function ReportMapCard({ hazard, frame }: ReportMapCardProps) {
       </RoadMap>
     </View>
   );
-}
-
-function mapCardStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    frame: {
-      aspectRatio: 16 / 9,
-      borderRadius: rounded.xl,
-      overflow: 'hidden',
-    },
-  });
 }

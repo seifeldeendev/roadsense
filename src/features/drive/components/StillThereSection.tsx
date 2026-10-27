@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
-import { AppButton, Card, AppText } from '@/components/ui';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { spacing } from '@/theme/tokens';
+import { AppText } from '@/components/ui';
+import type { HazardIconName } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type StillThereSectionProps = {
@@ -10,64 +10,61 @@ type StillThereSectionProps = {
   onVote: (stillThere: boolean) => void;
 };
 
+// Community confirmation: round thumbs-up / thumbs-down votes under the alert.
 export function StillThereSection({ hasVoted, reportedLine, onVote }: StillThereSectionProps) {
   const { colors } = useTheme();
   return (
-    <Card variant="soft">
-      <AppText variant="displaySm" style={styles.centered}>
-        Still there?
-      </AppText>
+    <View className="gap-md border-hairline pt-md" style={hairline.top}>
+      <View className="gap-xxs">
+        <AppText variant="bodyMdStrong">Still there?</AppText>
+        <AppText variant="caption" color="body" numberOfLines={1}>
+          {reportedLine}
+        </AppText>
+      </View>
       {hasVoted ? (
-        <View style={styles.thanks}>
+        <View className="flex-row items-center justify-center gap-xs">
           <MaterialCommunityIcons name="check" size={16} color={colors.ink} />
           <AppText variant="bodySmStrong">Thanks — vote recorded</AppText>
         </View>
       ) : (
-        <View style={styles.stack}>
-          <View style={styles.row}>
-            <View style={styles.half}>
-              <AppButton
-                title="Yes, still there"
-                onPress={() => onVote(true)}
-                accessibilityLabel="Confirm hazard is still there"
-              />
-            </View>
-            <View style={styles.half}>
-              <AppButton
-                title="No, it's gone"
-                variant="secondary"
-                onPress={() => onVote(false)}
-                accessibilityLabel="Hazard is no longer there"
-              />
-            </View>
-          </View>
-          <AppText variant="bodySm" color="body" style={styles.centered}>
-            {reportedLine}
-          </AppText>
+        <View className="flex-row justify-center gap-xxxl">
+          <VoteButton icon="thumb-up-outline" label="Yes" a11y="Confirm hazard is still there" primary onPress={() => onVote(true)} />
+          <VoteButton icon="thumb-down-outline" label="No" a11y="Hazard is no longer there" onPress={() => onVote(false)} />
         </View>
       )}
-    </Card>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  stack: {
-    gap: spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  half: {
-    flex: 1,
-  },
-  thanks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  centered: {
-    textAlign: 'center',
-  },
+type VoteButtonProps = {
+  icon: HazardIconName;
+  label: string;
+  a11y: string;
+  primary?: boolean;
+  onPress: () => void;
+};
+
+function VoteButton({ icon, label, a11y, primary = false, onPress }: VoteButtonProps) {
+  const { colors } = useTheme();
+  return (
+    <View className="items-center gap-xs">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={a11y}
+        onPress={onPress}
+        className={`h-touch-lg w-touch-lg items-center justify-center rounded-full ${
+          primary ? 'bg-primary active:bg-primary-pressed' : 'border-hairline bg-canvas active:bg-surface-pressed'
+        }`}
+        style={primary ? undefined : hairline.all}
+      >
+        <MaterialCommunityIcons name={icon} size={24} color={primary ? colors.onPrimary : colors.ink} />
+      </Pressable>
+      <AppText variant="bodySmStrong">{label}</AppText>
+    </View>
+  );
+}
+
+const hairline = StyleSheet.create({
+  top: { borderTopWidth: StyleSheet.hairlineWidth },
+  all: { borderWidth: StyleSheet.hairlineWidth },
 });

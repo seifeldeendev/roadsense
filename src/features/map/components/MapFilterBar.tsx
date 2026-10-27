@@ -1,7 +1,6 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Chip } from '@/components/ui';
-import { rounded, spacing } from '@/theme/tokens';
-import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { ScrollView, View } from 'react-native';
+import { Chip, GlassSurface } from '@/components/ui';
+import { rounded } from '@/theme/tokens';
 import type { MapFilterChipVm, MapFilterKey } from '../viewmodels/useLiveMapViewModel';
 
 type MapFilterBarProps = {
@@ -10,15 +9,13 @@ type MapFilterBarProps = {
 };
 
 export function MapFilterBar({ chips, onToggle }: MapFilterBarProps) {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(filterBarStyles, undefined);
   return (
-    <View pointerEvents="box-none" style={styles.wrap}>
-      <View style={[styles.surface, { backgroundColor: colors.canvas }]}>
+    <View pointerEvents="box-none" className="absolute left-lg right-lg top-md">
+      <GlassSurface radius={rounded.xl}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.row}
+          contentContainerClassName="gap-sm p-sm"
         >
           {chips.map((chip) => (
             <Chip
@@ -30,26 +27,7 @@ export function MapFilterBar({ chips, onToggle }: MapFilterBarProps) {
             />
           ))}
         </ScrollView>
-      </View>
+      </GlassSurface>
     </View>
   );
-}
-
-function filterBarStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    wrap: {
-      position: 'absolute',
-      top: spacing.md,
-      left: spacing.lg,
-      right: spacing.lg,
-    },
-    surface: {
-      borderRadius: rounded.xl,
-      ...theme.elevation.level3,
-    },
-    row: {
-      gap: spacing.sm,
-      padding: spacing.sm,
-    },
-  });
 }

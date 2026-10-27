@@ -1,17 +1,16 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { AppButton, AppText, Card } from '@/components/ui';
-import { spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 type MapBottomBarProps = {
   summaryLine: string;
   onPlanRoute: () => void;
+  // Distance from the screen bottom, clearing the floating tab bar.
+  bottomInset: number;
 };
 
-export function MapBottomBar({ summaryLine, onPlanRoute }: MapBottomBarProps) {
-  const styles = useThemedStyles(bottomBarStyles, undefined);
+export function MapBottomBar({ summaryLine, onPlanRoute, bottomInset }: MapBottomBarProps) {
   return (
-    <View style={styles.wrap}>
+    <View className="absolute left-lg right-lg" style={{ bottom: bottomInset }}>
       <Card variant="form">
         <AppText variant="bodyMdStrong">{summaryLine}</AppText>
         <AppButton
@@ -22,15 +21,4 @@ export function MapBottomBar({ summaryLine, onPlanRoute }: MapBottomBarProps) {
       </Card>
     </View>
   );
-}
-
-function bottomBarStyles(_theme: ResolvedTheme) {
-  return StyleSheet.create({
-    wrap: {
-      position: 'absolute',
-      bottom: spacing.lg,
-      left: spacing.lg,
-      right: spacing.lg,
-    },
-  });
 }

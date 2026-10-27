@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { AppButton, AppText, Card, IconButton, SegmentedControl } from '@/components/ui';
-import { rounded, spacing, typography } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 import type { ReplayControls } from '../viewmodels/useStatsReplayViewModel';
 
 type ReplayRate = 1 | 2 | 4;
@@ -18,9 +16,8 @@ type ReplayCardProps = {
 };
 
 export function ReplayCard({ controls }: ReplayCardProps) {
-  const styles = useThemedStyles(replayStyles, undefined);
   const [trackWidth, setTrackWidth] = useState(0);
-  const fillColor = useThemedStyles(fillColour, controls.status);
+  const status = statusClass[controls.status];
 
   return (
     <Card variant="content">
@@ -29,13 +26,10 @@ export function ReplayCard({ controls }: ReplayCardProps) {
           {controls.tripLabel}
         </AppText>
       )}
-      <View style={styles.readout}>
-        <Text
-          style={[styles.speedNumber, { color: fillColor }]}
-          accessibilityLabel={`Replay speed ${controls.speedKmh} kilometres per hour`}
-        >
+      <View className="flex-row items-baseline gap-xs" accessibilityLabel={`Replay speed ${controls.speedKmh} kilometres per hour`}>
+        <AppText variant="displayLg" className={`${status.text} tabular-nums`}>
           {controls.speedKmh}
-        </Text>
+        </AppText>
         <AppText variant="bodyMd" color="body">
           km/h
         </AppText>
@@ -45,7 +39,7 @@ export function ReplayCard({ controls }: ReplayCardProps) {
       </AppText>
 
       <Pressable
-        style={styles.trackHit}
+        className="mt-sm py-sm"
         accessibilityRole="slider"
         accessibilityLabel="Replay progress"
         accessibilityValue={{ text: `${controls.elapsedLabel} of ${controls.totalLabel}` }}
@@ -55,17 +49,15 @@ export function ReplayCard({ controls }: ReplayCardProps) {
         }}
         onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
       >
-        <View style={styles.track}>
+        <View className="h-sm overflow-hidden rounded-full bg-canvas-soft">
           <View
-            style={[
-              styles.fill,
-              { backgroundColor: fillColor, width: `${Math.round(controls.progress * 100)}%` },
-            ]}
+            className={`h-full rounded-full ${status.bg}`}
+            style={{ width: `${Math.round(controls.progress * 100)}%` }}
           />
         </View>
       </Pressable>
 
-      <View style={styles.timeRow}>
+      <View className="flex-row justify-between">
         <AppText variant="caption" color="body">
           {controls.elapsedLabel}
         </AppText>
@@ -74,13 +66,13 @@ export function ReplayCard({ controls }: ReplayCardProps) {
         </AppText>
       </View>
 
-      <View style={styles.controlsRow}>
+      <View className="my-md flex-row items-center gap-md">
         <IconButton
           icon={controls.isPlaying ? 'pause' : 'play'}
           accessibilityLabel={controls.isPlaying ? 'Pause replay' : 'Play replay'}
           onPress={controls.togglePlay}
         />
-        <View style={styles.rateControl}>
+        <View className="flex-1">
           <SegmentedControl
             options={replayRateOptions}
             value={controls.rate}
@@ -102,48 +94,8 @@ export function ReplayCard({ controls }: ReplayCardProps) {
 
 // The readout and progress fill take the speed status colour — the one allowed
 // non-grayscale accent on this screen.
-function fillColour(theme: ResolvedTheme, status: 'ok' | 'near' | 'over') {
-  return theme.colors.status[status];
-}
-
-function replayStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    readout: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: spacing.xs,
-    },
-    speedNumber: {
-      ...typography.displayLg,
-      fontVariant: ['tabular-nums'] as const,
-    },
-    trackHit: {
-      paddingVertical: spacing.sm,
-      marginTop: spacing.sm,
-    },
-    track: {
-      height: spacing.sm,
-      borderRadius: rounded.full,
-      backgroundColor: theme.colors.canvasSoft,
-      overflow: 'hidden',
-    },
-    fill: {
-      height: '100%',
-      borderRadius: rounded.full,
-    },
-    timeRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    controlsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      marginTop: spacing.md,
-      marginBottom: spacing.md,
-    },
-    rateControl: {
-      flex: 1,
-    },
-  });
-}
+const statusClass = {
+  ok: { text: 'text-status-ok', bg: 'bg-status-ok' },
+  near: { text: 'text-status-near', bg: 'bg-status-near' },
+  over: { text: 'text-status-over', bg: 'bg-status-over' },
+} as const;

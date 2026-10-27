@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import {
   AppText,
 } from '@/components/ui';
@@ -15,18 +15,16 @@ import {
 } from '@/components/map';
 import type { Trip } from '@/domain/entities';
 import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
-import { rounded, spacing } from '@/theme/tokens';
-import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { useTheme } from '@/theme/useTheme';
 import type { AlertMarkerModel } from '../viewmodels/useTripDetailsViewModel';
 
-const ASPECT_16_9 = 16 / 9;
-const SWATCH_SIZE = 10;
 
-const LEGEND_ITEMS: { status: 'ok' | 'near' | 'over'; label: string }[] = [
-  { status: 'ok', label: 'Within limit' },
-  { status: 'near', label: 'Near' },
-  { status: 'over', label: 'Over' },
-];
+// Status colours are the one allowed accent; they mark speed on the route line.
+const LEGEND_ITEMS = [
+  { status: 'ok', label: 'Within limit', swatch: 'bg-status-ok' },
+  { status: 'near', label: 'Near', swatch: 'bg-status-near' },
+  { status: 'over', label: 'Over', swatch: 'bg-status-over' },
+] as const;
 
 type TripMapCardProps = {
   trip: Trip;
@@ -36,7 +34,7 @@ type TripMapCardProps = {
 };
 
 export function TripMapCard({ trip, segments, alertMarkers, frame }: TripMapCardProps) {
-  const styles = useThemedStyles(mapStyles, undefined);
+  const { scheme } = useTheme();
   const mapRef = useRef<RoadMapHandle | null>(null);
 
   useEffect(() => {
@@ -47,7 +45,8 @@ export function TripMapCard({ trip, segments, alertMarkers, frame }: TripMapCard
   const lastPoint = trip.points[trip.points.length - 1];
 
   return (
-    <View style={styles.frame}>
+    // Map tiles clip against the rounding, so dark keeps a hairline edge.
+    <View className={`aspect-video overflow-hidden rounded-xl border-hairline ${scheme === 'dark' ? 'border' : ''}`}>
       <RoadMap ref={mapRef} initialRegion={frame}>
         <SegmentedRouteLine segments={segments} />
         {firstPoint !== undefined && (
@@ -64,6 +63,7 @@ export function TripMapCard({ trip, segments, alertMarkers, frame }: TripMapCard
               lng={marker.lng}
               roadName={marker.roadName}
               speedLimitKmh={marker.speedLimitKmh}
+              type={marker.cameraType}
             />
           ) : (
             <HazardMarker
@@ -80,14 +80,11 @@ export function TripMapCard({ trip, segments, alertMarkers, frame }: TripMapCard
 }
 
 export function TripMapLegend() {
-  const { colors } = useTheme();
   return (
-    <View style={legendStyles.row}>
+    <View className="flex-row gap-lg">
       {LEGEND_ITEMS.map((item) => (
-        <View key={item.status} style={legendStyles.item}>
-          <View
-            style={[legendStyles.swatch, { backgroundColor: colors.status[item.status] }]}
-          />
+        <View key={item.status} className="flex-row items-center gap-sm">
+          <View className={`h-2.5 w-2.5 rounded-full ${item.swatch}`} />
           <AppText variant="bodySm" color="body">
             {item.label}
           </AppText>
@@ -96,33 +93,3 @@ export function TripMapLegend() {
     </View>
   );
 }
-
-function mapStyles(theme: ResolvedTheme) {
-  return StyleSheet.create({
-    frame: {
-      aspectRatio: ASPECT_16_9,
-      borderRadius: rounded.xl,
-      overflow: 'hidden',
-      // Map tiles clip against the rounding, so dark keeps a hairline edge.
-      borderWidth: theme.scheme === 'dark' ? 1 : 0,
-      borderColor: theme.colors.hairline,
-    },
-  });
-}
-
-const legendStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  swatch: {
-    width: SWATCH_SIZE,
-    height: SWATCH_SIZE,
-    borderRadius: SWATCH_SIZE / 2,
-  },
-});

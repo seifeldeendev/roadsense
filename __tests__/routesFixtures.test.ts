@@ -5,9 +5,13 @@ import { MOCK_HAZARDS } from '../src/data/mock/hazards';
 import { MOCK_ROUTES, MOCK_DESTINATIONS } from '../src/data/mock/routes';
 
 describe('mock route fixtures', () => {
-  it('covers every destination with 60 to 120 interpolated points', () => {
-    expect(MOCK_DESTINATIONS).toHaveLength(5);
-    for (const destination of MOCK_DESTINATIONS) {
+  // Only the first destinations have hand-made road routes; the rest are routed live.
+  const handMade = MOCK_DESTINATIONS.filter((destination) => MOCK_ROUTES[destination.id] !== undefined);
+
+  it('gives each hand-made route 60 to 120 interpolated points', () => {
+    expect(handMade).toHaveLength(5);
+    expect(MOCK_DESTINATIONS.length).toBeGreaterThan(handMade.length);
+    for (const destination of handMade) {
       const route = MOCK_ROUTES[destination.id];
       expect(route).toBeDefined();
       expect(route.points.length).toBeGreaterThanOrEqual(60);
@@ -18,7 +22,7 @@ describe('mock route fixtures', () => {
   });
 
   it('sends at least two routes within 50 m of a camera or hazard', () => {
-    const hitsPerRoute = MOCK_DESTINATIONS.map((destination) =>
+    const hitsPerRoute = handMade.map((destination) =>
       getAlertsAlongRoute(MOCK_ROUTES[destination.id].points, MOCK_CAMERAS, MOCK_HAZARDS, 50),
     );
     expect(hitsPerRoute.flat().length).toBeGreaterThanOrEqual(2);

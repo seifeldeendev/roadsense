@@ -7,37 +7,40 @@ import {
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { View } from 'react-native';
+import '../../global.css';
 import { nativeTypography } from '@/theme/tokens';
+import { themeVars } from '@/theme/cssVars';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useTheme } from '@/theme/useTheme';
-import { useThemeStore } from '@/stores/useThemeStore';
-import { useSessionStore } from '@/stores/useSessionStore';
+import { AppDependenciesProvider } from '@/composition/AppDependenciesProvider';
+import { SessionGate } from '@/features/auth/components/SessionGate';
+import { useSessionGateViewModel } from '@/features/auth/viewmodels/useSessionGateViewModel';
+import { useThemePreference } from '@/features/settings/viewmodels/useAppSettingsViewModel';
 import { BrandSplash } from '@/features/onboarding/screens/BrandSplash';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const preference = useThemeStore((s) => s.preference);
-  const hasHydrated = useSessionStore((s) => s.hasHydrated);
   const [fontsLoaded, fontsError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_700Bold,
   });
 
-  const ready = (fontsLoaded || fontsError !== null) && hasHydrated;
+  return (
+    <AppDependenciesProvider>
+      <SessionGate ready={fontsLoaded || fontsError !== null}>
+        <ThemedRoot />
+      </SessionGate>
+    </AppDependenciesProvider>
+  );
+}
 
-  useEffect(() => {
-    if (ready) {
-      void SplashScreen.hideAsync();
-    }
-  }, [ready]);
-
-  if (!ready) {
-    return null;
-  }
-
+// Inside the providers, so the saved preference comes from the app's stores.
+function ThemedRoot() {
+  const preference = useThemePreference();
   return (
     <ThemeProvider preference={preference}>
       <ThemedChrome />
@@ -47,13 +50,14 @@ export default function RootLayout() {
 
 function ThemedChrome() {
   const { colors, scheme } = useTheme();
-  const user = useSessionStore((s) => s.user);
-  const hasCompletedOnboarding = useSessionStore((s) => s.hasCompletedOnboarding);
+  const access = useSessionGateViewModel();
   const [splashShown, setSplashShown] = useState(true);
   const hideSplash = useCallback(() => setSplashShown(false), []);
+  // Palette as CSS variables so NativeWind classes (bg-canvas, text-ink…) follow the theme.
+  const palette = useMemo(() => themeVars(colors), [colors]);
 
   return (
-    <>
+    <View style={[{ flex: 1 }, palette]}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
@@ -68,27 +72,32 @@ function ThemedChrome() {
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Protected guard={!hasCompletedOnboarding}>
+        <Stack.Protected guard={access.canOnboard}>
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Protected guard={hasCompletedOnboarding && user === null}>
+        <Stack.Protected guard={access.canSignIn}>
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Protected guard={user !== null}>
+        <Stack.Protected guard={access.canUseApp}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="alert"
             options={{ presentation: 'transparentModal', headerShown: false, animation: 'fade' }}
           />
-          <Stack.Screen name="settings/alerts" options={{ title: 'Alert settings' }} />
+          <Stack.Screen name="settings/profile" options={{ title: 'Profile' }} />
+          <Stack.Screen name="settings/alerts" options={{ title: 'Alerts' }} />
+          <Stack.Screen name="settings/map" options={{ title: 'Map & layers' }} />
+          <Stack.Screen name="settings/sound" options={{ title: 'Sound & voice' }} />
+          <Stack.Screen name="settings/drive-screen" options={{ title: 'Drive screen' }} />
+          <Stack.Screen name="settings/appearance" options={{ title: 'Appearance' }} />
           <Stack.Screen name="report/[id]" options={{ title: 'Report details' }} />
-          <Stack.Screen name="route-preview" options={{ title: 'Route preview' }} />
+          <Stack.Screen name="route-preview" options={{ headerShown: false }} />
           <Stack.Screen name="trip/[id]" options={{ title: 'Trip details' }} />
         </Stack.Protected>
       </Stack>
       {splashShown && (
         <BrandSplash onFinished={hideSplash} />
       )}
-    </>
+    </View>
   );
 }

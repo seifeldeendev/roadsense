@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { rounded, spacing } from '@/theme/tokens';
-import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { View } from 'react-native';
+import { elevation, rounded } from '@/theme/tokens';
+import { GlassSurface } from './GlassSurface';
 
 export type CardVariant = 'content' | 'elevated' | 'soft' | 'inverse' | 'form';
 
@@ -10,30 +10,26 @@ type CardProps = {
   variant?: CardVariant;
 };
 
+const variantClass: Record<Exclude<CardVariant, 'form'>, string> = {
+  content: 'bg-canvas p-xxl',
+  elevated: 'bg-canvas p-xxl',
+  soft: 'bg-canvas-soft p-xxl',
+  inverse: 'bg-inverse p-xxl',
+};
+
 export function Card({ children, variant = 'content' }: CardProps) {
-  const styles = useThemedStyles(cardStyles, variant);
-  return <View style={styles.base}>{children}</View>;
-}
-
-function cardStyles(theme: ResolvedTheme, variant: CardVariant) {
-  return StyleSheet.create({
-    base: cardBase(theme, variant),
-  });
-}
-
-function cardBase(theme: ResolvedTheme, variant: CardVariant): ViewStyle {
-  const { colors, elevation } = theme;
-  const variantLayer: Record<CardVariant, ViewStyle> = {
-    content: {},
-    elevated: { ...elevation.level1 },
-    soft: { backgroundColor: colors.canvasSoft },
-    inverse: { backgroundColor: colors.inverse },
-    form: { ...elevation.level2, padding: spacing.lg },
-  };
-  return {
-    backgroundColor: colors.canvas,
-    borderRadius: rounded.xl,
-    padding: spacing.xxl,
-    ...variantLayer[variant],
-  };
+  // The request-form card floats over the map, so it is glass.
+  if (variant === 'form') {
+    return (
+      <GlassSurface radius={rounded.xl} className="p-lg">
+        {children}
+      </GlassSurface>
+    );
+  }
+  // Shadows stay as styles: DESIGN.md elevation is a full box-shadow string.
+  return (
+    <View className={`rounded-xl ${variantClass[variant]}`} style={variant === 'elevated' ? elevation.level1 : undefined}>
+      {children}
+    </View>
+  );
 }

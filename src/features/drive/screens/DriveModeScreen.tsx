@@ -1,34 +1,39 @@
-import { StyleSheet, View } from 'react-native';
-import {
-  AppButton,
-  AppText,
-  ErrorState,
-  IconButton,
-  LoadingState,
-  Screen,
-  SectionHeader,
-} from '@/components/ui';
-import { hazardMeta, spacing } from '@/theme/tokens';
-import { DriveStatusPanel } from '../components/DriveStatusPanel';
-import { NextAlertCard } from '../components/NextAlertCard';
+import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarSpace } from '@/components/navigation';
+import { ErrorState, LoadingState, Screen } from '@/components/ui';
+import { spacing } from '@/theme/tokens';
+import { ActiveAlertsSheet, ReportSheet } from '../components/DriveActionSheets';
+import { DriveBottomBar } from '../components/DriveBottomBar';
+import { DriveMap } from '../components/DriveMap';
+import { MapOptionsSheet, SoundSheet } from '../components/DriveSettingsSheets';
+import { DriveTopOverlay } from '../components/DriveTopOverlay';
+import { MapFab } from '../components/MapFab';
+import { PinPickerOverlay } from '../components/PinPickerOverlay';
+import { PlannerDropdown } from '../components/PlannerDropdown';
 import { ReportBanner } from '../components/ReportBanner';
-import { ReportButton } from '../components/ReportButton';
-import { useDriveModeViewModel } from '../viewmodels/useDriveModeViewModel';
+import { RouteSummaryCard } from '../components/RouteSummaryCard';
+import { SpeedReadout } from '../components/SpeedReadout';
+import { useDriveControlsViewModel } from '../viewmodels/useDriveControlsViewModel';
 import { useDriveMapViewModel } from '../viewmodels/useDriveMapViewModel';
-import { DriveMapCard } from '../components/DriveMapCard';
+import { useDriveModeViewModel } from '../viewmodels/useDriveModeViewModel';
+import { useTripPlannerViewModel } from '../viewmodels/useTripPlannerViewModel';
 
 export default function DriveModeScreen() {
   const vm = useDriveModeViewModel();
-  const mapVm = useDriveMapViewModel();
+  const map = useDriveMapViewModel();
+  const controls = useDriveControlsViewModel();
+  const planner = useTripPlannerViewModel();
+  const insets = useSafeAreaInsets();
+  const tabBarSpace = useTabBarSpace();
 
-  if (vm.isLoading) {
+  if (vm.isLoading || map.isLoading) {
     return (
       <Screen>
         <LoadingState label="Loading cameras and hazards…" />
       </Screen>
     );
   }
-
   if (vm.error !== null) {
     return (
       <Screen>
@@ -37,95 +42,108 @@ export default function DriveModeScreen() {
     );
   }
 
+  // Planning happens on this screen, over the same map, like a ride-hailing home screen.
+  const showsRouteCard = planner.mode === 'route' && planner.destination !== null && !vm.isDriving;
+  const showsDriveControls = planner.mode === 'idle' || planner.mode === 'route';
+
   return (
-    <Screen scroll>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <AppText variant="displayXl">Drive</AppText>
-            <AppText variant="bodyMd" color="body" numberOfLines={1}>
-              {vm.isDriving ? `Live · ${vm.statusLabel}` : 'Salah Salem demo route'}
-            </AppText>
-          </View>
-          <IconButton
-            icon="cog-outline"
-            accessibilityLabel="Alert settings"
-            onPress={vm.openSettings}
+    <View className="flex-1 bg-canvas">
+      <DriveMap
+        {...map}
+        hazards={map.activeHazards}
+        recentreSignal={controls.recentreSignal}
+        onOpenHazard={controls.openHazard}
+        onCenterChange={planner.mode === 'pin' ? planner.onPinMove : undefined}
+        onRegionChange={map.onRegionChange}
+      />
+
+      {showsDriveControls ? (
+        <>
+          <DriveTopOverlay
+            topInset={insets.top}
+            showSearch={!showsRouteCard}
+            quickPlaces={vm.isDriving ? [] : planner.quickPlaces}
+            onChoosePlace={planner.choose}
+            showLimitSign={controls.showLimitSign}
+            limitKmh={vm.hasLimit ? vm.limitKmh : null}
+            over={vm.status === 'over'}
+            soundMode={controls.soundMode}
+            onGoTo={planner.openSearch}
+            onSound={() => controls.openSheet('sound')}
+            onOptions={() => controls.openSheet('options')}
+            onRecentre={controls.recentre}
           />
-        </View>
-
-        <DriveStatusPanel
-          isDriving={vm.isDriving}
-          speedKmh={vm.speedKmh}
-          status={vm.status}
-          statusLabel={vm.statusLabel}
-          hasLimit={vm.hasLimit}
-          limitKmh={vm.limitKmh}
-        />
-
-        <DriveMapCard
-          routePoints={mapVm.routePoints}
-          routeFrame={mapVm.routeFrame}
-          cameras={mapVm.cameras}
-          hazards={mapVm.activeHazards}
-          position={mapVm.position}
-          heading={mapVm.heading}
-          isDriving={mapVm.isDriving}
-          travelledIndex={mapVm.travelledIndex}
-        />
-
-        <NextAlertCard alert={vm.nextAlert} />
-
-        <View style={styles.reportSection}>
-          <SectionHeader
-            title="Report a hazard"
-            subtitle="One tap — location and time are added for you"
-          />
-          <View style={styles.grid}>
-            {vm.reportTypes.map((type) => (
-              <ReportButton
-                key={type}
-                icon={hazardMeta[type].icon}
-                label={hazardMeta[type].label}
-                onPress={() => vm.onReport(type)}
+          <View pointerEvents="box-none" className="absolute left-lg right-lg gap-md" style={{ bottom: tabBarSpace + spacing.md }}>
+            <View pointerEvents="box-none" className="flex-row items-end justify-between">
+              {controls.showSpeedometer ? <SpeedReadout speedKmh={vm.speedKmh} status={vm.status} /> : <View />}
+              {/* Black only while driving, so the idle screen keeps a single black CTA. */}
+              <MapFab icon="plus" accessibilityLabel="New alert" primary={vm.isDriving} onPress={() => controls.openSheet('report')} />
+            </View>
+            <ReportBanner message={vm.driverWarning} />
+            <ReportBanner message={vm.feedback} />
+            {showsRouteCard && planner.destination !== null ? (
+              <RouteSummaryCard
+                destinationName={planner.destination.name}
+                isRouting={planner.isRouting}
+                error={planner.routeError}
+                durationLabel={planner.durationLabel}
+                detailLabel={planner.detailLabel}
+                alerts={planner.alerts}
+                onStart={vm.start}
+                onClose={planner.close}
               />
-            ))}
+            ) : (
+              <DriveBottomBar
+                roadName={controls.roadName}
+                alertsAhead={controls.showAlertsAhead ? controls.activeAlerts.length : null}
+                isDriving={vm.isDriving}
+                onOpenAlerts={() => controls.openSheet('alerts')}
+                onStart={vm.start}
+                onStop={vm.stop}
+              />
+            )}
           </View>
-        </View>
+        </>
+      ) : null}
 
-        <ReportBanner message={vm.feedback} />
-
-        <AppButton
-          title={vm.isDriving ? 'Stop drive' : 'Start drive'}
-          variant={vm.isDriving ? 'secondary' : 'large'}
-          onPress={vm.isDriving ? vm.stop : vm.start}
-          accessibilityLabel={vm.isDriving ? 'Stop drive' : 'Start drive'}
+      {planner.mode === 'pin' ? (
+        <PinPickerOverlay topInset={insets.top} bottomInset={tabBarSpace} label={planner.pinLabel} onBack={planner.back} onConfirm={planner.confirmPin} />
+      ) : null}
+      {planner.mode === 'search' ? (
+        <PlannerDropdown
+          topInset={insets.top}
+          originLabel={planner.originLabel}
+          query={planner.query}
+          sections={planner.sections}
+          onQueryChange={planner.setQuery}
+          onChoose={planner.choose}
+          onSetOnMap={planner.openPin}
+          onClose={planner.back}
         />
-      </View>
-    </Screen>
+      ) : null}
+
+      <SoundSheet visible={controls.sheet === 'sound'} soundMode={controls.soundMode} onChoose={controls.chooseSoundMode} onClose={controls.closeSheet} />
+      <MapOptionsSheet
+        visible={controls.sheet === 'options'}
+        satellite={controls.satellite}
+        showTraffic={controls.showTraffic}
+        northUp={controls.northUp}
+        onSatellite={controls.setSatellite}
+        onTraffic={controls.setShowTraffic}
+        onNorthUp={controls.setNorthUp}
+        onOpenAppearance={controls.openAppearance}
+        onClose={controls.closeSheet}
+      />
+      <ReportSheet
+        visible={controls.sheet === 'report'}
+        reportTypes={vm.reportTypes}
+        onReport={(type) => {
+          controls.closeSheet();
+          vm.onReport(type);
+        }}
+        onClose={controls.closeSheet}
+      />
+      <ActiveAlertsSheet visible={controls.sheet === 'alerts'} alerts={controls.activeAlerts} onOpenAlert={controls.openAlert} onClose={controls.closeSheet} />
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.xxxl,
-    paddingBottom: spacing.xl,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  headerText: {
-    flex: 1,
-    gap: spacing.xxs,
-  },
-  reportSection: {
-    gap: spacing.sm,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-});

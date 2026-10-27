@@ -1,9 +1,10 @@
 export type { AlertKind, CameraType, HazardType } from './hazard-type';
 export type { User } from './user';
-export type { AlertTarget, Settings } from './settings';
+export type { AlertTarget, LocationSourceKind, MapType, Settings, SoundMode } from './settings';
 export type { Camera } from './camera';
 export type { Hazard } from './hazard';
 export type { LatLng } from './latlng';
+export type { GeoBounds } from './geo-bounds';
 export type { Trip } from './trip';
 export type { TripPoint } from './trip-point';
 export type { AlertEvent } from './alert-event';

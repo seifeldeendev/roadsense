@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react-native';
 import { afterAll, beforeAll, expect, jest, test } from '@jest/globals';
 import { renderRouter, testRouter, type RenderRouterResult } from 'expo-router/testing-library';
 
+jest.mock('expo-router/native-tabs', () => require('../test-support/nativeTabsMock'));
 jest.mock(
   '@react-native-async-storage/async-storage',
   () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -57,7 +58,6 @@ jest.mock('react-native-maps', () => {
     Marker: makeNative('map-marker'),
     Polyline: makeNative('map-polyline'),
     PROVIDER_GOOGLE: 'google',
-    PROVIDER_DEFAULT: undefined,
   };
 });
 jest.mock('react-native-safe-area-context', () => {
@@ -85,7 +85,7 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 const { DEMO_TRIP, MOCK_TRIPS } = require('../src/data/mock/trips');
-const { useTripStore } = require('../src/stores/useTripStore');
+const { useTripStore } = require('../src/composition/stores');
 
 function clockHHMM(ms: number): string {
   const date = new Date(ms);
@@ -108,7 +108,7 @@ async function advanceVirtualTime(count = 30, stepMs = 200): Promise<void> {
 let renderResult: RenderRouterResult;
 
 beforeAll(async () => {
-  require('../src/stores/useSessionStore').useSessionStore.setState({
+  require('../src/composition/stores').useSessionStore.setState({
     user: { id: 'demo', name: 'Demo', email: 'demo@roadsense.app' },
     hasCompletedOnboarding: true,
     hasHydrated: true,

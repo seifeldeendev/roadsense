@@ -4,6 +4,7 @@ import type {
   AlertEvent,
   AlertKind,
   Camera,
+  CameraType,
   Hazard,
   HazardType,
   Trip,
@@ -11,15 +12,14 @@ import type {
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { buildSpeedSegments, type SpeedSegment } from '@/domain/usecases/trips/buildSpeedSegments';
 import { summarizeTripEvents, type TripEvent } from '@/domain/usecases/trips/summarizeTripEvents';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
-import { useTripStore } from '@/stores/useTripStore';
+import { useStores } from '@/stores/DependenciesProvider';
+import { useAsyncResult } from '@/shared/useAsyncResult';
 import { hhmm } from './tripFormat';
 
 export type TripTile = { label: string; value: string };
 
 export type AlertMarkerModel =
-  | { id: string; kind: 'camera'; lat: number; lng: number; roadName: string; speedLimitKmh: number }
+  | { id: string; kind: 'camera'; lat: number; lng: number; roadName: string; speedLimitKmh: number; cameraType: CameraType }
   | { id: string; kind: 'hazard'; lat: number; lng: number; hazardType: HazardType };
 
 export type TripDetailsViewModel = {
@@ -37,19 +37,21 @@ export type TripDetailsViewModel = {
 };
 
 export function useTripDetailsViewModel(id: string | undefined): TripDetailsViewModel {
+  const { useCameraStore, useHazardStore, useSettingsStore, useTripStore } = useStores();
   const trips = useTripStore((state) => state.trips);
   const isLoading = useTripStore((state) => state.isLoading);
   const error = useTripStore((state) => state.error);
   const load = useTripStore((state) => state.load);
-  const cameras = useHazardStore((state) => state.cameras);
+  const loadUnless = useTripStore((state) => state.loadUnless);
+  const findByIds = useCameraStore((state) => state.findByIds);
   const hazards = useHazardStore((state) => state.hazards);
-  const loadPins = useHazardStore((state) => state.load);
+  const loadPinsUnless = useHazardStore((state) => state.loadUnless);
   const amberThresholdPct = useSettingsStore((state) => state.amberThresholdPct);
 
   useEffect(() => {
-    if (useTripStore.getState().trips.length === 0) void load();
-    if (useHazardStore.getState().cameras.length === 0) void loadPins();
-  }, [load, loadPins]);
+    void loadUnless((state) => state.trips.length > 0 || state.isLoading);
+    void loadPinsUnless((state) => state.hasLoaded || state.isLoading);
+  }, [loadUnless, loadPinsUnless]);
 
   const trip = useMemo(
     () => trips.find((candidate) => candidate.id === id) ?? null,
@@ -63,12 +65,17 @@ export function useTripDetailsViewModel(id: string | undefined): TripDetailsView
     [trip, amberThresholdPct],
   );
 
+  const tripCameras = useAsyncResult(trip, (current) =>
+    findByIds(current.alerts.filter((alert) => alert.kind === 'camera').map((alert) => alert.refId)).catch(() => []),
+  );
+
   const alertMarkers = useMemo<AlertMarkerModel[]>(() => {
     if (trip === null) return [];
+    const cameras = tripCameras.value ?? [];
     return trip.alerts
       .map((alert) => resolveAlert(alert, cameras, hazards))
       .filter((marker): marker is AlertMarkerModel => marker !== null);
-  }, [trip, cameras, hazards]);
+  }, [trip, tripCameras.value, hazards]);
 
   const tiles = useMemo<TripTile[]>(() => {
     if (trip === null) return [];
@@ -129,6 +136,7 @@ function resolveAlert(
       lng: camera.lng,
       roadName: camera.roadName,
       speedLimitKmh: camera.speedLimitKmh,
+      cameraType: camera.type,
     };
   }
   const hazard = hazards.find((candidate) => candidate.id === alert.refId);

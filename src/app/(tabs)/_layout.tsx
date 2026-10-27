@@ -1,63 +1,53 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router/js-tabs';
-import { StyleSheet, type ColorValue } from 'react-native';
-import { nativeTypography, spacing, type HazardIconName } from '@/theme/tokens';
+import { DynamicColorIOS, Platform } from 'react-native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { NativeTabs } from 'expo-router/native-tabs';
+import { darkColors, lightColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
-function TabIcon({ icon, color, size }: { icon: HazardIconName; color: ColorValue | null; size: number }) {
-  return (
-    <MaterialCommunityIcons
-      name={icon}
-      color={typeof color === 'string' ? color : undefined}
-      size={size}
-    />
-  );
-}
-
-const TAB_ICONS: Record<string, HazardIconName> = {
-  drive: 'steering',
-  map: 'map-outline',
-  trips: 'history',
-  stats: 'chart-bar',
-};
-
+// Native system tab bar: Liquid Glass on iOS 26+, Material navigation bar on
+// Android. Colours stay within DESIGN.md (ink on canvas, gray when inactive).
 export default function TabsLayout() {
-  const { colors } = useTheme();
+  const { scheme, colors } = useTheme();
+  // iOS adapts the tint to whatever the glass is floating over.
+  const ink = Platform.OS === 'ios' ? DynamicColorIOS({ light: lightColors.ink, dark: darkColors.ink }) : colors.ink;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.mute,
-        tabBarStyle: {
-          backgroundColor: colors.canvas,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: colors.hairline,
-          paddingTop: spacing.xxs,
-        },
-        tabBarLabelStyle: {
-          ...nativeTypography.tabLabel,
-          paddingVertical: spacing.xs,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="drive"
-        options={{ title: 'Drive', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.drive} color={color} size={size} /> }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{ title: 'Map', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.map} color={color} size={size} /> }}
-      />
-      <Tabs.Screen
-        name="trips"
-        options={{ title: 'Trips', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.trips} color={color} size={size} /> }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{ title: 'Stats', tabBarIcon: ({ color, size }) => <TabIcon icon={TAB_ICONS.stats} color={color} size={size} /> }}
-      />
-    </Tabs>
+    // Matches the navigator background to the app scheme to avoid white flashes.
+    <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <NativeTabs
+        tintColor={ink}
+        iconColor={{ default: colors.body, selected: colors.ink }}
+        labelStyle={{ default: { color: colors.body }, selected: { color: colors.ink } }}
+        minimizeBehavior="onScrollDown"
+        backgroundColor={colors.canvas}
+        indicatorColor={colors.canvasSoft}
+        rippleColor={colors.surfacePressed}
+        labelVisibilityMode="labeled"
+      >
+        <NativeTabs.Trigger name="drive">
+          <NativeTabs.Trigger.Label>Drive</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf="steeringwheel" md="directions_car" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="map">
+          <NativeTabs.Trigger.Label>Map</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} md="map" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="trips">
+          <NativeTabs.Trigger.Label>Trips</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf="clock.arrow.circlepath" md="history" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="stats">
+          <NativeTabs.Trigger.Label>Stats</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }} md="bar_chart" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="account">
+          <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
+            md="account_circle"
+          />
+        </NativeTabs.Trigger>
+      </NativeTabs>
+    </ThemeProvider>
   );
 }
