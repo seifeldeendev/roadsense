@@ -385,3 +385,31 @@ With the hook's `suspend()` call removed, the first test fails.
 
 **Re-sampling of the round 1 and 2 tests:** every mutation listed in AI-051 and above was caught; none passed against broken code.
 **Verification:** tsc, lint, jest 211/211 (38 suites, exits without `--forceExit`). _Seif: fill in your notes._
+
+### AI-053 · 2026-10-27 · Seif · fix round 3, part 1: domain import allowlist and layer-shape guard tests (audit F1, F2, F3); F4/F5 stopped on scope · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, round heading):** "## Round 3 — the lint gaps (F1–F5)"
+**F2 — rule inverted.**
+- **Allowlist.** `src/domain` may import nothing but itself. The framework denylist became the pattern `^(?!\.\.?/|@/domain(/|$))`: no packages (scoped or not), no Node built-ins. Relative imports that leave the domain stay the layer zone's job.
+- **Wider glob.** The rule's `files` glob now includes `.tsx`.
+- **Six colocated tests excluded.** The new rule immediately flagged six colocated unit tests in `src/domain/usecases/**` (`*.test.ts`, importing `@jest/globals`). They are excluded by path, as test code, not domain code.
+- **Proof.** It catches the original `@react-native-async-storage/async-storage` plant, plus two of mine that the old denylist passed: `nativewind`, and the scoped `@vis.gl/react-google-maps`.
+
+**F1 and F3 — guard tests, not lint.** `__tests__/layerShape.test.ts` reads the source tree through `test-support/sourceFiles.js`:
+- no file under `src/domain` is `.tsx`;
+- every non-layout file in `src/app` is exactly one line, `export { default } from '@/features/<slice>/screens/<Screen>'`.
+
+With the original plants put back, both tests fail and name the files. The route test also names the two route plants that held a store import, which lint already caught.
+
+**All plants re-run.** I recreated all 48 plants from the audit (47 violations plus the control) from `scratchpad/plants.cjs` and deleted each afterwards by literal path:
+- lint catches 43 of the 47 violations (it was 42);
+- the guard tests catch 2 of the 4 lint misses (route logic, domain `.tsx`): **45 of 47** overall;
+- the control (`import type` from the domain in `theme`) correctly passes;
+- the 2 still missed are packages in stores (`expo-location`, and `react-native` `Platform`). These are F4/F5.
+
+**Stopped: F4/F5 are scope growth (stop condition 4).**
+- **Why.** Putting AsyncStorage behind `Dependencies` works for the route and session stores, which `createStores(deps)` builds. But `useSettingsStore` and `useThemeStore` are module singletons (F9) that import `persistStorage` directly, and a store has no way to reach `Dependencies` except by being built through `createStores`.
+- **Size.** Moving them is F9's change: 22 files import the two stores (src, tests and the root layout).
+- **Knock-on to F4.** F4's package allowlist for stores depends on it: until `persistStorage.ts` is gone, the allowlist fails on it unless that file is exempted.
+- **Options for Seif:** (A) fold F9 into round 3; (B) do F5 for the two DI-built stores now, with a scoped, recorded exemption for `persistStorage.ts` in the stores allowlist until F9.
+
+**Verification:** tsc, lint, jest 213/213 (39 suites, exits without `--forceExit`). _Seif: fill in your notes._
