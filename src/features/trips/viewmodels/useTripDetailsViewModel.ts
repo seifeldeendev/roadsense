@@ -12,9 +12,8 @@ import type {
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { buildSpeedSegments, type SpeedSegment } from '@/domain/usecases/trips/buildSpeedSegments';
 import { summarizeTripEvents, type TripEvent } from '@/domain/usecases/trips/summarizeTripEvents';
-import { useHazardStore } from '@/stores/useHazardStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { useTripStore } from '@/stores/useTripStore';
 import { hhmm } from './tripFormat';
 
 export type TripTile = { label: string; value: string };
@@ -38,19 +37,21 @@ export type TripDetailsViewModel = {
 };
 
 export function useTripDetailsViewModel(id: string | undefined): TripDetailsViewModel {
+  const { useHazardStore, useTripStore } = useStores();
   const trips = useTripStore((state) => state.trips);
   const isLoading = useTripStore((state) => state.isLoading);
   const error = useTripStore((state) => state.error);
   const load = useTripStore((state) => state.load);
+  const loadUnless = useTripStore((state) => state.loadUnless);
   const cameras = useHazardStore((state) => state.cameras);
   const hazards = useHazardStore((state) => state.hazards);
-  const loadPins = useHazardStore((state) => state.load);
+  const loadPinsUnless = useHazardStore((state) => state.loadUnless);
   const amberThresholdPct = useSettingsStore((state) => state.amberThresholdPct);
 
   useEffect(() => {
-    if (useTripStore.getState().trips.length === 0) void load();
-    if (useHazardStore.getState().cameras.length === 0) void loadPins();
-  }, [load, loadPins]);
+    void loadUnless((state) => state.trips.length > 0);
+    void loadPinsUnless((state) => state.cameras.length > 0);
+  }, [loadUnless, loadPinsUnless]);
 
   const trip = useMemo(
     () => trips.find((candidate) => candidate.id === id) ?? null,
