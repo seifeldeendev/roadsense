@@ -1,4 +1,5 @@
 import type {
+  AppLifecycle,
   AuthRepository,
   CameraRepository,
   Geocoder,
@@ -14,6 +15,7 @@ import { MockHazardRepository, MockSettingsRepository, MockTripRepository } from
 import { MockRouteRepository } from './mock/routes';
 import { OsrmRouteRepository } from './osrm/OsrmRouteRepository';
 import { RadarCameraRepository } from './radars';
+import { subscribeToAppActivity } from '../services/appLifecycle';
 import { describePlace, searchPlaces } from '../services/geocoding';
 import { getCurrentLocation, requestLocationPermission } from '../services/gps';
 
@@ -27,6 +29,7 @@ export type Dependencies = {
   routes: RouteRepository;
   location: LocationSources;
   geocoder: Geocoder;
+  lifecycle: AppLifecycle;
 };
 
 // The production wiring; tests pass fakes for the parts they exercise.
@@ -46,6 +49,7 @@ export function createDependencies(overrides: Partial<Dependencies> = {}): Depen
       demo: (playback, limitFor) => createDemoLocationSource(playback, limitFor),
     },
     geocoder: overrides.geocoder ?? { search: searchPlaces, describe: describePlace },
+    lifecycle: overrides.lifecycle ?? { subscribe: subscribeToAppActivity },
   };
 }
 

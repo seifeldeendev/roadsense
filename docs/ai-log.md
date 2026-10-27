@@ -303,3 +303,16 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 - the remaining debt, including the trip planner's unguarded destinations load.
 
 Lint is clean, and `grep -rn "eslint-disable" src` returns nothing. _Seif: fill in your notes._
+
+### AI-049 · 2026-10-27 · Seif · AppState behind Dependencies (audit section 7) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, section heading):** "## 7. The one authorised fix"
+**Output:** the domain gains `AppLifecycle` (`subscribe(onChange) → Unsubscribe`, with `AppActivity` = active, inactive or background). `src/services/appLifecycle.ts` is the only file that reads React Native's `AppState`. `Dependencies.lifecycle` wires it in, the same shape as `location` and `geocoder`. `useFollowWorkingSet` (`src/stores/cameraHooks.ts`) subscribes through `useDependencies()`, so the stores layer no longer imports `react-native` for this.
+**Lint:** `no-restricted-imports` bans `AppState` from `react-native` across `src/`, except `src/services/appLifecycle.ts`. The stores block repeats the ban, because a later flat-config block's options replace an earlier block's. Planted `AppState` imports in stores, features and shared are all caught. The rule is deliberately narrow: `Platform` from `react-native` still passes in stores, because `src/stores/persistStorage.ts` imports it together with AsyncStorage. That is a separate audit finding and is not fixed here.
+**Test:** `__tests__/appLifecycle.test.ts` drives the lifecycle through a fake `AppLifecycle`:
+- in the background, a new fix fetches nothing;
+- on return, the current position is followed and refetched;
+- unmounting unsubscribes;
+- a resumed drive trusts no position until its next reading.
+
+With the hook's `suspend()` call removed, the first test fails.
+**Verification:** tsc, lint, jest 200/200 (37 suites, exits without `--forceExit`). 8 files touched. _Seif: fill in your notes._
