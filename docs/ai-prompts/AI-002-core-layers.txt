@@ -1,0 +1,68 @@
+<task>
+Project: RoadSense, a React Native + Expo (SDK 58, see package.json) + TypeScript (strict) app that warns drivers in Cairo about speed cameras and road hazards. Repo root = current directory. Expo Router routes live in src/app/. The `@/*` alias maps to `./src/*` (already in tsconfig.json). Full design notes are in docs/phase-1-plan.md (sections 5 and 6 are relevant), but everything you need is below.
+
+Architecture: MVVM inside Clean Architecture, feature-first presentation. In THIS task you build only the non-UI core layers. Create exactly these:
+
+1. src/domain/entities/ (pure TS types, one file per entity plus an index.ts barrel):
+   - HazardType = 'accident' | 'pothole' | 'checkpoint' | 'flooding'; AlertKind = 'camera' | 'hazard'
+   - LatLng { lat; lng }
+   - Camera extends LatLng { id; heading: number | null; speedLimitKmh; roadName; type: 'fixed' | 'average' | 'red_light' }
+   - Hazard extends LatLng { id; type: HazardType; heading; reportedBy; createdAt: string (ISO); expiresAt: string (ISO); confirmations; denials; status: 'active' | 'expired' }
+   - TripPoint extends LatLng { ts: number (epoch ms); speedKmh; heading; limitKmh }
+   - AlertEvent { ts; kind: AlertKind; refId; distanceM }
+   - Trip { id; startedAt; endedAt; distanceM; durationS; maxSpeedKmh; avgSpeedKmh; overLimitCount; points: TripPoint[]; alerts: AlertEvent[] }
+   - Settings { alertDistanceM: 200 | 300 | 500 | 800; enabledTypes: (HazardType | 'camera')[]; voiceEnabled; soundEnabled; units: 'kmh'; amberThresholdPct: 85 | 90 | 95 }
+   - UpcomingAlert { kind: AlertKind; refId; title; roadName?; distanceM; speedLimitKmh?; hazard?: Hazard; camera?: Camera }
+
+2. src/domain/repositories/ (interfaces only): CameraRepository { getAll(): Promise<Camera[]> }, HazardRepository { getActive(): Promise<Hazard[]>; report(input: { type: HazardType; lat; lng; heading }): Promise<Hazard>; vote(hazardId: string, stillThere: boolean): Promise<Hazard> }, TripRepository { list(): Promise<Trip[]>; getById(id: string): Promise<Trip | undefined> }, SettingsRepository { load(): Promise<Settings>; save(s: Settings): Promise<void> }, LocationSource { start(onPoint: (p: TripPoint) => void): void; stop(): void }.
+
+3. src/shared/constants.ts: DEFAULT_SETTINGS (alertDistanceM 300, all 5 types enabled, voice+sound on, units 'kmh', amberThresholdPct 90), ALERT_DISTANCE_OPTIONS [200,300,500,800], AMBER_OPTIONS [85,90,95], HEADING_CONE_DEG 45, HAZARD_DENIAL_LIMIT 3, HAZARD_TTL_MS per type (accident 2h, checkpoint 4h, flooding 24h, pothole 7 days). src/shared/format.ts: formatDistance (m -> "450 m" / "1.2 km"), formatTimeAgo(iso, now) -> "25 min ago", formatDuration(seconds) -> "27 min" / "1 h 05 min".
+
+4. src/domain/usecases/drive/:
+   - geo.ts: haversineDistanceM(a,b), bearingDeg(a,b), angleDiffDeg(a,b) (0..180).
+   - getSpeedStatus.ts: (speedKmh, limitKmh, amberThresholdPct = 90) => 'ok' | 'near' | 'over'. over if speed > limit; near if speed >= limit*pct/100; else ok.
+   - findUpcomingAlerts.ts: (position: LatLng, headingDeg, cameras, hazards, settings) => UpcomingAlert[] sorted by distance; include only items whose type is in settings.enabledTypes, hazards with status 'active', items within settings.alertDistanceM, and items AHEAD: angleDiffDeg(heading, bearing(position,item)) <= HEADING_CONE_DEG. Title: "Speed camera ahead" or e.g. "Pothole ahead".
+   src/domain/usecases/hazards/isHazardExpired.ts: (hazard, now: Date) => boolean: true if status is 'expired', denials >= HAZARD_DENIAL_LIMIT, or now >= expiresAt.
+   src/domain/usecases/hazards/applyVote.ts: (hazard, stillThere, now) => new Hazard (immutable) with confirmations/denials incremented and status set to 'expired' when isHazardExpired becomes true.
+   Domain must import NOTHING from react, react-native, expo-*, zustand, or src/data|features|stores|services.
+
+5. src/data/mock/: JSON-free TypeScript fixtures (cameras.ts, hazards.ts, trips.ts) with realistic Cairo data:
+   - ~10 cameras on real Cairo roads (Ring Road, 26th of July Corridor, Salah Salem, Autostrad, 90th Street New Cairo, Suez Road, Mehwar), coordinates within lat 29.95–30.15, lng 31.15–31.50, limits 60–120.
+   - ~8 hazards covering all 4 types, timestamps relative to Date.now() (computed at module load), varied votes, one expired.
+   - 1 demo trip "trip-demo-salah-salem" of ~120 points at 1 s spacing along Salah Salem Rd heading roughly north-east (interpolate between a handful of real waypoints), limit 80, speed rising 0 -> ~95 then back, so it has an amber stretch and a red over-limit stretch; place at least one camera and one active hazard from the fixtures within ~300 m ahead of points on this route so alerts fire during playback. Compute the trip summary fields from its points.
+   - Mock repositories (MockCameraRepository, MockHazardRepository, MockTripRepository, MockSettingsRepository) implementing the interfaces, each awaiting a ~400 ms delay. MockHazardRepository keeps in-memory state; report() creates a hazard with expiresAt = now + HAZARD_TTL_MS[type]; vote() uses applyVote. MockSettingsRepository uses @react-native-async-storage/async-storage under key "roadsense.settings", falling back to DEFAULT_SETTINGS.
+   src/data/di.ts: exports a single `repositories` object { cameras, hazards, trips, settings } built from the mock implementations (one place to swap later).
+
+6. src/services/:
+   - location.ts: MockLocationSource implements LocationSource; constructor(points: TripPoint[], intervalMs = 1000, rate = 1); emits points in order on a setInterval (interval = intervalMs / rate), stops at the end; also export setRate(rate). Export `createDemoLocationSource()` using the demo trip.
+   - speech.ts: speak(text: string) and stopSpeaking() wrapping expo-speech (check the SDK 58 expo-speech docs for the current API).
+
+7. src/stores/ (zustand):
+   - useSettingsStore: state = Settings + actions setAlertDistance, toggleType, setVoiceEnabled, setSoundEnabled, setAmberThreshold, reset. Use zustand `persist` with createJSONStorage(() => AsyncStorage), name "roadsense.settings".
+   - useDriveStore: { isDriving, position: LatLng | null, speedKmh, limitKmh, heading, activeAlert: UpcomingAlert | null, dismissedAlertIds: string[], overLimitCount } + actions startDrive(), stopDrive(), pushPoint(p: TripPoint), setActiveAlert(a), dismissAlert(id).
+   - useHazardStore: { cameras, hazards, isLoading, error: string | null } + actions load() (via repositories from di.ts, sets error message on failure), report(type, lat, lng, heading), vote(id, stillThere), getById(id).
+
+8. __tests__/ Jest tests (preset jest-expo is already configured; `npm test` runs jest): getSpeedStatus.test.ts (boundaries: exactly at limit = near, limit+1 = over, below threshold = ok, custom threshold), findUpcomingAlerts.test.ts (ahead vs behind, out of range, disabled type, expired hazard excluded, sorted order), isHazardExpired.test.ts (denial limit, ttl passed, active case). Mock AsyncStorage in tests if anything imports it (prefer: domain tests import only domain code).
+
+Leave untouched: src/app/** (routes), assets/, app.json, AGENTS.md, README.md, docs/. Do NOT create any UI components, screens, theme, or routes — that is a separate task. Do not add new npm dependencies; everything needed is installed (zustand, @react-native-async-storage/async-storage, expo-speech, jest, jest-expo).
+</task>
+
+<verification_loop>
+Run these and make them green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+Then run `git status --porcelain` and confirm only new files under src/domain, src/data, src/services, src/stores, src/shared, __tests__ (and package.json only if jest config truly required it).
+</verification_loop>
+
+<action_safety>
+Keep changes scoped to this task. No refactors of existing files. Do NOT run git add or git commit; the orchestrator commits after review. No `any` / `as any`. Keep each file under ~150 lines. Code comments: only where logic is non-obvious; no "phase"/"TODO"/"for now" comments.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. What you built, per numbered item above
+  2. Files created
+  3. Gate outcomes: tsc result, jest pass/fail counts, lint result
+  4. Any deviation, assumption, or open question
+</structured_output_contract>

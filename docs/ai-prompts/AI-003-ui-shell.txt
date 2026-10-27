@@ -1,0 +1,45 @@
+<task>
+Project: RoadSense, React Native + Expo (SDK 58, read the version in package.json and use the matching docs at https://docs.expo.dev/versions/v58.0.0/) + TypeScript strict + Expo Router (routes in src/app/). `@/*` maps to `./src/*`. The domain, data, services and stores layers already exist under src/domain, src/data, src/services, src/stores, src/shared. Read them; do not modify them.
+
+Build the shared UI foundation and the navigation shell. Styling approach: React Native StyleSheet + design tokens only (no NativeWind, no new dependencies).
+
+1. src/theme/tokens.ts: dark-first driving theme, `as const` objects:
+   colors { background '#0B1020', surface '#151C31', surfaceAlt '#1E2742', border '#2A3555', text '#F8FAFC', muted '#94A3B8', primary '#7CFFB2', danger '#FB7185', ok '#22C55E', near '#F59E0B', over '#EF4444', camera '#3B82F6', accident '#EF4444', pothole '#F97316', checkpoint '#A855F7', flooding '#0EA5E9' }
+   spacing { xs 4, sm 8, md 16, lg 24, xl 32 }, radius { sm 8, md 14, lg 20, pill 999 }, typography sizes { caption 12, body 15, title 20, heading 28, display 64 }, touch { min 48, large 64 }.
+   Also export hazardMeta: Record<HazardType | 'camera', { label: string; color: string; icon: string }> using emoji icons (📷 🚗 🕳️ 🚧 🌊). Import HazardType from @/domain/entities.
+
+2. src/components/ui/ (each its own file + index.ts barrel; no business data, no store imports, no imports from src/features):
+   Screen (SafeAreaView from react-native-safe-area-context, background color, optional scroll), AppButton (props: title, onPress, variant: 'primary' | 'secondary' | 'danger' | 'ghost', size: 'md' | 'lg', disabled, loading, icon?, accessibilityLabel?; min height touch.min, pressed opacity, disabled opacity 0.4), Card, Chip (selected state), Badge (color + text), SectionHeader, ToggleRow (label, description?, icon?, value, onValueChange using Switch), SegmentedControl<T> (options {label, value}[], value, onChange), EmptyState (icon, title, message, action?), ErrorState (message, onRetry), LoadingState (ActivityIndicator + optional label). Every pressable has accessibilityRole and a visible pressed state.
+
+3. Navigation shell with Expo Router (do NOT use NavigationContainer):
+   - src/app/_layout.tsx: root Stack, dark header styling from tokens, StatusBar light. Register screens: (tabs) headerShown false; "alert" with presentation 'transparentModal', headerShown false, animation 'fade'; "settings/alerts" title "Alert settings"; "report/[id]" title "Report details"; "route-preview" title "Route preview"; "trip/[id]" title "Trip details".
+   - src/app/(tabs)/_layout.tsx: Tabs with 4 tabs: drive (title "Drive"), map ("Map"), trips ("Trips"), stats ("Stats"); dark tab bar from tokens; simple emoji/text icons are fine (no new icon dependency unless @expo/vector-icons is already installed — check node_modules first).
+   - Remove the existing src/app/index.tsx and add src/app/index.tsx that redirects to /drive (use <Redirect href="/drive" />).
+   - Route files are thin: each one only re-exports a feature screen, e.g. `export { default } from '@/features/drive/screens/DriveModeScreen';`
+     Routes: (tabs)/drive.tsx -> features/drive/screens/DriveModeScreen; alert.tsx -> features/drive/screens/AlertOverlayScreen; settings/alerts.tsx -> features/drive/screens/AlertSettingsScreen; (tabs)/map.tsx -> features/map/screens/LiveMapScreen; report/[id].tsx -> features/map/screens/ReportDetailsScreen; route-preview.tsx -> features/map/screens/RoutePreviewScreen; (tabs)/trips.tsx -> features/trips/screens/TripHistoryScreen; trip/[id].tsx -> features/trips/screens/TripDetailsScreen; (tabs)/stats.tsx -> features/trips/screens/StatsReplayScreen.
+   - Create those 9 feature screen files as PLACEHOLDERS only: each renders <Screen> with an <EmptyState> showing the screen name and "Coming soon", and for the [id] screens shows the id read via useLocalSearchParams<{ id: string }>(). Also create empty folders' structure by adding the placeholder files under features/<feature>/screens/ only (no viewmodels/components yet). Each placeholder must be under 25 lines.
+   - (auth) screens are out of scope.
+
+Leave untouched: src/domain, src/data, src/services, src/stores, src/shared, __tests__, app.json, AGENTS.md, README.md, docs/. No new npm dependencies.
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (bundles the app; must succeed; then delete the .export-check directory)
+Then `git status --porcelain` must show only changes under src/theme, src/components, src/app, src/features.
+</verification_loop>
+
+<action_safety>
+Scoped to this task only. Do NOT git add or git commit; the orchestrator commits after review. No `any`/`as any`, typed route params. Files under ~150 lines. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. What you built, per numbered item
+  2. Files created/modified/deleted
+  3. Gate outcomes (tsc, jest counts, lint, export)
+  4. Deviations, assumptions, open questions
+</structured_output_contract>
