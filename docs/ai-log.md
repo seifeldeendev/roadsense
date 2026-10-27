@@ -247,3 +247,10 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Size:** 26 files: 19 for the composition root (7 of them tests that read the old module-level stores), 7 for the map boundaries.
 **Debt:** all 6 `composition-root` and 3 `map-boundaries` disables removed; 6 remain (`gps-di` ×4, `auth-gate` ×2).
 **Verification:** tsc, lint, jest 149/149, web export. _Seif: fill in your notes._
+
+### AI-043 · 2026-10-27 · Seif · tests past the domain layer, and no second fetch mid-flight (architecture item 6) · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, item heading):** "### B. Item 6 — tests past the domain layer (one commit)"
+**Output:** `__tests__/stores.test.ts` builds the hazard, route, trip and session stores from fake repositories (`createXStore(fakeDeps)`): load success and failure, `loadUnless` skipping while a load is in flight, report and vote, a slower route for an abandoned destination being ignored, replay play / tick / seek / restart, sign-in, profile update, sign-out. `__tests__/viewModels.test.tsx` renders view models inside a test `DependenciesProvider`. `__tests__/osrmRouteRepository.test.ts` covers the OSRM fallback: network failure, error status, malformed responses (no routes, non-Ok code, one-point geometry, non-JSON body) and success (GeoJSON `[lng, lat]` order, rounding, not estimated).
+**Behaviour fix (in scope):** route-preview hazards, trip-details pins and the three trip-screen loads lacked the "not already loading" guard, so a screen mounting while another screen's load was in flight started a second fetch. Each now also skips while loading; each screen's data-needed condition is unchanged. A test per site starts a load, mounts the screen, and expects one fetch; with the five guards reverted, five tests fail.
+**Correction:** my item-3 list of unguarded loads missed a sixth with the same drift, the trip planner's destinations (`useTripPlannerViewModel`). It was not in this item's scope and is left as known debt.
+**Verification:** tsc, lint, jest 172/172 (35 suites). _Seif: fill in your notes._
