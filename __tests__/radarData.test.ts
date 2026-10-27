@@ -3,6 +3,7 @@ import type { Camera } from '../src/domain/entities';
 import { parseRadarFeed, type RadarFeed } from '../src/data/radars/parseRadarFeed';
 import { RadarCameraRepository } from '../src/data/radars';
 import { JsonRadarCameraRepository } from '../src/data/radars/JsonRadarCameraRepository';
+import { openRadarDatabase } from '../src/data/radars/openRadarDatabase';
 import { RADAR_SEED_VERSION } from '../src/data/radars/radarSeedVersion';
 import { findUpcomingAlerts } from '../src/domain/usecases/drive/findUpcomingAlerts';
 import { alertTargetFor, fixedPointTitle, isSpeedCamera, nearestPoints } from '../src/domain/usecases/drive/fixedPoints';
@@ -41,9 +42,17 @@ describe('parseRadarFeed', () => {
     expect(fromSqlite).toEqual(fromJson);
   });
 
-  it('carries the seed version of the current export (run npm run build:radars after updating it)', () => {
+  it('carries the seed version of the current export (run npm run build:radars after changing it or the schema)', () => {
     const { currentRadarSeedVersion } = require('../test-support/radarSeed') as { currentRadarSeedVersion: () => string };
     expect(RADAR_SEED_VERSION).toBe(currentRadarSeedVersion());
+  });
+
+  it('ships a database rebuilt for the current seed, with the lat/lng index', async () => {
+    const db = await openRadarDatabase();
+    const seed = await db.getFirstAsync<{ value: string }>("SELECT value FROM meta WHERE key = 'seed_version'");
+    expect(seed?.value).toBe(RADAR_SEED_VERSION);
+    const indexes = await db.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'index'");
+    expect(indexes.map((row) => row.name)).toContain('cameras_lat_lng');
   });
 });
 
