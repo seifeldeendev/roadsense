@@ -4,7 +4,9 @@ import type { Camera, Hazard } from '@/domain/entities';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
+import { boundsAround } from '@/domain/usecases/geo/bounds';
 import { formatTimeAgo } from '@/shared/format';
+import { useAsyncResult } from '@/shared/useAsyncResult';
 import { useStores } from '@/stores/DependenciesProvider';
 
 const NEARBY_CAMERA_M = 300;
@@ -54,14 +56,14 @@ function locate(hazard: Hazard, cameras: Camera[]): string {
 }
 
 export function useReportDetailsViewModel(id: string): ReportDetailsViewModel {
-  const { useHazardStore } = useStores();
+  const { useCameraStore, useHazardStore } = useStores();
   const hazards = useHazardStore((s) => s.hazards);
-  const cameras = useHazardStore((s) => s.cameras);
-  const isLoading = useHazardStore((s) => s.isLoading);
+  const hazardsLoading = useHazardStore((s) => s.isLoading);
   const error = useHazardStore((s) => s.error);
   const load = useHazardStore((s) => s.load);
   const loadUnless = useHazardStore((s) => s.loadUnless);
   const vote = useHazardStore((s) => s.vote);
+  const findInBounds = useCameraStore((s) => s.findInBounds);
 
   const [hasVoted, setHasVoted] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
@@ -74,6 +76,14 @@ export function useReportDetailsViewModel(id: string): ReportDetailsViewModel {
     () => hazards.find((item) => item.id === id) ?? null,
     [hazards, id],
   );
+
+  // Only cameras near the report can name its road. Keyed by id, so a vote
+  // (which replaces the hazard object) does not look them up again.
+  const nearby = useAsyncResult(hazard?.id ?? null, () =>
+    hazard === null ? Promise.resolve([]) : findInBounds(boundsAround([hazard], NEARBY_CAMERA_M)).catch(() => []),
+  );
+  // The screen stays loading until the road name is known, as when every camera loaded with the hazards.
+  const isLoading = hazardsLoading || nearby.pending;
 
   const isExpired = hazard !== null && isHazardExpired(hazard, new Date());
 
@@ -99,17 +109,17 @@ export function useReportDetailsViewModel(id: string): ReportDetailsViewModel {
         label: 'Expires',
         value: isExpired ? 'Expired' : formatRemaining(hazard.expiresAt, new Date()),
       },
-      { label: 'Location', value: locate(hazard, cameras) },
+      { label: 'Location', value: locate(hazard, nearby.value ?? []) },
       { label: 'Confirmations', value: String(hazard.confirmations) },
       { label: 'Denials', value: String(hazard.denials) },
     ];
-  }, [hazard, isExpired, cameras]);
+  }, [hazard, isExpired, nearby.value]);
 
   return {
     isLoading,
     error,
     retry: load,
-    notFound: !isLoading && error === null && hazards.length > 0 && hazard === null,
+    notFound: !hazardsLoading && error === null && hazards.length > 0 && hazard === null,
     hazard,
     statusLabel: isExpired ? 'Expired' : 'Active',
     isExpired,
