@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import type { FieldErrors } from '@/domain/usecases/auth/validateAuthForm';
 import { validateProfile, type ProfileField } from '@/domain/usecases/auth/validateProfile';
 import { pickProfilePhoto, type PhotoSource } from '@/services/imagePicker';
-import { useSessionStore } from '@/stores/useSessionStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { initialsOf } from './initials';
 
 export type ProfileViewModel = {
@@ -30,6 +30,7 @@ export type ProfileViewModel = {
 const GENERIC_SAVE_ERROR = 'Could not save your profile — try again';
 
 export function useProfileViewModel(): ProfileViewModel {
+  const { useSessionStore } = useStores();
   const user = useSessionStore((s) => s.user);
   const updateProfile = useSessionStore((s) => s.updateProfile);
   const [name, setName] = useState(user?.name ?? '');

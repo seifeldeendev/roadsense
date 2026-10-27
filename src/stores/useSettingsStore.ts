@@ -4,7 +4,7 @@ import { persistStorage } from './persistStorage';
 import type { AlertTarget, LocationSourceKind, MapType, Settings, SoundMode } from '../domain/entities';
 import { DEFAULT_SETTINGS } from '../shared/constants';
 
-interface SettingsState extends Settings {
+export interface SettingsState extends Settings {
   setAlertDistance(alertDistanceM: Settings['alertDistanceM']): void;
   toggleType(type: AlertTarget): void;
   setVoiceEnabled(voiceEnabled: boolean): void;

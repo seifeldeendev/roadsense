@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import type { LatLng, TripPoint } from '../domain/entities';
 import type { DemoPlayback } from '../domain/repositories';
-// TODO(item-2): inject via Dependencies
-import { DEMO_ROUTE } from '../data/location/DemoLocationSource';
+import { productionDependencies } from '../data/dependencies';
 
 interface NavigationState {
   // The recorded demo drive path; the fallback for driveRoute and the demo start.
@@ -50,4 +49,4 @@ export function createNavigationStore(demoRoute: LatLng[]) {
   }));
 }
 
-export const useNavigationStore = createNavigationStore(DEMO_ROUTE);
+export const useNavigationStore = createNavigationStore(productionDependencies.location.demoRoute);

@@ -15,6 +15,8 @@ import { themeVars } from '@/theme/cssVars';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useTheme } from '@/theme/useTheme';
 import { useThemeStore } from '@/stores/useThemeStore';
+import { DependenciesProvider } from '@/stores/DependenciesProvider';
+// TODO(item-5): routing reads the session store; move into an auth-gate component in a feature slice
 import { useSessionStore } from '@/stores/useSessionStore';
 import { BrandSplash } from '@/features/onboarding/screens/BrandSplash';
 
@@ -42,9 +44,11 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider preference={preference}>
-      <ThemedChrome />
-    </ThemeProvider>
+    <DependenciesProvider>
+      <ThemeProvider preference={preference}>
+        <ThemedChrome />
+      </ThemeProvider>
+    </DependenciesProvider>
   );
 }
 

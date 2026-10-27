@@ -5,7 +5,7 @@ import { angleDiffDeg, bearingDeg, haversineDistanceM } from '@/domain/usecases/
 import { formatDistance, formatTimeAgo } from '@/shared/format';
 import { stopSpeaking } from '@/services/speech';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 const AUTO_DISMISS_MS = 8000;
@@ -29,13 +29,16 @@ export type AlertOverlayViewModel = {
 };
 
 export function useAlertOverlayViewModel(): AlertOverlayViewModel {
+  const { useHazardStore } = useStores();
   const activeAlert = useDriveStore((s) => s.activeAlert);
   const position = useDriveStore((s) => s.position);
   const heading = useDriveStore((s) => s.heading);
   const isDriving = useDriveStore((s) => s.isDriving);
   const speedKmh = useDriveStore((s) => s.speedKmh);
   const alertDistanceM = useSettingsStore((s) => s.alertDistanceM);
+  const dismissAlert = useDriveStore((s) => s.dismissAlert);
   const hazards = useHazardStore((s) => s.hazards);
+  const vote = useHazardStore((s) => s.vote);
   const [votedRefId, setVotedRefId] = useState<string | null>(null);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,14 +57,13 @@ export function useAlertOverlayViewModel(): AlertOverlayViewModel {
   }, []);
 
   const onDismiss = useCallback(() => {
-    const alert = useDriveStore.getState().activeAlert;
     clearDismissTimer();
-    if (alert !== null) {
-      useDriveStore.getState().dismissAlert(alert.refId);
+    if (activeAlert !== null) {
+      dismissAlert(activeAlert.refId);
     }
     stopSpeaking();
     router.back();
-  }, [clearDismissTimer]);
+  }, [activeAlert, clearDismissTimer, dismissAlert]);
 
   useEffect(() => {
     if (activeAlert === null) return undefined;
@@ -83,15 +85,13 @@ export function useAlertOverlayViewModel(): AlertOverlayViewModel {
 
   const onVote = useCallback(
     (stillThere: boolean) => {
-      const alert = useDriveStore.getState().activeAlert;
+      const alert = activeAlert;
       if (alert === null || hasVoted) return;
-      useHazardStore
-        .getState()
-        .vote(alert.refId, stillThere)
+      vote(alert.refId, stillThere)
         .then(() => setVotedRefId(alert.refId))
         .catch(() => undefined);
     },
-    [hasVoted],
+    [activeAlert, hasVoted, vote],
   );
 
   const distanceM = useMemo(() => {

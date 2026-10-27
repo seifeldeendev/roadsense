@@ -1,4 +1,5 @@
 import { Redirect } from 'expo-router';
+// TODO(item-5): routing reads the session store; move into an auth-gate component in a feature slice
 import { useSessionStore } from '@/stores/useSessionStore';
 
 export default function SessionRedirect() {

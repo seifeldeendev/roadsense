@@ -4,8 +4,7 @@ import type { SoundMode, UpcomingAlert } from '@/domain/entities';
 import { findUpcomingAlerts } from '@/domain/usecases/drive/findUpcomingAlerts';
 import { nearestRoadName } from '@/domain/usecases/drive/nearestRoadName';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
-import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 // How far ahead the "Active alerts" list looks; the spoken alert distance stays a setting.
@@ -38,6 +37,7 @@ export type DriveControlsViewModel = {
 };
 
 export function useDriveControlsViewModel(): DriveControlsViewModel {
+  const { useHazardStore, useNavigationStore } = useStores();
   const [sheet, setSheet] = useState<DriveSheet | null>(null);
   const [recentreSignal, setRecentreSignal] = useState(0);
   const position = useDriveStore((s) => s.position);

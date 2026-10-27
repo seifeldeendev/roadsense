@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useSessionStore } from '@/stores/useSessionStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import type { HazardIconName } from '@/theme/tokens';
 
 export type OnboardingSlideData = {
@@ -40,6 +40,7 @@ export type OnboardingViewModel = {
 };
 
 export function useOnboardingViewModel(): OnboardingViewModel {
+  const { useSessionStore } = useStores();
   const [index, setIndex] = useState(0);
   const completeOnboarding = useSessionStore((s) => s.completeOnboarding);
 

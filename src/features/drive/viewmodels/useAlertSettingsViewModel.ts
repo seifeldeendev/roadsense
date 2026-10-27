@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import type { AlertTarget, Camera, Settings, UpcomingAlert } from '@/domain/entities';
 import { isSpeedCamera } from '@/domain/usecases/drive/fixedPoints';
 import { useDriveStore } from '@/stores/useDriveStore';
-import { useHazardStore } from '@/stores/useHazardStore';
+import { useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export type AlertSettingsViewModel = {
@@ -19,9 +19,11 @@ export type AlertSettingsViewModel = {
 };
 
 export function useAlertSettingsViewModel(): AlertSettingsViewModel {
+  const { useHazardStore } = useStores();
   const settings = useSettingsStore();
   const cameras = useHazardStore((s) => s.cameras);
   const load = useHazardStore((s) => s.load);
+  const setActiveAlert = useDriveStore((s) => s.setActiveAlert);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,18 +33,18 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
   }, [cameras.length, load]);
 
   const toggleType = useCallback((type: AlertTarget) => {
-    const current = useSettingsStore.getState().enabledTypes;
+    const current = settings.enabledTypes;
     if (current.includes(type) && current.length === 1) {
       setMessage('Keep at least one alert type on');
       return;
     }
     setMessage(null);
-    useSettingsStore.getState().toggleType(type);
-  }, []);
+    settings.toggleType(type);
+  }, [settings]);
 
   const sampleCameraAlert = useCallback((): UpcomingAlert | null => {
     // The road database also lists police and bumps; the preview uses a speed camera.
-    const camera: Camera | undefined = useHazardStore.getState().cameras.find((item) => isSpeedCamera(item));
+    const camera: Camera | undefined = cameras.find((item) => isSpeedCamera(item));
     if (camera === undefined) return null;
     return {
       kind: 'camera',
@@ -53,7 +55,7 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
       speedLimitKmh: camera.speedLimitKmh > 0 ? camera.speedLimitKmh : undefined,
       camera,
     };
-  }, []);
+  }, [cameras]);
 
   const previewAlert = useCallback(() => {
     const alert = sampleCameraAlert();
@@ -62,9 +64,9 @@ export function useAlertSettingsViewModel(): AlertSettingsViewModel {
       return;
     }
     setMessage(null);
-    useDriveStore.getState().setActiveAlert(alert);
+    setActiveAlert(alert);
     router.push('/alert');
-  }, [sampleCameraAlert]);
+  }, [sampleCameraAlert, setActiveAlert]);
 
   return {
     alertDistanceM: settings.alertDistanceM,
