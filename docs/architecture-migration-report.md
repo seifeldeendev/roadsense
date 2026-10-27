@@ -106,6 +106,7 @@ The lint config (`eslint.config.js`) encodes the prompt's table plus the amendme
 
 **Where the table, the config or the code don't line up exactly:**
 - `src/stores/cameraHooks.ts` and `DependenciesProvider.tsx` are React hooks and components in the stores layer, and `cameraHooks` imports `react-native` (for `AppState`). The table treats stores as state only. The lint only restricts paths inside `src`, so it does not flag package imports here.
+- **Correction (audit F5):** this list originally implied the `AppState` import was the only mismatch. It wasn't: `src/stores/persistStorage.ts` also imported AsyncStorage and `react-native` (`Platform`). Both are fixed. `AppState` is behind `Dependencies.lifecycle` (AI-049), and persistence is behind `Dependencies.storage`, with a package allowlist for stores (AI-056). See `docs/architecture-audit.md`.
 - `__tests__/` and `test-support/` are outside the zones, by design.
 
 ## Remaining debt

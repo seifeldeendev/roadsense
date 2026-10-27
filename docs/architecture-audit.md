@@ -1,6 +1,63 @@
 # Architecture migration audit
 
-Branch `seif/radarbot-map`, audited 2026-10-27 at `eb43f5c`. The one authorised fix (Section 7) is `68e2d2b`. Everything here is local and unpushed.
+Branch `seif/radarbot-map`, audited 2026-10-27 at `eb43f5c`. The one authorised fix (Section 7) is `68e2d2b`. Fix rounds 1–4 followed, up to `35cdf60`. Everything here is local and unpushed.
+
+## Status after the fix rounds (Round 5)
+
+### Verdict
+
+**Not fully Clean Architecture + MVVM yet: one blocking item remains.** It is small and mechanical. Everything else still open is acceptable debt.
+
+**What holds, each proved by breaking it:**
+- **Boundaries are enforced.** All 48 audit plants were re-run (AI-056): 47 of 47 violations are caught, 45 by lint and 2 by the layer-shape guard tests. The control passes.
+- **Allowlists, not denylists.** The domain imports only itself. Stores may import only `zustand` and `react`. There are no file exemptions and no `eslint-disable` anywhere in `src`.
+- **Platform code reaches the inner layers only through `Dependencies`:** location, geocoding, app lifecycle, storage and camera data.
+- **Screen and route shape.** Every screen goes through a view model, and every route file is a one-line re-export.
+- **The two critical driver-safety gaps are closed.** A camera query that hangs, and a location feed that fails or stops, now both reach the driver-facing banner (AI-051).
+
+**The blocking item: `useDriveStore` is still a module singleton.** Nine files under `src/features` and `src/stores` import it directly rather than through `useStores()`. The audit's MVVM contract (Section 2) is that view models get their dependencies from `useStores()` / `useDependencies()`. This store holds only in-memory drive state, with no external dependency, but it can't be swapped for a fake: tests reset it by hand. It also carries F7's `getState()` in `cameraHooks.ts:51`. Converting it the way settings and theme were converted (AI-055) closes both.
+
+### Findings status
+
+| ID | Severity | Status | Where fixed / why still open | Blocks "fully Clean Architecture + MVVM"? |
+|---|---|---|---|---|
+| F1 | High | ✅ Fixed | Guard test `__tests__/layerShape.test.ts` (AI-053) | — |
+| F2 | High | ✅ Fixed | Domain import allowlist (AI-053) | — |
+| F3 | High | ✅ Fixed | Guard test: no `.tsx` in `src/domain` (AI-053) | — |
+| F4 | High | ✅ Fixed | Stores package allowlist, no exemptions (AI-056) | — |
+| F5 | High | ✅ Fixed | `Dependencies.storage` for all four persisted stores (AI-056); report corrected in Round 5 | — |
+| F6 | Medium | Open | `Dependencies.settings: SettingsRepository` is still wired and unread. Settings persist through `Dependencies.storage`. | No: a dead port, not a boundary breach. Acceptable debt; delete it or route settings through it. |
+| F7 | Medium | Open | `useDriveStore.getState()` in the lifecycle callback, `src/stores/cameraHooks.ts:51` | **Yes, as part of the `useDriveStore` item above.** It goes away when the drive store is built by `createStores`. |
+| F8 | Low | No fix needed | Internal to a store | — |
+| F9 | Medium | Partly fixed | Settings and theme converted (AI-055). **`useDriveStore` remains.** | **Yes**: see the verdict |
+| F10 | Low | Open | `BrandSplash` sits in `screens/` without a view model | No: cosmetic placement |
+| F11 | Medium | ✅ Fixed | `WorkingSet` class with a private list; `forConsumer` is typed by the registry (AI-052) | — |
+| F12 | Critical | ✅ Fixed | 5 s hang detector on every camera query; coverage states; one deadline at drive start (AI-051) | — |
+| F13 | Critical | ✅ Fixed (detection and warning) | Watch errors reported, staleness after 5 s, same banner, no frozen speed (AI-051) | — |
+| F14 | Medium | Open, defused | Before the first reading the follower still targets the phone's last fix. The banner now judges coverage at the drive's start (`drivingFrom`), so the only effect left is one wasted fetch. | No: acceptable debt |
+| F15 | Medium | ✅ Fixed by F12 | The map view query goes through the store's `findInBounds`, which now times out, so a hung view query ends as `failed` and the loading overlay clears. Verified by reading `cameraHooks.ts:101` and `useCameraStore.ts:121`; there is no dedicated test. | — |
+| F16 | Low | Open | A demo drive played in the background stops following | No: demo only |
+| F17 | Medium | ✅ Fixed | The status test carries a valid body; deleting the check fails it (AI-052) | — |
+| F18 | Medium | ✅ Fixed | Timer cleanup in `afterEach` across four files; a broken warning fails in 13 s (AI-052) | — |
+| F19 | High | ✅ Fixed | AI-038 is marked superseded; the `0f2c480` message is noted as superseded, not rewritten (AI-054) | — |
+| F20 | Low | ✅ Fixed | The report cites the right entries (AI-054) | — |
+| F21 | High | ✅ Fixed | AI-046 relabelled as a behaviour change (AI-054) | — |
+| F22 | Low | Open | `docs/radar-visibility-findings.md` (dated 2026-10-26) still describes the full-list mechanism, with no "superseded" note | No: a dated investigation record |
+| F23 | Medium | Open, unverifiable here | Equivalence is proved through `node:sqlite`, not `expo-sqlite` on a device | No: a verification gap, not an architecture one. Needs a device run. |
+| F24 | Medium | Open | The trip planner's destinations `loadUnless` lacks `\|\| state.isLoading` (`useTripPlannerViewModel.ts:79`) | No: correctness debt (a duplicate fetch), not a boundary |
+| F25 | Low | Open | Route queries use the whole route's bounding box (at most 938 of 4,215 cameras) | No: efficiency |
+
+**Filed during the fix rounds, still open:**
+- **Permission recovery flows (from F13).** The driver is now warned when location fails or stops ("Location unavailable", "GPS signal lost"). There is no in-app recovery yet: re-requesting permission, opening settings, restarting the watch. Recovery means stopping and restarting the drive. It doesn't block the architecture verdict; it is product work on a failure path that is no longer silent.
+- **Device measurements.** The dev-only time-to-first-cameras log is still uncommitted in the working tree, in `useDriveMapViewModel.ts`. Query latency on a device is unmeasured (F23). The 5 s camera timeout is a hang detector, not a latency budget (AI-051), so these measurements are not needed to justify it.
+
+**Final state:** tsc, lint, jest 215/215 across 39 suites (exits without `--forceExit`), and the web export builds.
+
+---
+
+## Original audit (at `ee3ceca`)
+
+The rest of this document is the audit as first written. It is kept unchanged as the record the fix rounds worked from.
 
 Every claim in `docs/architecture-migration-report.md` and in AI-036 to AI-048 was treated as unverified until checked against the code. Evidence is either a file and line, or a command that was run: a planted violation, or a mutation that was applied, observed and then reverted. A passing suite was never counted as proof of an architecture claim.
 

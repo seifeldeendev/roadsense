@@ -458,4 +458,18 @@ With the original plants put back, both tests fail and name the files. The route
 - **The control passes:** `import type` from the domain in `theme`.
 - **Nothing missed.**
 
-**Verification:** tsc, lint, jest 215/215 (39 suites, exits without `--forceExit`), web export. 15 files including this log. _Seif: fill in your notes._
+**Verification:** tsc, lint, jest 215/215 (39 suites, exits without `--forceExit`), web export. 14 files including this log (an earlier version of this line said 15). _Seif: fill in your notes._
+
+### AI-057 · 2026-10-27 · Seif · fix round 5: audit status and verdict after the fix rounds · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim, round heading):** "## Round 5 — final"
+**Output:** `docs/architecture-audit.md` opens with a status section: the new verdict, and every finding's status, where it was fixed, and whether it blocks "fully Clean Architecture + MVVM". The original audit follows, unchanged, as the record the rounds worked from.
+- **Fixed (17):**
+  - F1–F5, F11, F12, F13 (detection and warning), F17–F21;
+  - F15, which the F12 timeout fixes because the view query goes through the store's `findInBounds`. That is verified by reading, with no dedicated test.
+  - F9 for settings and theme.
+- **Verdict: one blocking item.** `useDriveStore` is still a module singleton, imported directly by 9 files. That breaks the audit's own rule that view models get their stores through `useStores()`, and F7's `getState()` goes with it.
+- **Acceptable debt, each with a reason:** F6 (dead settings port), F10, F14 (defused by `drivingFrom`), F16, F22, F23 (needs a device), F24 (a duplicate fetch, not a boundary), F25.
+- **Filed, not fixed:** permission recovery flows. The driver is warned (AI-051), but recovery still means stopping and restarting the drive.
+
+The migration report's layer section also gets the F5 correction: the `AppState` import was not the only mismatch.
+**Verification:** documentation only; the suite and lint are as in AI-056. _Seif: fill in your notes._
