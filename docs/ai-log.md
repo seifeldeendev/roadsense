@@ -491,3 +491,18 @@ The migration report's layer section also gets the F5 correction: the `AppState`
 
 **Tests.** Five tests now set or read their own store instead of the old singleton, and the full-app screen test reads the composition export. The timing log was kept out with `git stash`, not by rebuilding a file, as Seif instructed.
 **Verification:** tsc, lint, jest 217/217 (39 suites, exits without `--forceExit`). _Seif: fill in your notes._
+
+### AI-059 · 2026-10-27 · Seif · F15 tested, and the final audit verdict · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim):** "Then F15: write the test. … Then re-run the full suite plus the 47 plants once more and give the final verdict."
+**F15.** The audit's own rule is that a claim verified only by reading is unverified, so this one now has a test (`__tests__/viewModels.test.tsx`). Every `getInBounds` call hangs. The Live Map stays loading past the first query timeout, during which the working set times out and the view queries its own area. It leaves loading after the second timeout, with no markers. So a first load whose lookups all hang clears in about 10 s (two timeouts); it doesn't stay up forever. With `findInBounds` untimed (the working set's timeout left in place), the test fails: "Expected: false, Received: true".
+**Final re-run:**
+- tsc and lint clean, and no `eslint-disable` in `src`;
+- jest 218/218 across 39 suites, exiting without `--forceExit`;
+- the web export builds;
+- all 48 plants recreated and deleted by literal path afterwards: 47 of 47 violations caught (45 lint, 2 guard tests), and the control passes.
+
+**Verdict, recorded at the top of `docs/architecture-audit.md`: fully Clean Architecture + MVVM, with the listed debt.**
+- **Debt, none of it blocking:** F6, F10, F14, F16, F22, F23 (clears on a device run), F24, F25, and permission-recovery flows.
+- **Nothing blocks.**
+
+_Seif: fill in your notes._

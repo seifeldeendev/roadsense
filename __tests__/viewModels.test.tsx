@@ -14,6 +14,7 @@ import { useRoutePreviewViewModel } from '@/features/map/viewmodels/useRoutePrev
 import { useStatsReplayViewModel } from '@/features/trips/viewmodels/useStatsReplayViewModel';
 import { useTripDetailsViewModel } from '@/features/trips/viewmodels/useTripDetailsViewModel';
 import { useTripHistoryViewModel } from '@/features/trips/viewmodels/useTripHistoryViewModel';
+import { CAMERA_QUERY_TIMEOUT_MS } from '@/stores/useCameraStore';
 import { createStores } from '@/stores/createStores';
 import { DependenciesProvider, useStores } from '@/stores/DependenciesProvider';
 import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
@@ -316,5 +317,30 @@ describe('cameras around the driver (working set) and around a panned view (quer
 
     await act(async () => releasePan());
     expect(result.current.visibleCameras.map((camera) => camera.id)).toEqual(['cam-there']);
+  });
+});
+
+describe('a camera lookup that hangs on the Live Map (audit F15)', () => {
+  it('times out, and the first-load overlay clears instead of staying up', async () => {
+    jest.useFakeTimers();
+    const cameras = fakeCameraRepository([], {
+      getInBounds: jest.fn(() => new Promise<Camera[]>(() => undefined)),
+    });
+    const dependencies = createDependencies({ hazards: fakeHazards(), cameras });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <DependenciesProvider dependencies={dependencies}>{children}</DependenciesProvider>
+    );
+    const { result } = await renderHook(() => useLiveMapViewModel(), { wrapper });
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    expect(result.current.isLoading).toBe(true);
+
+    // The working set's fetch hangs until the query timeout turns it into a failure;
+    // the view then queries its own area, which hangs and times out the same way.
+    await act(() => jest.advanceTimersByTimeAsync(CAMERA_QUERY_TIMEOUT_MS));
+    expect(cameras.getInBounds).toHaveBeenCalledTimes(2);
+    expect(result.current.isLoading).toBe(true);
+    await act(() => jest.advanceTimersByTimeAsync(CAMERA_QUERY_TIMEOUT_MS));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.visibleCameras).toEqual([]);
   });
 });
