@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import type { Destination, PlannedRoute } from '@/domain/entities';
 import type { RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
-import { describeRouteAlerts, getAlertsAlongRoute } from '@/domain/usecases/routes/getAlertsAlongRoute';
+import { describeRouteAlerts, getAlertsAlongRoute, routeAlertBounds } from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { bearingDeg } from '@/domain/usecases/drive/geo';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
 import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion';
 import { formatDistance, formatDuration } from '@/shared/format';
+import { useAsyncResult } from '@/shared/useAsyncResult';
 import { useStores } from '@/stores/DependenciesProvider';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -36,19 +37,19 @@ export type RoutePreviewViewModel = {
 };
 
 export function useRoutePreviewViewModel(): RoutePreviewViewModel {
-  const { useHazardStore, useNavigationStore, useRouteStore } = useStores();
+  const { useCameraStore, useHazardStore, useNavigationStore, useRouteStore } = useStores();
+  const findInBounds = useCameraStore((s) => s.findInBounds);
   const destinations = useRouteStore((s) => s.destinations);
   const selected = useRouteStore((s) => s.selected);
   const currentLocation = useDriveStore((s) => s.currentLocation);
   const locationSource = useSettingsStore((s) => s.locationSource);
-  const route = useRouteStore((s) => s.route);
-  const isLoading = useRouteStore((s) => s.isLoading);
+  const fetchedRoute = useRouteStore((s) => s.route);
+  const routeLoading = useRouteStore((s) => s.isLoading);
   const error = useRouteStore((s) => s.error);
   const loadDestinations = useRouteStore((s) => s.loadDestinations);
   const loadDestinationsUnless = useRouteStore((s) => s.loadDestinationsUnless);
   const selectDestination = useRouteStore((s) => s.selectDestination);
   const resetSelection = useRouteStore((s) => s.resetSelection);
-  const cameras = useHazardStore((s) => s.cameras);
   const hazards = useHazardStore((s) => s.hazards);
   const loadHazardsUnless = useHazardStore((s) => s.loadUnless);
   const demoRoute = useNavigationStore((s) => s.demoRoute);
@@ -80,10 +81,18 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
     [hazards],
   );
 
+  // Only cameras in the route's box can be along it. The route shows once they
+  // are known, so the summary never reads "nothing on the way" ahead of them.
+  const routeCameras = useAsyncResult(fetchedRoute, (current) =>
+    findInBounds(routeAlertBounds(current.points)).catch(() => []),
+  );
+  const route = routeCameras.value === null ? null : fetchedRoute;
+  const isLoading = routeLoading || routeCameras.pending;
+
   const alerts = useMemo<RouteAlert[]>(
     () =>
-      route === null ? [] : getAlertsAlongRoute(route.points, cameras, activeHazards),
-    [route, cameras, activeHazards],
+      route === null ? [] : getAlertsAlongRoute(route.points, routeCameras.value ?? [], activeHazards),
+    [route, routeCameras.value, activeHazards],
   );
 
   const onQueryChange = useCallback(
@@ -116,9 +125,9 @@ export function useRoutePreviewViewModel(): RoutePreviewViewModel {
 
   const startDrive = useCallback(() => {
     // Hand the chosen route to the Drive map before switching to it.
-    showPlannedRoute(route?.points ?? null);
+    showPlannedRoute(fetchedRoute?.points ?? null);
     router.navigate('/drive');
-  }, [route, showPlannedRoute]);
+  }, [fetchedRoute, showPlannedRoute]);
 
   const startHeading =
     route !== null && route.points.length >= START_MARKER_MIN_POINTS
