@@ -42,6 +42,65 @@ describe('parseRadarFeed', () => {
     expect(fromSqlite).toEqual(fromJson);
   });
 
+  describe('every query answers the same on SQLite and on the JSON (web) path', () => {
+    // Deterministic pseudo-random numbers, so a failure reproduces.
+    const random = (() => {
+      let seed = 20261027;
+      return () => {
+        seed = (seed * 1103515245 + 12345) % 2147483648;
+        return seed / 2147483648;
+      };
+    })();
+    const sqlite = new RadarCameraRepository();
+    const json = new JsonRadarCameraRepository();
+
+    it('getInBounds over many random boxes, from city-sized to country-sized, plus empty ones', async () => {
+      const all = await json.getAll();
+      let nonEmpty = 0;
+      for (let i = 0; i < 200; i += 1) {
+        // Centre on a real camera most of the time so boxes are not all empty.
+        const anchor = all[Math.floor(random() * all.length)];
+        const centre = i % 10 === 0 ? { lat: 20 + random() * 15, lng: 22 + random() * 15 } : anchor;
+        const halfLat = 0.001 + random() * (i % 3 === 0 ? 3 : 0.2);
+        const halfLng = 0.001 + random() * (i % 3 === 0 ? 3 : 0.2);
+        const bounds = {
+          minLat: centre.lat - halfLat,
+          maxLat: centre.lat + halfLat,
+          minLng: centre.lng - halfLng,
+          maxLng: centre.lng + halfLng,
+        };
+        const [fromSqlite, fromJson] = await Promise.all([sqlite.getInBounds(bounds), json.getInBounds(bounds)]);
+        expect(fromSqlite).toEqual(fromJson);
+        if (fromJson.length > 0) nonEmpty += 1;
+      }
+      expect(nonEmpty).toBeGreaterThan(150);
+    });
+
+    it('includes a camera lying exactly on the box edge', async () => {
+      const [camera] = await json.getAll();
+      const edge = { minLat: camera.lat, maxLat: camera.lat + 0.01, minLng: camera.lng - 0.01, maxLng: camera.lng };
+      expect((await sqlite.getInBounds(edge)).map((c: Camera) => c.id)).toContain(camera.id);
+      expect(await sqlite.getInBounds(edge)).toEqual(await json.getInBounds(edge));
+    });
+
+    it('getByIds over random id sets, including unknown ids and an empty set', async () => {
+      const all = await json.getAll();
+      for (let i = 0; i < 50; i += 1) {
+        const ids = Array.from({ length: Math.floor(random() * 12) }, () => all[Math.floor(random() * all.length)].id);
+        if (i % 5 === 0) ids.push('eg-does-not-exist');
+        expect(await sqlite.getByIds(ids)).toEqual(await json.getByIds(ids));
+      }
+      expect(await sqlite.getByIds([])).toEqual([]);
+    });
+
+    it('getFirstSpeedCamera', async () => {
+      const first = await sqlite.getFirstSpeedCamera();
+      expect(first).not.toBeNull();
+      expect(first).toEqual(await json.getFirstSpeedCamera());
+      expect(first).toEqual((await json.getAll()).find(isSpeedCamera));
+    });
+  });
+
   it('carries the seed version of the current export (run npm run build:radars after changing it or the schema)', () => {
     const { currentRadarSeedVersion } = require('../test-support/radarSeed') as { currentRadarSeedVersion: () => string };
     expect(RADAR_SEED_VERSION).toBe(currentRadarSeedVersion());

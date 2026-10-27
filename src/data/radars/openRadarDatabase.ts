@@ -10,8 +10,8 @@ const RADAR_DB_ASSET: number = require('../../../assets/data/radars_eg.db');
 
 // The reads the camera repository needs, so tests can supply any SQLite.
 export interface RadarDatabase {
-  getAllAsync<T>(sql: string): Promise<T[]>;
-  getFirstAsync<T>(sql: string): Promise<T | null>;
+  getAllAsync<T>(sql: string, ...params: (string | number)[]): Promise<T[]>;
+  getFirstAsync<T>(sql: string, ...params: (string | number)[]): Promise<T | null>;
 }
 
 // Opens the installed radar database, first copying the bundled one into place

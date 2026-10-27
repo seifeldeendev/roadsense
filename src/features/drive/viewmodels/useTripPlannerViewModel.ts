@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Destination, LatLng, PlannedRoute } from '@/domain/entities';
 import { haversineDistanceM } from '@/domain/usecases/drive/geo';
-import { describeRouteAlerts, getAlertsAlongRoute, type RouteAlert } from '@/domain/usecases/routes/getAlertsAlongRoute';
+import {
+  describeRouteAlerts,
+  getAlertsAlongRoute,
+  routeAlertBounds,
+  type RouteAlert,
+} from '@/domain/usecases/routes/getAlertsAlongRoute';
 import { formatDistance, formatDuration } from '@/shared/format';
+import { useAsyncResult } from '@/shared/useAsyncResult';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useDependencies, useStores } from '@/stores/DependenciesProvider';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -41,7 +47,7 @@ const SUGGESTION_COUNT = 6;
 const QUICK_PLACE_COUNT = 3;
 
 export function useTripPlannerViewModel(): TripPlannerViewModel {
-  const { useHazardStore, useNavigationStore, useRouteStore } = useStores();
+  const { useCameraStore, useHazardStore, useNavigationStore, useRouteStore } = useStores();
   const { location } = useDependencies();
   const [mode, setMode] = useState<PlannerMode>('idle');
   const [query, setQuery] = useState('');
@@ -49,11 +55,17 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
   const currentLocation = useDriveStore((s) => s.currentLocation);
   const setCurrentLocation = useDriveStore((s) => s.setCurrentLocation);
   const locationSource = useSettingsStore((s) => s.locationSource);
-  const { destinations, recent, selected, route, isLoading, error } = useRouteStore();
+  const { destinations, recent, selected, route: fetchedRoute, isLoading, error } = useRouteStore();
   const loadDestinationsUnless = useRouteStore((s) => s.loadDestinationsUnless);
   const selectDestination = useRouteStore((s) => s.selectDestination);
   const resetSelection = useRouteStore((s) => s.resetSelection);
-  const cameras = useHazardStore((s) => s.cameras);
+  const findInBounds = useCameraStore((s) => s.findInBounds);
+  // Only cameras in the route's box can be along it. The summary waits for them,
+  // so it never reads "nothing on the way" ahead of them.
+  const routeCameras = useAsyncResult(fetchedRoute, (current) =>
+    findInBounds(routeAlertBounds(current.points)).catch(() => []),
+  );
+  const route = routeCameras.value === null ? null : fetchedRoute;
   const demoRoute = useNavigationStore((s) => s.demoRoute);
   const showPlannedRoute = useNavigationStore((s) => s.showPlannedRoute);
   const hazards = useHazardStore((s) => s.hazards);
@@ -72,11 +84,11 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
   // store), and only real changes count, so mounting doesn't wipe a queued replay.
   const shownRoute = useRef<PlannedRoute | null>(null);
   useEffect(() => {
-    const own = mode === 'route' ? route : null;
+    const own = mode === 'route' ? fetchedRoute : null;
     if (own === shownRoute.current) return;
     shownRoute.current = own;
     showPlannedRoute(own?.points ?? null);
-  }, [mode, route, showPlannedRoute]);
+  }, [mode, fetchedRoute, showPlannedRoute]);
 
   const sections = useMemo<PlaceSection[]>(() => {
     const withDistance = (place: Destination): PlaceItem => ({
@@ -140,8 +152,8 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
   }, [resetSelection]);
 
   const alerts = useMemo(
-    () => (route === null ? [] : getAlertsAlongRoute(route.points, cameras, hazards)),
-    [route, cameras, hazards],
+    () => (route === null ? [] : getAlertsAlongRoute(route.points, routeCameras.value ?? [], hazards)),
+    [route, routeCameras.value, hazards],
   );
 
   return {
@@ -152,7 +164,7 @@ export function useTripPlannerViewModel(): TripPlannerViewModel {
     sections,
     quickPlaces,
     pinLabel,
-    isRouting: isLoading && selected !== null && route === null,
+    isRouting: (isLoading || routeCameras.pending) && selected !== null && route === null,
     routeError: error,
     destination: selected,
     route,

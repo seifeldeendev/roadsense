@@ -4,6 +4,7 @@ export type { AlertTarget, LocationSourceKind, MapType, Settings, SoundMode } fr
 export type { Camera } from './camera';
 export type { Hazard } from './hazard';
 export type { LatLng } from './latlng';
+export type { GeoBounds } from './geo-bounds';
 export type { Trip } from './trip';
 export type { TripPoint } from './trip-point';
 export type { AlertEvent } from './alert-event';

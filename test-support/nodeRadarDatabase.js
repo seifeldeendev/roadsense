@@ -8,8 +8,8 @@ const DB_PATH = path.join(__dirname, '..', 'assets', 'data', 'radars_eg.db');
 async function openRadarDatabase() {
   const db = new DatabaseSync(DB_PATH, { readOnly: true });
   return {
-    getAllAsync: async (sql) => db.prepare(sql).all(),
-    getFirstAsync: async (sql) => db.prepare(sql).get() ?? null,
+    getAllAsync: async (sql, ...params) => db.prepare(sql).all(...params),
+    getFirstAsync: async (sql, ...params) => db.prepare(sql).get(...params) ?? null,
   };
 }
 

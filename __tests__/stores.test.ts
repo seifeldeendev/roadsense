@@ -13,6 +13,7 @@ import { createHazardStore } from '@/stores/useHazardStore';
 import { createRouteStore } from '@/stores/useRouteStore';
 import { createSessionStore } from '@/stores/useSessionStore';
 import { createTripStore } from '@/stores/useTripStore';
+import { fakeCameraRepository } from '../test-support/fakeCameraRepository';
 
 jest.mock(
   '@react-native-async-storage/async-storage',
@@ -54,7 +55,7 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-const fakeCameras = (cameras: Camera[] = [CAMERA]): CameraRepository => ({ getAll: jest.fn(async () => cameras) });
+const fakeCameras = (cameras: Camera[] = [CAMERA]): CameraRepository => fakeCameraRepository(cameras);
 
 const fakeHazards = (overrides: Partial<HazardRepository> = {}): HazardRepository => ({
   getActive: jest.fn(async () => [HAZARD]),
