@@ -5,9 +5,9 @@ import { fitRouteRegion, type MapFrame } from '@/domain/usecases/drive/fitRegion
 import { alertTargetFor, isMinorRegionChange, nearestPoints, pointsInView } from '@/domain/usecases/drive/fixedPoints';
 import { visibleOnMap } from '@/domain/usecases/drive/mapLayers';
 import { isHazardExpired } from '@/domain/usecases/hazards/isHazardExpired';
-import { getDemoRoute } from '@/services/location';
 import { useDriveStore } from '@/stores/useDriveStore';
 import { useHazardStore } from '@/stores/useHazardStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import {
   hazardMeta,
@@ -78,6 +78,7 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const mapType = useSettingsStore((s) => s.mapType);
   const showTraffic = useSettingsStore((s) => s.showTraffic);
   const currentLocation = useDriveStore((s) => s.currentLocation);
+  const demoRoute = useNavigationStore((s) => s.demoRoute);
   const hiddenOnMap = useSettingsStore((s) => s.hiddenOnMap);
   const [selected, setSelected] = useState<ReadonlySet<MapFilterKey>>(ALL);
   // What the map has been showing since the user last moved it, or null before
@@ -138,8 +139,8 @@ export function useLiveMapViewModel(): LiveMapViewModel {
   const nearbyCameras = useMemo(() => {
     // After a pan, the drawn points follow what the map is looking at.
     if (viewport !== null) return pointsInView(shownCameras, viewport, MAX_FIXED_POINTS);
-    return nearestPoints(shownCameras, currentLocation ?? getDemoRoute()[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M);
-  }, [shownCameras, viewport, currentLocation]);
+    return nearestPoints(shownCameras, currentLocation ?? demoRoute[0], MAX_FIXED_POINTS, FIXED_POINT_RADIUS_M);
+  }, [shownCameras, viewport, currentLocation, demoRoute]);
 
   const visibleCameras = useMemo(
     () =>
