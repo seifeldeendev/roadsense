@@ -1,7 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 import { AppButton, Card, AppText } from '@/components/ui';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 
 type StillThereSectionProps = {
   hasVoted: boolean;
@@ -10,6 +11,7 @@ type StillThereSectionProps = {
 };
 
 export function StillThereSection({ hasVoted, reportedLine, onVote }: StillThereSectionProps) {
+  const { colors } = useTheme();
   return (
     <Card variant="soft">
       <AppText variant="displaySm" style={styles.centered}>

@@ -1,14 +1,14 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-  colors,
-  elevation,
   rounded,
   spacing,
   touch,
   typography,
   type HazardIconName,
+  type ThemeColors,
 } from '@/theme/tokens';
+import { useTheme, type ResolvedTheme } from '@/theme/useTheme';
 
 export type AppButtonVariant = 'primary' | 'secondary' | 'subtle' | 'floating' | 'large';
 export type AppButtonSize = 'md' | 'lg';
@@ -19,39 +19,61 @@ type VariantStyle = {
   pressedBackground: string;
 };
 
-const variants: Record<AppButtonVariant, VariantStyle> = {
-  primary: {
-    container: { backgroundColor: colors.primary },
-    textColor: colors.onPrimary,
-    pressedBackground: colors.blackElevated,
-  },
-  secondary: {
-    container: {
-      backgroundColor: colors.canvas,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.hairline,
-    },
-    textColor: colors.ink,
-    pressedBackground: colors.surfacePressed,
-  },
-  subtle: {
-    container: { backgroundColor: colors.canvasSoft },
-    textColor: colors.ink,
-    pressedBackground: colors.surfacePressed,
-  },
-  floating: {
-    container: {
-      backgroundColor: colors.canvas,
-      ...elevation.level3,
-    },
-    textColor: colors.ink,
-    pressedBackground: colors.surfacePressed,
-  },
-  large: {
-    container: { backgroundColor: colors.primary },
-    textColor: colors.onPrimary,
-    pressedBackground: colors.blackElevated,
-  },
+function variantStyle(
+  colors: ThemeColors,
+  elevation: ResolvedTheme['elevation'],
+  variant: AppButtonVariant,
+  pill: boolean,
+): VariantStyle {
+  const padding: ViewStyle = pill ? pillPadding : { paddingVertical: spacing.lg, paddingHorizontal: spacing.xl };
+  switch (variant) {
+    case 'primary':
+    case 'large':
+      return {
+        container: { backgroundColor: colors.primary, ...padding },
+        textColor: colors.onPrimary,
+        pressedBackground: colors.primaryPressed,
+      };
+    case 'secondary':
+      return {
+        container: {
+          backgroundColor: colors.canvas,
+          ...padding,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.hairline,
+        },
+        textColor: colors.ink,
+        pressedBackground: colors.surfacePressed,
+      };
+    case 'subtle': {
+      const subtlePadding: ViewStyle = pill
+        ? { ...padding, paddingHorizontal: spacing.lg }
+        : padding;
+      return {
+        container: {
+          backgroundColor: colors.canvasSoft,
+          ...subtlePadding,
+        },
+        textColor: colors.ink,
+        pressedBackground: colors.surfacePressed,
+      };
+    }
+    case 'floating':
+      return {
+        container: {
+          backgroundColor: colors.canvas,
+          ...padding,
+          ...elevation.level3,
+        },
+        textColor: colors.ink,
+        pressedBackground: colors.surfacePressed,
+      };
+  }
+}
+
+const pillPadding: ViewStyle = {
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.md,
 };
 
 type AppButtonProps = {
@@ -75,8 +97,10 @@ export function AppButton({
   icon,
   accessibilityLabel,
 }: AppButtonProps) {
+  const theme = useTheme();
+  const styles = stylesBase;
   const isLarge = variant === 'large' || size === 'lg';
-  const style = variants[variant];
+  const style = variantStyle(theme.colors, theme.elevation, variant, !isLarge);
   const inactive = disabled || loading;
   const labelTypography = isLarge ? typography.buttonLarge : typography.buttonMd;
 
@@ -115,20 +139,26 @@ export function AppButton({
   );
 }
 
-const styles = StyleSheet.create({
+type ButtonStyles = {
+  base: ViewStyle;
+  pillBase: ViewStyle;
+  largeBase: ViewStyle;
+  inactive: ViewStyle;
+  row: ViewStyle;
+};
+
+const stylesBase: ButtonStyles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   pillBase: {
     borderRadius: rounded.pill,
-    paddingHorizontal: spacing.xl,
     minHeight: touch.min,
+    minWidth: touch.min * 2,
   },
   largeBase: {
     borderRadius: rounded.xl,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
     minHeight: touch.large,
   },
   inactive: {

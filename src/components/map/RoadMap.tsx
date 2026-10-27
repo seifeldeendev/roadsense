@@ -1,0 +1,129 @@
+import {
+  useImperativeHandle,
+  useEffect,
+  useRef,
+  type ReactNode,
+  type Ref,
+} from 'react';
+import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import MapView, {
+  PROVIDER_GOOGLE,
+  type Camera,
+  type Provider,
+  type Region,
+} from 'react-native-maps';
+import type { MapFrame } from '@/domain/usecases/drive/fitRegion';
+import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
+import { darkMapStyle, lightMapStyle } from '@/theme/mapStyles';
+import { spacing } from '@/theme/tokens';
+
+export type FollowPoint = { lat: number; lng: number; heading: number };
+
+export type RoadMapHandle = {
+  fit: (coordinates: { lat: number; lng: number }[]) => void;
+};
+
+type RoadMapProps = {
+  initialRegion?: MapFrame & Region;
+  region?: MapFrame & Region;
+  children?: ReactNode;
+  followPoint?: FollowPoint | null;
+  scrollEnabled?: boolean;
+  zoomEnabled?: boolean;
+  rotateEnabled?: boolean;
+  style?: StyleProp<ViewStyle>;
+  ref?: Ref<RoadMapHandle>;
+};
+
+type MapViewInstance = InstanceType<typeof MapView>;
+
+const mapProvider: Provider = Platform.select({
+  android: PROVIDER_GOOGLE,
+  ios: undefined,
+});
+
+const DRIVE_PITCH = 45;
+
+function followCamera(point: FollowPoint): Partial<Camera> {
+  const center = { latitude: point.lat, longitude: point.lng };
+  return {
+    center,
+    heading: point.heading,
+    pitch: DRIVE_PITCH,
+    // Google honours zoom, Apple Maps reads the altitude equivalent.
+    zoom: 16,
+    altitude: 750,
+  };
+}
+
+export function RoadMap({
+  initialRegion,
+  region,
+  children,
+  followPoint = null,
+  scrollEnabled = true,
+  zoomEnabled = true,
+  rotateEnabled = true,
+  style,
+  ref,
+}: RoadMapProps) {
+  const { scheme } = useTheme();
+  const styles = useThemedStyles(roadMapStyles, undefined);
+  const mapRef = useRef<MapViewInstance | null>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      fit: (coordinates) => {
+        mapRef.current?.fitToCoordinates(
+          coordinates.map((c) => ({ latitude: c.lat, longitude: c.lng })),
+          { edgePadding: styles.edgePadding, animated: true },
+        );
+      },
+    }),
+    [styles],
+  );
+
+  const lat = followPoint?.lat ?? null;
+  const lng = followPoint?.lng ?? null;
+  const heading = followPoint?.heading ?? null;
+
+  useEffect(() => {
+    if (lat === null || lng === null || heading === null) return;
+    mapRef.current?.animateCamera(followCamera({ lat, lng, heading }), { duration: 500 });
+  }, [lat, lng, heading]);
+
+  return (
+    <MapView
+      ref={mapRef}
+      style={styles.base}
+      provider={mapProvider}
+      initialRegion={initialRegion}
+      region={region}
+      customMapStyle={scheme === 'dark' ? darkMapStyle : lightMapStyle}
+      userInterfaceStyle={scheme}
+      showsCompass={false}
+      showsMyLocationButton={false}
+      showsUserLocation={false}
+      toolbarEnabled={false}
+      scrollEnabled={scrollEnabled}
+      zoomEnabled={zoomEnabled}
+      rotateEnabled={rotateEnabled}
+    >
+      {children}
+    </MapView>
+  );
+}
+
+function roadMapStyles(_theme: ResolvedTheme) {
+  return StyleSheet.create({
+    base: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+    },
+    edgePadding: { top: spacing.xxxl, right: spacing.xxxl, bottom: spacing.xxxl, left: spacing.xxxl },
+  });
+}

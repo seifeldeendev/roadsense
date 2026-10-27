@@ -1,27 +1,32 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 
 type ScreenProps = {
   children: ReactNode;
   scroll?: boolean;
+  padded?: boolean;
 };
 
-export function Screen({ children, scroll = false }: ScreenProps) {
+export function Screen({ children, scroll = false, padded = true }: ScreenProps) {
+  const { colors } = useTheme();
+  const fill: ViewStyle = { flex: 1, backgroundColor: colors.canvas };
+  const gutter = padded ? styles.gutter : styles.noGutter;
   if (!scroll) {
     return (
-      <SafeAreaView style={styles.fill}>
-        <View style={[styles.fill, styles.gutter]}>{children}</View>
+      <SafeAreaView style={fill}>
+        <View style={[fill, gutter]}>{children}</View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.fill}>
+    <SafeAreaView style={fill}>
       <ScrollView
-        style={styles.fill}
-        contentContainerStyle={[styles.gutter, styles.scrollContent]}
+        style={fill}
+        contentContainerStyle={[gutter, styles.scrollContent]}
         alwaysBounceVertical
       >
         {children}
@@ -31,12 +36,11 @@ export function Screen({ children, scroll = false }: ScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  fill: {
-    flex: 1,
-    backgroundColor: colors.canvas,
-  },
   gutter: {
     paddingHorizontal: spacing.lg,
+  },
+  noGutter: {
+    paddingHorizontal: 0,
   },
   scrollContent: {
     paddingBottom: spacing.xl,

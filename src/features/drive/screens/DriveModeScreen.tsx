@@ -14,9 +14,12 @@ import { NextAlertCard } from '../components/NextAlertCard';
 import { ReportBanner } from '../components/ReportBanner';
 import { ReportButton } from '../components/ReportButton';
 import { useDriveModeViewModel } from '../viewmodels/useDriveModeViewModel';
+import { useDriveMapViewModel } from '../viewmodels/useDriveMapViewModel';
+import { DriveMapCard } from '../components/DriveMapCard';
 
 export default function DriveModeScreen() {
   const vm = useDriveModeViewModel();
+  const mapVm = useDriveMapViewModel();
 
   if (vm.isLoading) {
     return (
@@ -60,6 +63,17 @@ export default function DriveModeScreen() {
           limitKmh={vm.limitKmh}
         />
 
+        <DriveMapCard
+          routePoints={mapVm.routePoints}
+          routeFrame={mapVm.routeFrame}
+          cameras={mapVm.cameras}
+          hazards={mapVm.activeHazards}
+          position={mapVm.position}
+          heading={mapVm.heading}
+          isDriving={mapVm.isDriving}
+          travelledIndex={mapVm.travelledIndex}
+        />
+
         <NextAlertCard alert={vm.nextAlert} />
 
         <View style={styles.reportSection}>
@@ -94,7 +108,7 @@ export default function DriveModeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.xl,
+    gap: spacing.xxxl,
     paddingBottom: spacing.xl,
   },
   header: {

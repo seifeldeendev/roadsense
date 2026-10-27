@@ -1,13 +1,9 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
-import {
-  colors,
-  elevation,
-  rounded,
-  spacing,
-} from '@/theme/tokens';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { rounded, spacing } from '@/theme/tokens';
+import { useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
-export type CardVariant = 'content' | 'elevated' | 'soft' | 'dark' | 'form';
+export type CardVariant = 'content' | 'elevated' | 'soft' | 'inverse' | 'form';
 
 type CardProps = {
   children: ReactNode;
@@ -15,30 +11,29 @@ type CardProps = {
 };
 
 export function Card({ children, variant = 'content' }: CardProps) {
-  return <View style={[styles.base, variantStyles[variant]]}>{children}</View>;
+  const styles = useThemedStyles(cardStyles, variant);
+  return <View style={styles.base}>{children}</View>;
 }
 
-const variantStyles = {
-  content: {},
-  elevated: {
-    ...elevation.level1,
-  },
-  soft: {
-    backgroundColor: colors.canvasSoft,
-  },
-  dark: {
-    backgroundColor: colors.ink,
-  },
-  form: {
-    ...elevation.level2,
-    padding: spacing.lg,
-  },
-} satisfies Record<CardVariant, object>;
+function cardStyles(theme: ResolvedTheme, variant: CardVariant) {
+  return StyleSheet.create({
+    base: cardBase(theme, variant),
+  });
+}
 
-const styles = StyleSheet.create({
-  base: {
+function cardBase(theme: ResolvedTheme, variant: CardVariant): ViewStyle {
+  const { colors, elevation } = theme;
+  const variantLayer: Record<CardVariant, ViewStyle> = {
+    content: {},
+    elevated: { ...elevation.level1 },
+    soft: { backgroundColor: colors.canvasSoft },
+    inverse: { backgroundColor: colors.inverse },
+    form: { ...elevation.level2, padding: spacing.lg },
+  };
+  return {
     backgroundColor: colors.canvas,
     borderRadius: rounded.xl,
     padding: spacing.xxl,
-  },
-});
+    ...variantLayer[variant],
+  };
+}

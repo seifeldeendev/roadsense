@@ -3,20 +3,23 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { UpcomingAlert } from '@/domain/entities';
 import { Card, AppText } from '@/components/ui';
 import { formatDistance } from '@/shared/format';
-import { colors, hazardMeta, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import { hazardMeta, rounded, spacing, touch, type HazardIconName } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 
 type NextAlertCardProps = {
   alert: UpcomingAlert | null;
 };
 
 export function NextAlertCard({ alert }: NextAlertCardProps) {
+  const { colors } = useTheme();
+
   if (alert === null) {
     return (
-      <Card variant="dark">
-        <AppText variant="displaySm" color="onDark">
+      <Card variant="inverse">
+        <AppText variant="displaySm" color="onInverse">
           No alerts ahead
         </AppText>
-        <AppText variant="bodyMd" color="mute">
+        <AppText variant="bodyMd" color="inverseMuted">
           Nearby hazards show up here while you drive
         </AppText>
       </Card>
@@ -31,20 +34,20 @@ export function NextAlertCard({ alert }: NextAlertCardProps) {
         : 'alert';
 
   return (
-    <Card variant="dark">
+    <Card variant="inverse">
       <View style={styles.row}>
-        <View style={styles.iconWrap}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.onInverse }]}>
           <MaterialCommunityIcons name={icon} size={24} color={colors.ink} />
         </View>
         <View style={styles.textBlock}>
-          <AppText variant="displaySm" color="onDark" numberOfLines={1}>
+          <AppText variant="displaySm" color="onInverse" numberOfLines={1}>
             {alert.title}
           </AppText>
-          <AppText variant="bodyMd" color="onDark">
+          <AppText variant="bodyMd" color="onInverse">
             {formatDistance(alert.distanceM)}
             {alert.roadName !== undefined ? ' · ' : ''}
             {alert.roadName !== undefined ? (
-              <Text style={{ color: colors.mute }}>{alert.roadName}</Text>
+              <Text style={{ color: colors.inverseMuted }}>{alert.roadName}</Text>
             ) : null}
           </AppText>
         </View>
@@ -63,7 +66,6 @@ const styles = StyleSheet.create({
     width: touch.min,
     height: touch.min,
     borderRadius: rounded.full,
-    backgroundColor: colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
   },

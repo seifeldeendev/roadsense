@@ -1,7 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, AppText } from '@/components/ui';
-import { colors, rounded, spacing, touch } from '@/theme/tokens';
+import { rounded, spacing, touch } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 import { AlertStatusLine } from './AlertStatusLine';
 import { LimitBadge } from './LimitBadge';
 import { SpeedGauge } from './SpeedGauge';
@@ -24,17 +25,19 @@ export function DriveStatusPanel({
   hasLimit,
   limitKmh,
 }: DriveStatusPanelProps) {
+  const { colors } = useTheme();
+
   if (!isDriving) {
     return (
       <Card variant="soft">
-        <View style={styles.idle}>
-          <View style={styles.idleIcon}>
+        <View style={panelStyles.idle}>
+          <View style={[panelStyles.idleIcon, { backgroundColor: colors.canvas }]}>
             <MaterialCommunityIcons name="steering" size={24} color={colors.ink} />
           </View>
-          <AppText variant="displaySm" style={styles.centered}>
+          <AppText variant="displaySm" style={panelStyles.centered}>
             Ready when you are
           </AppText>
-          <AppText variant="bodyMd" color="body" style={styles.centered}>
+          <AppText variant="bodyMd" color="body" style={panelStyles.centered}>
             Start a drive to see live speed and nearby alerts.
           </AppText>
         </View>
@@ -44,7 +47,7 @@ export function DriveStatusPanel({
 
   return (
     <Card variant="form">
-      <View style={styles.hero}>
+      <View style={panelStyles.hero}>
         <SpeedGauge speedKmh={speedKmh} status={status} />
         <LimitBadge limitKmh={hasLimit ? limitKmh : null} over={status === 'over'} />
         <AlertStatusLine status={status} label={statusLabel} />
@@ -53,7 +56,7 @@ export function DriveStatusPanel({
   );
 }
 
-const styles = StyleSheet.create({
+const panelStyles = StyleSheet.create({
   hero: {
     alignItems: 'center',
     gap: spacing.md,
@@ -67,7 +70,6 @@ const styles = StyleSheet.create({
     width: touch.min,
     height: touch.min,
     borderRadius: rounded.full,
-    backgroundColor: colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
   },

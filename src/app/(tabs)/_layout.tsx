@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
 import { StyleSheet, type ColorValue } from 'react-native';
-import { colors, spacing, typography, type HazardIconName } from '@/theme/tokens';
+import { nativeTypography, spacing, type HazardIconName } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
 
 function TabIcon({ icon, color, size }: { icon: HazardIconName; color: ColorValue | null; size: number }) {
   return (
@@ -21,6 +22,8 @@ const TAB_ICONS: Record<string, HazardIconName> = {
 };
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
@@ -34,8 +37,7 @@ export default function TabsLayout() {
           paddingTop: spacing.xxs,
         },
         tabBarLabelStyle: {
-          fontFamily: typography.bodySmStrong.fontFamily,
-          fontSize: typography.bodySmStrong.fontSize,
+          ...nativeTypography.tabLabel,
           paddingVertical: spacing.xs,
         },
       }}

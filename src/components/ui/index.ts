@@ -10,4 +10,5 @@ export { LoadingState } from './LoadingState';
 export { Screen } from './Screen';
 export { SectionHeader } from './SectionHeader';
 export { SegmentedControl } from './SegmentedControl';
+export { TextField } from './TextField';
 export { ToggleRow } from './ToggleRow';

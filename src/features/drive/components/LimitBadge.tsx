@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, rounded, typography } from '@/theme/tokens';
+import { rounded, typography } from '@/theme/tokens';
+import { useTheme, type ResolvedTheme } from '@/theme/useTheme';
 
 type LimitBadgeProps = {
   limitKmh: number | null;
@@ -8,24 +9,35 @@ type LimitBadgeProps = {
 };
 
 export function LimitBadge({ limitKmh, size = 'md', over = false }: LimitBadgeProps) {
+  const { colors } = useTheme();
   const dims = size === 'sm' ? styles.small : styles.base;
   return (
     <View
       accessibilityLabel={limitKmh === null ? 'Speed limit unknown' : `Speed limit ${limitKmh}`}
       accessibilityRole="text"
-      style={[styles.sign, dims, { borderColor: over ? colors.status.over : colors.ink }]}
+      style={[
+        styles.sign,
+        dims,
+        {
+          backgroundColor: colors.canvas,
+          borderColor: limitBorder(colors, over),
+        },
+      ]}
     >
-      <Text style={styles.limit} adjustsFontSizeToFit>
+      <Text style={[styles.limit, { color: colors.ink }]} adjustsFontSizeToFit>
         {limitKmh === null ? '–' : limitKmh}
       </Text>
     </View>
   );
 }
 
+function limitBorder(colors: ResolvedTheme['colors'], over: boolean): string {
+  return over ? colors.status.over : colors.ink;
+}
+
 const styles = StyleSheet.create({
   sign: {
     borderRadius: rounded.full,
-    backgroundColor: colors.canvas,
     borderWidth: 7,
     alignItems: 'center',
     justifyContent: 'center',
@@ -41,7 +53,6 @@ const styles = StyleSheet.create({
   },
   limit: {
     ...typography.displayMd,
-    color: colors.ink,
     fontVariant: ['tabular-nums'],
-  },
+  } as const,
 });

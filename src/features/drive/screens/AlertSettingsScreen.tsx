@@ -7,8 +7,9 @@ import {
   SegmentedControl,
   ToggleRow,
 } from '@/components/ui';
-import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
 import { spacing } from '@/theme/tokens';
+import { ALERT_DISTANCE_OPTIONS, AMBER_OPTIONS } from '@/shared/constants';
+import { AccountSection } from '../components/AccountSection';
 import { AlertTypeList } from '../components/AlertTypeList';
 import { ValidationNote } from '../components/ValidationNote';
 import { useAlertSettingsViewModel } from '../viewmodels/useAlertSettingsViewModel';
@@ -23,6 +24,12 @@ const AMBER_SEGMENTS = AMBER_OPTIONS.map((value) => ({
   value,
 }));
 
+const APPEARANCE_SEGMENTS = [
+  { label: 'System', value: 'system' },
+  { label: 'Light', value: 'light' },
+  { label: 'Dark', value: 'dark' },
+] as const;
+
 export default function AlertSettingsScreen() {
   const vm = useAlertSettingsViewModel();
 
@@ -32,6 +39,18 @@ export default function AlertSettingsScreen() {
         <AppText variant="bodyMd" color="body">
           Camera and hazard warnings for the demo route.
         </AppText>
+
+        <View style={styles.section}>
+          <SectionHeader title="Appearance" />
+          <SegmentedControl
+            options={APPEARANCE_SEGMENTS}
+            value={vm.themePreference}
+            onChange={vm.setThemePreference}
+          />
+          <AppText variant="bodySm" color="body">
+            System follows your phone&apos;s setting
+          </AppText>
+        </View>
 
         <View style={styles.section}>
           <SectionHeader title="Alert distance" />
@@ -103,6 +122,13 @@ export default function AlertSettingsScreen() {
             accessibilityLabel="Reset to defaults"
           />
         </View>
+
+        <AccountSection
+          name={vm.user?.name ?? 'Not signed in'}
+          email={vm.user?.email ?? '—'}
+          signingOut={vm.signingOut}
+          onSignOut={vm.signOut}
+        />
       </View>
     </Screen>
   );

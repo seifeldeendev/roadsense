@@ -1,12 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
-  colors,
-  elevation,
   rounded,
   spacing,
   touch,
   typography,
 } from '@/theme/tokens';
+import { useTheme, useThemedStyles, type ResolvedTheme } from '@/theme/useTheme';
 
 type SegmentedOption<T> = {
   label: string;
@@ -20,6 +19,8 @@ type SegmentedControlProps<T> = {
 };
 
 export function SegmentedControl<T>({ options, value, onChange }: SegmentedControlProps<T>) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(segmentedStyles, undefined);
   return (
     <View style={styles.track}>
       {options.map((option) => {
@@ -34,7 +35,7 @@ export function SegmentedControl<T>({ options, value, onChange }: SegmentedContr
             style={({ pressed }) => [
               styles.segment,
               selected && styles.selected,
-              pressed && styles.pressed,
+              pressed && !selected && styles.pressed,
             ]}
           >
             <Text
@@ -54,26 +55,28 @@ export function SegmentedControl<T>({ options, value, onChange }: SegmentedContr
   );
 }
 
-const styles = StyleSheet.create({
-  track: {
-    flexDirection: 'row',
-    backgroundColor: colors.canvasSoft,
-    borderRadius: rounded.pillTab,
-    padding: spacing.xs,
-    minHeight: touch.min,
-  },
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.sm,
-    borderRadius: rounded.pillTab - spacing.xs,
-  },
-  selected: {
-    backgroundColor: colors.canvas,
-    ...elevation.level3,
-  },
-  pressed: {
-    backgroundColor: colors.surfacePressed,
-  },
-});
+function segmentedStyles(theme: ResolvedTheme) {
+  return StyleSheet.create({
+    track: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.canvasSoft,
+      borderRadius: rounded.pillTab,
+      padding: spacing.xs,
+      minHeight: touch.min,
+    },
+    segment: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.sm,
+      borderRadius: rounded.pillTab - spacing.xs,
+    },
+    selected: {
+      backgroundColor: theme.colors.canvas,
+      ...theme.elevation.level3,
+    },
+    pressed: {
+      backgroundColor: theme.colors.surfacePressed,
+    },
+  });
+}

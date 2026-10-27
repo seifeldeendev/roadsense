@@ -1,0 +1,59 @@
+<task>
+Project: RoadSense, React Native 0.88 + Expo SDK 58 (docs: https://docs.expo.dev/versions/v58.0.0/) + TypeScript strict + Expo Router (routes in src/app/), `@/*` -> `./src/*`. Architecture: MVVM in Clean Architecture — src/domain (entities, repository interfaces, pure use cases), src/data (mock repositories + di.ts), src/stores (zustand), src/services, src/features/<feature>/{screens,viewmodels,components}, src/components/ui (primitives), src/theme (light/dark palettes, useTheme / useThemedStyles, typography, spacing, rounded, elevation). Screens render only what a ViewModel hook returns; screens/components never import stores, services, data or use-case functions. Read DESIGN.md (repo root) in full first and follow it in BOTH light and dark schemes: grayscale only, Inter type tokens, pill-shaped interactive elements, rounded.xl cards, rounded.md inputs, one primary CTA per screen, sentence case, no letterSpacing, no hex literals outside src/theme. Study how existing screens use useTheme/useThemedStyles and the ui primitives, and reuse them.
+
+Add a launch flow: splash -> onboarding (first launch only) -> sign in / sign up -> the existing tabs. Authentication is mocked (no backend).
+
+1. Domain + data:
+   - src/domain/entities/user.ts: User { id; name; email }. Export from the entities barrel.
+   - src/domain/repositories/auth-repository.ts: AuthRepository { signIn(email, password): Promise<User>; signUp(name, email, password): Promise<User>; signOut(): Promise<void> }. Export from barrel.
+   - src/domain/usecases/auth/validateAuthForm.ts (pure): validateName (trimmed length >= 2, "Enter your name"), validateEmail (simple RFC-ish regex, "Enter a valid email address"; empty -> "Email is required"), validatePassword (>= 8 chars with at least one letter and one number: "Use at least 8 characters with a letter and a number"; empty -> "Password is required"), validateSignIn({email,password}) and validateSignUp({name,email,password,confirmPassword}; mismatch -> "Passwords don't match") returning Partial<Record<field, string>> (empty object = valid).
+   - src/data/mock/MockAuthRepository.ts: in-memory users seeded with demo user { name 'Demo Driver', email 'demo@roadsense.app', password 'Drive2026' }; ~600 ms delay; signIn wrong credentials -> throw Error("Incorrect email or password"); signUp existing email (case-insensitive) -> throw Error("An account with this email already exists"). Add `auth` to src/data/di.ts.
+   - __tests__/validateAuthForm.test.ts covering each rule and the valid case.
+
+2. Session store src/stores/useSessionStore.ts (zustand persist + AsyncStorage, name "roadsense.session"; persist only user and hasCompletedOnboarding): { user: User | null, hasCompletedOnboarding, hasHydrated (set via onRehydrateStorage, not persisted), completeOnboarding(), signIn(email,password), signUp(name,email,password), signOut() } — async actions call repositories.auth and rethrow errors for the ViewModel to show.
+
+3. Routing (src/app): read the Expo Router SDK 58 docs for protected routes (`Stack.Protected` with `guard`) and use them in src/app/_layout.tsx:
+   - groups: src/app/(onboarding)/index.tsx, src/app/(auth)/sign-in.tsx, src/app/(auth)/sign-up.tsx (+ (auth)/_layout.tsx Stack with headerShown false, and (onboarding)/_layout.tsx if needed); existing (tabs) and stack screens unchanged.
+   - guards: onboarding when !hasCompletedOnboarding; auth when hasCompletedOnboarding && !user; app (tabs, alert, settings/alerts, report/[id], route-preview, trip/[id]) when user. Make src/app/index.tsx redirect correctly (or remove it if guards make it unnecessary — make sure the app opens on the right screen).
+   - Route files stay thin re-exports of feature screens.
+
+4. Splash: keep the native splash (expo-splash-screen) up until fonts are loaded AND the session store has hydrated; then show a branded in-app splash (src/features/onboarding/screens/BrandSplash.tsx rendered by the root layout, not a route) for ~1200 ms with a fade-out: full-bleed `inverse` surface (black in light, white in dark — DESIGN.md polarity band, rounded.none), wordmark "RoadSense" in displayXxl onInverse, tagline "Know what's on the road ahead" in bodyMd inverseMuted, a small monochrome MaterialCommunityIcons 'speedometer' above the wordmark. Also update app.json expo-splash-screen plugin: backgroundColor "#000000" with a "dark" variant backgroundColor "#000000" (check the SDK 58 splash-screen config docs for the exact keys); keep the existing image setting if the docs require one. Change android.adaptiveIcon.backgroundColor to "#000000". Touch nothing else in app.json.
+
+5. Onboarding (src/features/onboarding/{screens/OnboardingScreen.tsx, viewmodels/useOnboardingViewModel.ts, components/*}): 3 slides in a horizontal paging FlatList (keyExtractor on ids, onViewableItemsChanged or scroll offset for the index). Each slide: a 4:3 illustration frame (canvasSoft, rounded.xl) holding a composition of large monochrome MaterialCommunityIcons in white circular containers (no images); headline in displayXl sentence-case; body in bodyLg `body` colour.
+   Slides: (1) "Know what's ahead" — "Speed cameras and hazards are announced before you reach them." icons speedometer + cctv; (2) "Report in one tap" — "Accidents, potholes, checkpoints and flooding, shared with every driver nearby." icons gesture-tap + alert-octagon-outline; (3) "Every drive, recorded" — "See your route, speed and alerts after each trip." icons map-marker-path + chart-bar. Verify glyph names exist in the MaterialCommunityIcons glyphmap.
+   Footer: page dots (active = ink pill 24x8, inactive = mute 8x8 circle, animated width is optional), "Skip" subtle pill (hidden on last slide), "Next" primary pill which on the last slide becomes "Get started" (AppButton variant 'large'). Skip / Get started call completeOnboarding (ViewModel), which lets the guard move to sign-in.
+
+6. Auth UI (src/features/auth/{screens/SignInScreen.tsx, SignUpScreen.tsx, viewmodels/useSignInViewModel.ts, useSignUpViewModel.ts, components/*}):
+   - New ui primitive src/components/ui/TextField.tsx (export from index): DESIGN.md text-input — label bodySmStrong ink, input canvasSoft fill, rounded.md, padding lg, bodyMd ink text, placeholder mute, min height touch.min; focused = 1.5 px ink border; error = 1.5 px ink border + row with 'alert-circle-outline' icon and bodySm ink message (monochrome — no red); optional `secureToggle` adds an IconButton-style eye / eye-off toggle (accessibilityLabel "Show password" / "Hide password"). Forward TextInput props (autoComplete, textContentType, keyboardType, returnKeyType, onSubmitEditing) and a ref for focus chaining.
+   - Sign in: KeyboardAvoidingView + ScrollView on canvas. Top: small 'speedometer' circular icon + "RoadSense" bodyMdStrong; headline "Welcome back" displayXl; bodyMd body "Sign in to report hazards and keep your trips." Form = ex-auth-form-card (content Card: canvas, rounded.xl, padding 2xl; in dark scheme give it the hairline border) with Email and Password TextFields, then the primary pill "Sign in" full width (loading state while submitting). Form-level error ("Incorrect email or password") in a canvasSoft rounded.md row with icon. Under the card: bodyMd body "New to RoadSense?" + pressable bodyMdStrong ink underlined "Create an account" -> /sign-up. Caption in mute: "Demo account: demo@roadsense.app · Drive2026".
+   - Sign up: same chrome; headline "Create your account"; fields Name, Email, Password, Confirm password; primary pill "Create account"; caption mute "By continuing you agree to drive safely and follow local traffic law."; link back "Already have an account? Sign in".
+   - ViewModels: hold field values, validate with the domain validators — show field errors after first submit attempt (then live), focus chaining via returnKeyType next/done, submit calls the session store; map thrown errors to the form-level message; disable submit while submitting.
+
+7. Account in settings: in src/features/drive/screens/AlertSettingsScreen.tsx add a final section "Account" (SectionHeader displaySm): a row with circular 'account' icon, the user's name (bodyMdStrong) and email (bodySm body), and a "Sign out" secondary pill. Wire through useAlertSettingsViewModel (reads user, calls signOut). Signing out must land on sign-in (via the guard). Keep the rest of that screen unchanged.
+
+No new npm dependencies. Typed routes, no `any`/`as any`. Files under ~150 lines (split components). Accessibility labels on every pressable.
+Leave untouched: src/features/map, src/features/trips, existing domain use cases/entities other than the barrel exports, DESIGN.md, docs/, package.json.
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app; `@/stores|@/services|@/data` imports in src/features/*/screens or components; react/expo imports in src/domain.
+Then `git status --porcelain` shows only intended files (src/domain, src/data, src/stores, src/app, src/features/{onboarding,auth,drive}, src/components/ui, __tests__, app.json).
+</verification_loop>
+
+<action_safety>
+Scoped to this task. Do NOT git add or git commit; the orchestrator commits after review. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Launch flow and routing guards (how splash/onboarding/auth/app are gated)
+  2. Per screen: DESIGN.md components/tokens used
+  3. Files created/modified
+  4. Gate outcomes (tsc, jest counts, lint, export, greps)
+  5. Deviations, assumptions, open questions
+</structured_output_contract>

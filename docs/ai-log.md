@@ -41,3 +41,47 @@ Full verbatim prompts are stored in `docs/ai-prompts/`.
 **Output:** Drive Mode (speed card with level-2 shadow, black next-alert band, monochrome report tiles, one black CTA), Alert Overlay (modal card, pill vote buttons), Alert Settings (tab-toggle segmented controls, faq-row toggles, validation note); ViewModels unchanged.
 **My changes & verification:** Re-ran tsc, jest, lint, Android export; grepped screens/components for hex, font props, letter-spacing and store/service/data imports — none. Replaced a duplicated `SpeedStatus` union with a type re-export from the domain so it can't drift. _Seif: add on-device review notes._
 **Rationale:** _Seif: fill in._
+
+### AI-007 · 2026-10-24 · Seif · dark mode + appearance toggle · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-007-dark-mode.txt`
+**Output:** light/dark semantic palettes (dark = DESIGN.md polarity flip: black canvas, white primary CTA, white inverse band), persisted theme preference store (System/Light/Dark), ThemeProvider + `useTheme`/`useThemedStyles`, hairline borders on elevated surfaces in dark, all ui primitives / navigation / drive screens migrated, Appearance section in Alert settings.
+**My changes & verification:** Re-ran tsc, jest (16/16), lint; grepped for hex/rgba outside `src/theme`, static colour imports, raw font props, and store imports in screens — none. Reviewed ThemeProvider/useTheme and confirmed speed-status colours still drive the gauge and status line. _Seif: test both schemes on device and add notes._
+**Rationale:** _Seif: fill in._
+
+### AI-008 · 2026-10-24 · Seif · splash, onboarding, sign-in / sign-up, route guards · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-008-onboarding-auth.txt`
+**Output:** User entity, AuthRepository + mock (demo@roadsense.app / Drive2026), pure form validators with 13 new Jest tests, persisted session store, `Stack.Protected` guards (onboarding → auth → app), branded in-app splash, 3-slide onboarding, `TextField` primitive, sign-in and sign-up screens with validation, Account / sign-out section in settings, black native splash in app.json.
+**My changes & verification:** Re-ran tsc, jest (29/29), lint, Android export and the architecture/colour greps. Fixed a bug where the splash's `onFinished` callback was recreated on every root render, restarting the 1.2 s splash timer on hydration or theme change (now a stable `useCallback`). Note: mock accounts created via sign-up live in memory only until the real backend is added. _Seif: walk through the flow on device and add notes._
+**Rationale:** _Seif: fill in._
+
+### AI-009 · 2026-10-24 · Seif · fix launch flow + DESIGN.md sizing · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Problem reported:** flow broke after onboarding; sizes didn't match DESIGN.md.
+**My diagnosis before delegating:** (1) deleting `src/app/index.tsx` made `(onboarding)/index` the only "/" anchor, so once the onboarding/auth guards flipped the router had no valid fallback route; (2) onboarding slides used the full window width inside a 16-px-padded `Screen`, so pages were wider than the pager (clipped, off-centre, wrong dot index); (3) pill buttons and text inputs used padding that didn't match DESIGN.md component specs.
+**Prompt (verbatim):** `docs/ai-prompts/AI-009-fix-flow-sizes.txt`
+**Output:** always-available `index` redirect route + `/onboarding` route, edge-to-edge measured pager with `getItemLayout`, splash no longer intercepts touches, DESIGN.md padding for pills/inputs/icon buttons, display text capped at 1.3× OS font scale, and `__tests__/appFlow.test.tsx` — 4 router tests that render the real `src/app` and walk launch → onboarding → skip → sign-in → demo sign-in → drive → settings → sign-out.
+**My changes & verification:** confirmed `node_modules` untouched; moved the RNTL "don't clean up" opt-out from a global jest setup file into the flow test only; re-ran tsc, jest (33/33), lint, Android export and the colour/font/import greps. _Seif: verify on device and add notes._
+**Rationale:** _Seif: fill in._
+
+### AI-010 · 2026-10-24 · Seif · auth input sizing + Google/Apple buttons · Claude Code (claude-opus-5-5), written directly (no OpenCode)
+**Prompt (verbatim):** "review the sizes of the input at the sign-in/up and please also add btns for signup using google,apple"
+**Output:** `TextField` fixed to DESIGN.md text-input height (16 + 24 + 16 = 56; was ~79 because row padding, row min-height and input min-height stacked); 24-px password toggle with a 44-pt hit area. Mock provider sign-in (`AuthProvider`, `signInWithProvider` in repository → store → `useSocialAuthViewModel`), `SocialAuthButtons` ("or" divider + white secondary pills with monochrome Google/Apple glyphs) on sign-in and sign-up; flow test extended (34/34).
+**My changes & verification:** _Seif: fill in._
+**Rationale:** _Seif: fill in._
+
+### AI-011 · 2026-10-24 · Seif · Google Maps (shared map kit + Drive Mode map card) and prefilled demo login · OpenCode (opencode/glm-5.3-flash-free), orchestrated by Claude Code
+**Prompt (verbatim):** `docs/ai-prompts/AI-011-maps-prefill.txt`
+**Output:** `src/components/map` (RoadMap with PROVIDER_GOOGLE on Android / Apple Maps on iOS Expo Go, grayscale light/dark Google map styles, camera / hazard / user markers, route line with travelled progress), Drive Mode map card (demo route, cameras, hazards, follow-camera while driving, Recentre pill), `useDriveMapViewModel`, pure `fitRouteRegion` / `nearestRouteIndex` with tests, `app.config.ts` that adds the native Google Maps key only when `EXPO_PUBLIC_GOOGLE_MAPS_KEY` is set, `DEMO_CREDENTIALS` prefilled on sign-in in `__DEV__`.
+**My line-by-line review found and fixed:** (1) the user arrow was rotated inside a marker view that is snapshotted after 400 ms, so it froze at the first heading — now uses the Marker `rotation` prop; (2) camera/hazard/user markers never refreshed after a light/dark switch — `useTracksViewChanges` now re-arms on a redraw key; (3) `DriveMapCard` (a feature component) called domain use cases — route framing and expired-hazard filtering moved into `useDriveMapViewModel`; (4) `activeHazards` included expired hazards; (5) `fitRouteRegion([])` produced Infinity/NaN — falls back to central Cairo (+ test); (6) unused test import and a comment typo. Re-ran tsc, jest (41/41), lint, Android export, `expo config`. _Seif: check the map on an Android phone in Expo Go and add notes._
+**Rationale:** _Seif: fill in._
+
+### AI-012 · 2026-10-24 · Seif · fix `npx expo start` crash ("window is not defined") · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim):** pasted terminal output of `npx expo start` ending in `ReferenceError: window is not defined … at Object.setHasHydrated`.
+**Cause:** `app.json` had the template's `"web": { "output": "server" }`, so the dev server rendered routes in Node; the session store's `setHasHydrated` persisted through AsyncStorage, whose web build calls `window.localStorage`, which doesn't exist in Node.
+**Fix:** web output set to `"single"` (RoadSense has no need for server rendering) and a shared `src/stores/persistStorage.ts` that uses AsyncStorage normally but a no-op storage when running on web without `window`.
+**Verification:** reproduced the crash by requesting `/` from a running dev server; after the fix the same request, the Expo Go manifest and the Android bundle all return 200 with no errors; tsc, jest (41/41), lint pass. _Seif: fill in your notes._
+
+### AI-013 · 2026-10-24 · Seif · fix web crash in react-native-maps · Claude Code (claude-opus-5-5), written directly
+**Prompt (verbatim):** pasted Metro web log ending in `TypeError: (0 , _reactNativeWebDistIndex.codegenNativeComponent) is not a function` from `react-native-maps/src/specs/NativeComponentGooglePolygon.ts`.
+**Cause:** react-native-maps is native-only; opening the app in a browser imported it through `src/components/map`.
+**Fix:** `src/components/map/index.web.ts` + `WebMapFallback.tsx` — Metro resolves the `.web.ts` entry on web, so the native module is never bundled there; the map card shows a "The live map runs in the mobile app" placeholder and overlays render nothing. Android/iOS are unchanged.
+**Verification:** web export contains no react-native-maps native specs and does contain the fallback; Android export still contains react-native-maps; tsc, lint, jest (41/41) pass. _Seif: fill in your notes._

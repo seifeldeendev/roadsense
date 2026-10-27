@@ -1,0 +1,44 @@
+<task>
+Project: RoadSense, React Native 0.88 + Expo SDK 58 + TypeScript strict + Expo Router (routes in src/app/), `@/*` -> `./src/*`. The UI follows DESIGN.md at the repo root (read it first): black/white/grayscale only, Inter type scale, pills, rounded.xl cards, elevation levels. The only approved colour exception is `colors.status.near` / `colors.status.over` for speed status. Tokens live in src/theme/tokens.ts; ui primitives in src/components/ui; screens in src/features/*. Today every style reads static `colors.*` from tokens.ts, so the app is light-only.
+
+Add dark mode with a user toggle.
+
+1. Palettes (src/theme/tokens.ts or a new src/theme/palettes.ts): keep spacing/rounded/typography/touch/hazardMeta/fontFamily as they are. Replace the single static `colors` with two semantic palettes of the same shape, `lightColors` and `darkColors`, typed by one `ThemeColors` type. Dark mode in DESIGN.md is a polarity flip (see its ex-pricing-tier-featured note: "dark fill + light text in light mode, light fill + dark text in dark mode"):
+   keys: primary, onPrimary, primaryPressed, canvas, canvasSoft, canvasSofter, surfacePressed, ink, body, hairlineMid, mute, hairline, inverse, onInverse, inverseMuted, backdrop, status { ok, near, over }.
+   light: primary #000000, onPrimary #ffffff, primaryPressed #282828, canvas #ffffff, canvasSoft #efefef, canvasSofter #f3f3f3, surfacePressed #e2e2e2, ink #000000, body #5e5e5e, hairlineMid #4b4b4b, mute #afafaf, hairline #e2e2e2, inverse #000000, onInverse #ffffff, inverseMuted #afafaf, backdrop rgba(0,0,0,0.5), status ok #000000 near #F5A623 over #E11900.
+   dark: primary #ffffff, onPrimary #000000, primaryPressed #e2e2e2, canvas #000000, canvasSoft #1f1f1f, canvasSofter #161616, surfacePressed #333333, ink #ffffff, body #afafaf, hairlineMid #c4c4c4, mute #5e5e5e, hairline #282828, inverse #ffffff, onInverse #000000, inverseMuted #5e5e5e, backdrop rgba(0,0,0,0.7), status ok #ffffff near #F5A623 over #FF5A45.
+   Old keys onDark / blackElevated are replaced by onInverse / primaryPressed — migrate all callers. Elevation: shadows vanish on black, so in dark mode elevated surfaces (level1/2/3) also get a 1 px `hairline` border; expose elevation via the theme so components get the right variant.
+
+2. Preference store: src/stores/useThemeStore.ts (zustand persist + AsyncStorage, name "roadsense.theme"): `preference: 'system' | 'light' | 'dark'`, `setPreference`.
+   Theme hook: src/theme/ThemeProvider.tsx + src/theme/useTheme.ts — resolves the scheme from the preference and React Native `useColorScheme()`, returns `{ scheme: 'light' | 'dark', colors: ThemeColors, elevation }`. Also export a `useThemedStyles(factory: (t) => StyleSheet styles)` helper that memoises per scheme. app.json already has "userInterfaceStyle": "automatic".
+
+3. Migrate EVERY component and screen (src/components/ui/*, src/app/_layout.tsx, src/app/(tabs)/_layout.tsx, src/features/**) from static `colors` to the theme (useTheme / useThemedStyles). No file may import a static colour object afterwards. Root Stack header, contentStyle, tab bar colours and the StatusBar style ('dark' in light scheme, 'light' in dark) follow the theme. Where the drive feature used the black band (NextAlertCard, Card variant 'dark', ReportBanner toast) use `inverse` / `onInverse` / `inverseMuted` so it flips to a white band in dark mode. Rename Card variant 'dark' to 'inverse'. Switch track/thumb colours, ActivityIndicator, icon colours and placeholders all come from the theme.
+
+4. Toggle UI: in src/features/drive/screens/AlertSettingsScreen.tsx add a first section "Appearance" (SectionHeader displaySm) with the existing SegmentedControl over System / Light / Dark, plus bodySm helper text in `body` ("System follows your phone's setting"). Wire it through useAlertSettingsViewModel (the ViewModel reads/writes useThemeStore; the screen must not import stores). Keep everything else on that screen unchanged.
+
+Rules: DESIGN.md compliance in both schemes — grayscale only (plus speed status), pill for interactive elements, rounded.xl cards, one primary (black in light / white in dark) CTA per screen, sentence case, no letterSpacing, typography tokens only (no raw fontSize/fontWeight/fontFamily), no hex/rgba literals outside src/theme/. No new dependencies. Keep behaviour and accessibility labels unchanged.
+
+Leave untouched: src/domain, src/data, src/services, src/shared, __tests__, DESIGN.md, docs/, app.json, package.json.
+</task>
+
+<verification_loop>
+Run and make green before finishing; fix failures rather than reporting them:
+  npx tsc --noEmit
+  npm test -- --watchAll=false
+  npx expo lint
+  npx expo export --platform android --output-dir .export-check   (must succeed; then delete .export-check)
+Greps that must return nothing: hex/rgba literals in src/ outside src/theme/; any import of a static `colors` object outside src/theme/; `fontWeight|fontSize|fontFamily|letterSpacing` in src/features and src/app (allowed only inside src/theme and in components/ui spreading typography tokens); `@/stores` imports in src/features/*/screens or components.
+Then `git status --porcelain` shows changes only under src/theme, src/stores (new file), src/components, src/app, src/features.
+</verification_loop>
+
+<action_safety>
+Scoped to this task. Do NOT git add or git commit; the orchestrator commits after review. No `any`/`as any`. Files under ~150 lines. Comments only where non-obvious; no "phase"/"TODO"/"for now" wording.
+</action_safety>
+
+<structured_output_contract>
+End with a written report:
+  1. Theme architecture (palettes, provider/hook, store) and how the toggle works
+  2. Files created/modified
+  3. Gate outcomes (tsc, jest, lint, export, each grep)
+  4. Deviations from DESIGN.md or this brief and why; open questions
+</structured_output_contract>
